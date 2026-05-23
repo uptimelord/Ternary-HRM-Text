@@ -85,6 +85,56 @@ class LinearInit(nn.Module):
         return F.linear(input, self.weight, self.bias)
 
 
+class TernaryLinear158Init(LinearInit):
+    def __init__(self,
+                 in_features: int,
+                 out_features: int,
+                 bias: bool,
+                 batch_out_features: Sequence[int] = (),
+                 init_std: Optional[float] = None,
+                 ternary_group_size: int = 128,
+                 ternary_threshold: float = 0.7,
+                 ternary_eps: float = 1e-6,
+                 **kwargs):
+        super().__init__(in_features, out_features, bias, batch_out_features, init_std, **kwargs)
+        if ternary_group_size <= 0:
+            raise ValueError("ternary_group_size must be positive.")
+
+        self.ternary_group_size = ternary_group_size
+        self.ternary_threshold = ternary_threshold
+        self.ternary_eps = ternary_eps
+        self.bits_per_weight = math.log2(3)
+
+    def _grouped_weight(self) -> tuple[Tensor, int]:
+        flat_weight = self.weight.reshape(-1)
+        pad = (self.ternary_group_size - (flat_weight.numel() % self.ternary_group_size)) % self.ternary_group_size
+        if pad:
+            flat_weight = F.pad(flat_weight, (0, pad))
+
+        return flat_weight.reshape(-1, self.ternary_group_size), pad
+
+    def group_scale(self) -> Tensor:
+        groups, _pad = self._grouped_weight()
+        return groups.abs().mean(dim=1, keepdim=True).clamp_min(self.ternary_eps)
+
+    def quantized_weight(self) -> Tensor:
+        groups, pad = self._grouped_weight()
+        scale = groups.abs().mean(dim=1, keepdim=True).clamp_min(self.ternary_eps)
+        normalized = groups / scale
+        positive = normalized > self.ternary_threshold
+        negative = normalized < -self.ternary_threshold
+        ternary = torch.where(positive, torch.ones_like(groups), torch.where(negative, -torch.ones_like(groups), torch.zeros_like(groups)))
+        hard_weight = (ternary * scale).reshape(-1)
+        if pad:
+            hard_weight = hard_weight[:-pad]
+
+        hard_weight = hard_weight.reshape_as(self.weight)
+        return self.weight + (hard_weight - self.weight).detach()
+
+    def forward(self, input: Tensor) -> Tensor:
+        return F.linear(input, self.quantized_weight(), self.bias)
+
+
 class ScaledEmbeddingInit(nn.Module):
     def __init__(self,
                  num_embeddings: int,
@@ -114,17 +164,19 @@ class Cache(NamedTuple):
 
 
 class Attention(nn.Module):
-    def __init__(self, hidden_size, head_dim, num_heads, num_key_value_heads, attn_type, init_std_in=None, init_std_out=None, **kwargs):
+    def __init__(self, hidden_size, head_dim, num_heads, num_key_value_heads, attn_type, init_std_in=None, init_std_out=None,
+                 linear_cls=LinearInit, linear_kwargs: Optional[dict[str, Any]] = None, **kwargs):
         super().__init__()
         self.head_dim = head_dim
         self.num_heads = num_heads
         self.num_key_value_heads = num_key_value_heads
         self.attn_type = attn_type
+        linear_kwargs = linear_kwargs or {}
 
-        self.gqkv_proj = LinearInit(hidden_size, self.head_dim, batch_out_features=(2 * self.num_heads + 2 * self.num_key_value_heads, ),
-                                   bias=False, init_std=init_std_in, **kwargs)
-        self.o_proj = LinearInit(head_dim * num_heads, hidden_size,
-                                 bias=False, init_std=init_std_out, **kwargs)
+        self.gqkv_proj = linear_cls(hidden_size, self.head_dim, batch_out_features=(2 * self.num_heads + 2 * self.num_key_value_heads, ),
+                                    bias=False, init_std=init_std_in, **kwargs, **linear_kwargs)
+        self.o_proj = linear_cls(head_dim * num_heads, hidden_size,
+                                 bias=False, init_std=init_std_out, **kwargs, **linear_kwargs)
 
     def forward(self, hidden_states: Tensor, cos_sin: Optional[CosSin], cache: Optional[Cache] = None, cache_lengths: Optional[Tensor] = None, **seq_info) -> Tensor:
         # hidden_states, gqkv: [..., seq_len, hidden_size]
@@ -156,12 +208,14 @@ class Attention(nn.Module):
 
 
 class SwiGLU(nn.Module):
-    def __init__(self, hidden_size: int, intermediate_size: int, init_std_in=None, init_std_out=None, **kwargs):
+    def __init__(self, hidden_size: int, intermediate_size: int, init_std_in=None, init_std_out=None,
+                 linear_cls=LinearInit, linear_kwargs: Optional[dict[str, Any]] = None, **kwargs):
         super().__init__()
-        self.gate_up_proj = LinearInit(hidden_size, intermediate_size, batch_out_features=(2, ),
-                                       bias=False, init_std=init_std_in, **kwargs)
-        self.down_proj    = LinearInit(intermediate_size, hidden_size,
-                                       bias=False, init_std=init_std_out, **kwargs)
+        linear_kwargs = linear_kwargs or {}
+        self.gate_up_proj = linear_cls(hidden_size, intermediate_size, batch_out_features=(2, ),
+                                       bias=False, init_std=init_std_in, **kwargs, **linear_kwargs)
+        self.down_proj    = linear_cls(intermediate_size, hidden_size,
+                                       bias=False, init_std=init_std_out, **kwargs, **linear_kwargs)
 
     def forward(self, x):
         gate, up = self.gate_up_proj(x).chunk(2, dim=-1)

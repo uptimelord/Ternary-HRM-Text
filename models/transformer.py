@@ -4,9 +4,9 @@ import math
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
-from models.layers import SwiGLU, AttnType, Attention, Cache, RotaryEmbedding, find_multiple
+from models.layers import SwiGLU, AttnType, Attention, Cache, RotaryEmbedding, find_multiple, LinearInit, TernaryLinear158Init
 
 
 class InitConfig(BaseModel):
@@ -14,6 +14,14 @@ class InitConfig(BaseModel):
 
     attn_out_std: float
     ff_out_std: float
+
+
+class TernaryConfig(BaseModel):
+    enabled: bool = False
+    target: Literal["mlp", "attention", "body"] = "body"
+    group_size: int = 128
+    threshold: float = 0.7
+    eps: float = 1e-6
 
 
 class TransformerConfig(BaseModel):
@@ -37,6 +45,8 @@ class TransformerConfig(BaseModel):
 
     pos_emb_type: Literal["rope", "none"]
     rope_theta: Optional[float] = None
+
+    ternary: TernaryConfig = Field(default_factory=TernaryConfig)
 
     # [Computed properties]
     @property
@@ -65,6 +75,14 @@ class TransformerConfig(BaseModel):
 class TransformerBlock(nn.Module):
     def __init__(self, config: TransformerConfig) -> None:
         super().__init__()
+        ternary_kwargs = dict(
+            ternary_group_size=config.ternary.group_size,
+            ternary_threshold=config.ternary.threshold,
+            ternary_eps=config.ternary.eps,
+        )
+        use_ternary_attention = config.ternary.enabled and config.ternary.target in ("attention", "body")
+        use_ternary_mlp = config.ternary.enabled and config.ternary.target in ("mlp", "body")
+
         self.attn = Attention(
             hidden_size=config.hidden_size,
             head_dim=config.hidden_size // config.num_heads,
@@ -73,14 +91,18 @@ class TransformerBlock(nn.Module):
             attn_type=config.attn_type,
 
             init_std_in=config.init_config.in_std,
-            init_std_out=config.init_config.attn_out_std
+            init_std_out=config.init_config.attn_out_std,
+            linear_cls=TernaryLinear158Init if use_ternary_attention else LinearInit,
+            linear_kwargs=ternary_kwargs if use_ternary_attention else None
         )
         self.mlp = SwiGLU(
             hidden_size=config.hidden_size,
             intermediate_size=config.intermediate_size,
             
             init_std_in=config.init_config.in_std,
-            init_std_out=config.init_config.ff_out_std
+            init_std_out=config.init_config.ff_out_std,
+            linear_cls=TernaryLinear158Init if use_ternary_mlp else LinearInit,
+            linear_kwargs=ternary_kwargs if use_ternary_mlp else None
         )
         
         self.forward = getattr(self, f"_forward_{config.norm_type}")  # Avoid branching logic in "forward" for torch.compile compatibility
