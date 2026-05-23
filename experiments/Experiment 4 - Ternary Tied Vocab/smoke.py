@@ -91,7 +91,8 @@ def _hrm_kwargs(*, hidden_size, n_layers, num_heads, expansion, max_seq_len,
 
 
 def build_variant(name: str, *, vocab_size: int, ternary_threshold: float,
-                  ternary_group_size: int, **hrm_kw):
+                  ternary_group_size: int, ternary_scale_mode: str = "mean_abs",
+                  **hrm_kw):
     hrm = HierarchicalReasoningModel(
         _hrm_kwargs(ternarize_body=("ternary_body" in name),
                     ternary_threshold=ternary_threshold,
@@ -108,6 +109,7 @@ def build_variant(name: str, *, vocab_size: int, ternary_threshold: float,
             linear_cls=TernaryLinear158Init,
             ternary_group_size=ternary_group_size,
             ternary_threshold=ternary_threshold,
+            ternary_scale_mode=ternary_scale_mode,
         )
     if name == "ternary_body_ternary_tied_vocab":
         return EXP4.TiedVocabHead(
@@ -115,6 +117,7 @@ def build_variant(name: str, *, vocab_size: int, ternary_threshold: float,
             linear_cls=TernaryLinear158Init,
             ternary_group_size=ternary_group_size,
             ternary_threshold=ternary_threshold,
+            ternary_scale_mode=ternary_scale_mode,
         )
     raise ValueError(f"unknown variant: {name}")
 

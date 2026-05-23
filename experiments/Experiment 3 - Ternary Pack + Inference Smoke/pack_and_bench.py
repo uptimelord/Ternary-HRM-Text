@@ -66,22 +66,9 @@ def pack_ternary_layer(layer: TernaryLinear158Init) -> dict:
     """
     with torch.no_grad():
         weight = layer.weight.detach()
-        flat = weight.reshape(-1)
         gs = layer.ternary_group_size
-        pad = (gs - (flat.numel() % gs)) % gs
-        if pad:
-            flat_p = torch.nn.functional.pad(flat, (0, pad))
-        else:
-            flat_p = flat
-        groups = flat_p.reshape(-1, gs)
-        scales = groups.abs().mean(dim=1, keepdim=True).clamp_min(layer.ternary_eps)
-        normalized = groups / scales
-        positive = normalized > layer.ternary_threshold
-        negative = normalized < -layer.ternary_threshold
+        trits, scales, pad = layer.ternary_components()
         # Trits in {-1, 0, +1} -> digits {0, 1, 2}
-        trits = torch.zeros_like(groups, dtype=torch.int8)
-        trits[positive] = 1
-        trits[negative] = -1
         digits = (trits + 1).to(torch.uint8)  # [num_groups, gs]
 
         flat_digits = digits.reshape(-1)  # [num_groups * gs]
@@ -101,6 +88,7 @@ def pack_ternary_layer(layer: TernaryLinear158Init) -> dict:
             "group_size": gs,
             "threshold": layer.ternary_threshold,
             "eps": layer.ternary_eps,
+            "scale_mode": layer.ternary_scale_mode,
             "trit_bytes": bytes_.cpu(),
             "num_trits": int(weight.numel()),
             "pad_group": int(pad),

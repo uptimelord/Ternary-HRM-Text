@@ -37,6 +37,7 @@ class TiedVocabHead(nn.Module):
                  ternary_group_size: int = 128,
                  ternary_threshold: float = 0.5,
                  ternary_eps: float = 1e-6,
+                 ternary_scale_mode: str = "mean_abs",
                  init_std_override: Optional[float] = None):
         super().__init__()
         self.model = model
@@ -54,6 +55,7 @@ class TiedVocabHead(nn.Module):
                 ternary_group_size=ternary_group_size,
                 ternary_threshold=ternary_threshold,
                 ternary_eps=ternary_eps,
+                ternary_scale_mode=ternary_scale_mode,
                 **kwargs,
             )
             self._is_ternary = True

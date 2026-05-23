@@ -95,14 +95,18 @@ class TernaryLinear158Init(LinearInit):
                  ternary_group_size: int = 128,
                  ternary_threshold: float = 0.7,
                  ternary_eps: float = 1e-6,
+                 ternary_scale_mode: Literal["mean_abs", "selected_mean_abs", "rms"] = "mean_abs",
                  **kwargs):
         super().__init__(in_features, out_features, bias, batch_out_features, init_std, **kwargs)
         if ternary_group_size <= 0:
             raise ValueError("ternary_group_size must be positive.")
+        if ternary_scale_mode not in ("mean_abs", "selected_mean_abs", "rms"):
+            raise ValueError(f"Unsupported ternary_scale_mode: {ternary_scale_mode}")
 
         self.ternary_group_size = ternary_group_size
         self.ternary_threshold = ternary_threshold
         self.ternary_eps = ternary_eps
+        self.ternary_scale_mode = ternary_scale_mode
         self.bits_per_weight = math.log2(3)
 
     def _grouped_weight(self) -> tuple[Tensor, int]:
@@ -115,15 +119,49 @@ class TernaryLinear158Init(LinearInit):
 
     def group_scale(self) -> Tensor:
         groups, _pad = self._grouped_weight()
+        ternary = self._ternary_mask(groups, self._normalization_scale(groups))
+        return self._output_scale(groups, ternary)
+
+    def _mean_abs_scale(self, groups: Tensor) -> Tensor:
         return groups.abs().mean(dim=1, keepdim=True).clamp_min(self.ternary_eps)
 
-    def quantized_weight(self) -> Tensor:
-        groups, pad = self._grouped_weight()
-        scale = groups.abs().mean(dim=1, keepdim=True).clamp_min(self.ternary_eps)
+    def _rms_scale(self, groups: Tensor) -> Tensor:
+        return groups.square().mean(dim=1, keepdim=True).sqrt().clamp_min(self.ternary_eps)
+
+    def _normalization_scale(self, groups: Tensor) -> Tensor:
+        if self.ternary_scale_mode == "rms":
+            return self._rms_scale(groups)
+        return self._mean_abs_scale(groups)
+
+    def _ternary_mask(self, groups: Tensor, scale: Tensor) -> Tensor:
         normalized = groups / scale
         positive = normalized > self.ternary_threshold
         negative = normalized < -self.ternary_threshold
-        ternary = torch.where(positive, torch.ones_like(groups), torch.where(negative, -torch.ones_like(groups), torch.zeros_like(groups)))
+        return torch.where(
+            positive,
+            torch.ones_like(groups),
+            torch.where(negative, -torch.ones_like(groups), torch.zeros_like(groups)),
+        )
+
+    def _output_scale(self, groups: Tensor, ternary: Tensor) -> Tensor:
+        if self.ternary_scale_mode == "rms":
+            return self._rms_scale(groups)
+        if self.ternary_scale_mode == "selected_mean_abs":
+            selected = ternary.abs()
+            denom = selected.sum(dim=1, keepdim=True)
+            selected_scale = (groups.abs() * selected).sum(dim=1, keepdim=True) / denom.clamp_min(1.0)
+            fallback = self._mean_abs_scale(groups)
+            return torch.where(denom > 0, selected_scale, fallback).clamp_min(self.ternary_eps)
+        return self._mean_abs_scale(groups)
+
+    def ternary_components(self) -> tuple[Tensor, Tensor, int]:
+        groups, pad = self._grouped_weight()
+        ternary = self._ternary_mask(groups, self._normalization_scale(groups))
+        scale = self._output_scale(groups, ternary)
+        return ternary, scale, pad
+
+    def quantized_weight(self) -> Tensor:
+        ternary, scale, pad = self.ternary_components()
         hard_weight = (ternary * scale).reshape(-1)
         if pad:
             hard_weight = hard_weight[:-pad]
@@ -165,18 +203,26 @@ class Cache(NamedTuple):
 
 class Attention(nn.Module):
     def __init__(self, hidden_size, head_dim, num_heads, num_key_value_heads, attn_type, init_std_in=None, init_std_out=None,
-                 linear_cls=LinearInit, linear_kwargs: Optional[dict[str, Any]] = None, **kwargs):
+                 linear_cls=LinearInit, linear_kwargs: Optional[dict[str, Any]] = None,
+                 gqkv_linear_cls=None, o_linear_cls=None,
+                 gqkv_linear_kwargs: Optional[dict[str, Any]] = None,
+                 o_linear_kwargs: Optional[dict[str, Any]] = None,
+                 **kwargs):
         super().__init__()
         self.head_dim = head_dim
         self.num_heads = num_heads
         self.num_key_value_heads = num_key_value_heads
         self.attn_type = attn_type
         linear_kwargs = linear_kwargs or {}
+        gqkv_linear_cls = gqkv_linear_cls or linear_cls
+        o_linear_cls = o_linear_cls or linear_cls
+        gqkv_linear_kwargs = gqkv_linear_kwargs if gqkv_linear_kwargs is not None else linear_kwargs
+        o_linear_kwargs = o_linear_kwargs if o_linear_kwargs is not None else linear_kwargs
 
-        self.gqkv_proj = linear_cls(hidden_size, self.head_dim, batch_out_features=(2 * self.num_heads + 2 * self.num_key_value_heads, ),
-                                    bias=False, init_std=init_std_in, **kwargs, **linear_kwargs)
-        self.o_proj = linear_cls(head_dim * num_heads, hidden_size,
-                                 bias=False, init_std=init_std_out, **kwargs, **linear_kwargs)
+        self.gqkv_proj = gqkv_linear_cls(hidden_size, self.head_dim, batch_out_features=(2 * self.num_heads + 2 * self.num_key_value_heads, ),
+                                         bias=False, init_std=init_std_in, **kwargs, **gqkv_linear_kwargs)
+        self.o_proj = o_linear_cls(head_dim * num_heads, hidden_size,
+                                   bias=False, init_std=init_std_out, **kwargs, **o_linear_kwargs)
 
     def forward(self, hidden_states: Tensor, cos_sin: Optional[CosSin], cache: Optional[Cache] = None, cache_lengths: Optional[Tensor] = None, **seq_info) -> Tensor:
         # hidden_states, gqkv: [..., seq_len, hidden_size]
@@ -209,13 +255,21 @@ class Attention(nn.Module):
 
 class SwiGLU(nn.Module):
     def __init__(self, hidden_size: int, intermediate_size: int, init_std_in=None, init_std_out=None,
-                 linear_cls=LinearInit, linear_kwargs: Optional[dict[str, Any]] = None, **kwargs):
+                 linear_cls=LinearInit, linear_kwargs: Optional[dict[str, Any]] = None,
+                 gate_up_linear_cls=None, down_linear_cls=None,
+                 gate_up_linear_kwargs: Optional[dict[str, Any]] = None,
+                 down_linear_kwargs: Optional[dict[str, Any]] = None,
+                 **kwargs):
         super().__init__()
         linear_kwargs = linear_kwargs or {}
-        self.gate_up_proj = linear_cls(hidden_size, intermediate_size, batch_out_features=(2, ),
-                                       bias=False, init_std=init_std_in, **kwargs, **linear_kwargs)
-        self.down_proj    = linear_cls(intermediate_size, hidden_size,
-                                       bias=False, init_std=init_std_out, **kwargs, **linear_kwargs)
+        gate_up_linear_cls = gate_up_linear_cls or linear_cls
+        down_linear_cls = down_linear_cls or linear_cls
+        gate_up_linear_kwargs = gate_up_linear_kwargs if gate_up_linear_kwargs is not None else linear_kwargs
+        down_linear_kwargs = down_linear_kwargs if down_linear_kwargs is not None else linear_kwargs
+        self.gate_up_proj = gate_up_linear_cls(hidden_size, intermediate_size, batch_out_features=(2, ),
+                                               bias=False, init_std=init_std_in, **kwargs, **gate_up_linear_kwargs)
+        self.down_proj    = down_linear_cls(intermediate_size, hidden_size,
+                                            bias=False, init_std=init_std_out, **kwargs, **down_linear_kwargs)
 
     def forward(self, x):
         gate, up = self.gate_up_proj(x).chunk(2, dim=-1)

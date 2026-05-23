@@ -18,10 +18,21 @@ class InitConfig(BaseModel):
 
 class TernaryConfig(BaseModel):
     enabled: bool = False
-    target: Literal["mlp", "attention", "body"] = "body"
+    target: Literal[
+        "mlp",
+        "attention",
+        "body",
+        "mlp_gate_up",
+        "mlp_down",
+        "attention_gqkv",
+        "attention_o",
+        "mlp_no_down",
+        "attention_no_o",
+    ] = "body"
     group_size: int = 128
     threshold: float = 0.7
     eps: float = 1e-6
+    scale_mode: Literal["mean_abs", "selected_mean_abs", "rms"] = "mean_abs"
 
 
 class TransformerConfig(BaseModel):
@@ -79,9 +90,13 @@ class TransformerBlock(nn.Module):
             ternary_group_size=config.ternary.group_size,
             ternary_threshold=config.ternary.threshold,
             ternary_eps=config.ternary.eps,
+            ternary_scale_mode=config.ternary.scale_mode,
         )
-        use_ternary_attention = config.ternary.enabled and config.ternary.target in ("attention", "body")
-        use_ternary_mlp = config.ternary.enabled and config.ternary.target in ("mlp", "body")
+        target = config.ternary.target
+        use_ternary_gqkv = config.ternary.enabled and target in ("attention", "body", "attention_gqkv", "attention_no_o")
+        use_ternary_o = config.ternary.enabled and target in ("attention", "body", "attention_o")
+        use_ternary_gate_up = config.ternary.enabled and target in ("mlp", "body", "mlp_gate_up", "mlp_no_down")
+        use_ternary_down = config.ternary.enabled and target in ("mlp", "body", "mlp_down")
 
         self.attn = Attention(
             hidden_size=config.hidden_size,
@@ -92,8 +107,10 @@ class TransformerBlock(nn.Module):
 
             init_std_in=config.init_config.in_std,
             init_std_out=config.init_config.attn_out_std,
-            linear_cls=TernaryLinear158Init if use_ternary_attention else LinearInit,
-            linear_kwargs=ternary_kwargs if use_ternary_attention else None
+            gqkv_linear_cls=TernaryLinear158Init if use_ternary_gqkv else LinearInit,
+            o_linear_cls=TernaryLinear158Init if use_ternary_o else LinearInit,
+            gqkv_linear_kwargs=ternary_kwargs if use_ternary_gqkv else None,
+            o_linear_kwargs=ternary_kwargs if use_ternary_o else None,
         )
         self.mlp = SwiGLU(
             hidden_size=config.hidden_size,
@@ -101,8 +118,10 @@ class TransformerBlock(nn.Module):
             
             init_std_in=config.init_config.in_std,
             init_std_out=config.init_config.ff_out_std,
-            linear_cls=TernaryLinear158Init if use_ternary_mlp else LinearInit,
-            linear_kwargs=ternary_kwargs if use_ternary_mlp else None
+            gate_up_linear_cls=TernaryLinear158Init if use_ternary_gate_up else LinearInit,
+            down_linear_cls=TernaryLinear158Init if use_ternary_down else LinearInit,
+            gate_up_linear_kwargs=ternary_kwargs if use_ternary_gate_up else None,
+            down_linear_kwargs=ternary_kwargs if use_ternary_down else None,
         )
         
         self.forward = getattr(self, f"_forward_{config.norm_type}")  # Avoid branching logic in "forward" for torch.compile compatibility
