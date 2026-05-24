@@ -57,6 +57,25 @@ def test_ternarylinear158_uses_groupwise_ternary_weight_with_ste_gradients():
     assert layer.weight.grad.shape == layer.weight.shape
 
 
+def test_ternarylinear158_tequila_mode_keeps_deadzone_weights_active():
+    standard = TernaryLinear158Init(4, 1, bias=False, ternary_group_size=4, ternary_threshold=0.7)
+    tequila = TernaryLinear158Init(
+        4,
+        1,
+        bias=False,
+        ternary_group_size=4,
+        ternary_threshold=0.7,
+        ternary_ste_mode="tequila",
+    )
+    weights = torch.tensor([[0.10, 1.00, -0.10, -1.00]])
+    standard.weight.data.copy_(weights)
+    tequila.weight.data.copy_(weights)
+    x = torch.tensor([[1.0, 0.0, 0.0, 0.0]])
+
+    assert torch.allclose(standard(x), torch.tensor([[0.0]]), atol=1e-6)
+    assert torch.allclose(tequila(x), torch.tensor([[0.10]]), atol=1e-6)
+
+
 def test_ternary_mlp_target_leaves_attention_dense():
     block = TransformerBlock(_tiny_config(enabled=True, target="mlp"))
 

@@ -96,17 +96,21 @@ class TernaryLinear158Init(LinearInit):
                  ternary_threshold: float = 0.7,
                  ternary_eps: float = 1e-6,
                  ternary_scale_mode: Literal["mean_abs", "selected_mean_abs", "rms"] = "mean_abs",
+                 ternary_ste_mode: Literal["standard", "tequila"] = "standard",
                  **kwargs):
         super().__init__(in_features, out_features, bias, batch_out_features, init_std, **kwargs)
         if ternary_group_size <= 0:
             raise ValueError("ternary_group_size must be positive.")
         if ternary_scale_mode not in ("mean_abs", "selected_mean_abs", "rms"):
             raise ValueError(f"Unsupported ternary_scale_mode: {ternary_scale_mode}")
+        if ternary_ste_mode not in ("standard", "tequila"):
+            raise ValueError(f"Unsupported ternary_ste_mode: {ternary_ste_mode}")
 
         self.ternary_group_size = ternary_group_size
         self.ternary_threshold = ternary_threshold
         self.ternary_eps = ternary_eps
         self.ternary_scale_mode = ternary_scale_mode
+        self.ternary_ste_mode = ternary_ste_mode
         self.bits_per_weight = math.log2(3)
 
     def _grouped_weight(self) -> tuple[Tensor, int]:
@@ -169,8 +173,24 @@ class TernaryLinear158Init(LinearInit):
         hard_weight = hard_weight.reshape_as(self.weight)
         return self.weight + (hard_weight - self.weight).detach()
 
+    def effective_weight(self) -> Tensor:
+        if self.ternary_ste_mode == "standard":
+            return self.quantized_weight()
+
+        ternary, scale, pad = self.ternary_components()
+        active_mask = (ternary != 0).to(dtype=self.weight.dtype).reshape(-1)
+        hard_weight = (ternary * scale).reshape(-1)
+        if pad:
+            active_mask = active_mask[:-pad]
+            hard_weight = hard_weight[:-pad]
+
+        active_mask = active_mask.reshape_as(self.weight)
+        hard_weight = hard_weight.reshape_as(self.weight)
+        ste_weight = self.weight + (hard_weight - self.weight).detach()
+        return ste_weight * active_mask + self.weight * (1 - active_mask)
+
     def forward(self, input: Tensor) -> Tensor:
-        return F.linear(input, self.quantized_weight(), self.bias)
+        return F.linear(input, self.effective_weight(), self.bias)
 
 
 class ScaledEmbeddingInit(nn.Module):

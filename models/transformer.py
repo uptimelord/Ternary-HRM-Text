@@ -33,6 +33,7 @@ class TernaryConfig(BaseModel):
     threshold: float = 0.7
     eps: float = 1e-6
     scale_mode: Literal["mean_abs", "selected_mean_abs", "rms"] = "mean_abs"
+    ste_mode: Literal["standard", "tequila"] = "standard"
 
 
 class TransformerConfig(BaseModel):
@@ -91,6 +92,7 @@ class TransformerBlock(nn.Module):
             ternary_threshold=config.ternary.threshold,
             ternary_eps=config.ternary.eps,
             ternary_scale_mode=config.ternary.scale_mode,
+            ternary_ste_mode=config.ternary.ste_mode,
         )
         target = config.ternary.target
         use_ternary_gqkv = config.ternary.enabled and target in ("attention", "body", "attention_gqkv", "attention_no_o")

@@ -38,6 +38,7 @@ class TiedVocabHead(nn.Module):
                  ternary_threshold: float = 0.5,
                  ternary_eps: float = 1e-6,
                  ternary_scale_mode: str = "mean_abs",
+                 ternary_ste_mode: str = "standard",
                  init_std_override: Optional[float] = None):
         super().__init__()
         self.model = model
@@ -56,6 +57,7 @@ class TiedVocabHead(nn.Module):
                 ternary_threshold=ternary_threshold,
                 ternary_eps=ternary_eps,
                 ternary_scale_mode=ternary_scale_mode,
+                ternary_ste_mode=ternary_ste_mode,
                 **kwargs,
             )
             self._is_ternary = True
@@ -70,7 +72,7 @@ class TiedVocabHead(nn.Module):
     def _shared_weight(self) -> Tensor:
         """Return the [vocab, hidden] weight used for both embedding and projection."""
         if self._is_ternary:
-            return self.tied_vocab.quantized_weight()
+            return self.tied_vocab.effective_weight()
         return self.tied_vocab.weight
 
     def forward(self, carry, batch: dict[str, Tensor], **kwargs):
