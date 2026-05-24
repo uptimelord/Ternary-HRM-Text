@@ -1,6 +1,8 @@
 import sys
 import types
 
+import torch
+
 
 def _stub_flash_attention_modules():
     prefixlm = types.ModuleType("models.flash_attention_prefixlm_v2")
@@ -44,15 +46,20 @@ def test_selective_ternary_target_can_convert_only_mlp_gate_up():
 
 
 def test_selected_mean_abs_scale_mode_changes_quantized_weight():
-    base = TernaryLinear158Init(8, 2, bias=False, ternary_group_size=4, ternary_threshold=0.25)
+    base = TernaryLinear158Init(8, 2, bias=False, ternary_group_size=4, ternary_threshold=0.7)
     selected = TernaryLinear158Init(
         8,
         2,
         bias=False,
         ternary_group_size=4,
-        ternary_threshold=0.25,
+        ternary_threshold=0.7,
         ternary_scale_mode="selected_mean_abs",
     )
-    selected.weight.data.copy_(base.weight.data)
+    weights = torch.tensor([
+        [0.05, -0.10, 0.50, -1.00, 0.02, -0.03, 0.70, -0.90],
+        [0.01, 0.20, -0.40, 1.20, -0.08, 0.09, -0.60, 1.00],
+    ])
+    base.weight.data.copy_(weights)
+    selected.weight.data.copy_(weights)
 
     assert not base.quantized_weight().equal(selected.quantized_weight())
