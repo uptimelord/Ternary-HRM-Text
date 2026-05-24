@@ -1,19 +1,64 @@
 ![](./assets/banner.png)
 
-# HRM-Text: Efficient Pretraining Beyond Scaling
+# Ternary-HRM-Text
 
 <p align="center">
+  <a href="https://github.com/NASAEXP/Ternary-HRM-Text"><img src="https://img.shields.io/badge/GitHub-NASAEXP%2FTernary--HRM--Text-181717?logo=github&logoColor=white" alt="GitHub Repo"></a>
   <a href="https://arxiv.org/pdf/2605.20613"><img src="https://img.shields.io/badge/Paper-arXiv-red?logo=arxiv&logoColor=white" alt="arXiv Paper"></a>
   <a href="https://huggingface.co/sapientinc/HRM-Text-1B"><img src="https://img.shields.io/badge/Model-HuggingFace-yellow" alt="Model"></a>
 </p>
 
-<p align="center"><strong>🌟 Pretrain a foundation model from scratch with ~$1000. 🌠</strong></p>
+<p align="center"><strong>Ternary experiments for lower-cost HRM-style text pretraining.</strong></p>
 
-HRM-Text is a 1B text generation model based on the HRM architecture, strengthened by task completion and latent space reasoning. It offers a full pretraining framework, making foundation model pretraining accessible with 130-600x less compute and 150-900x less data. It is built upon a hierarchical recurrent architecture, PrefixLM sequence packing, FlashAttention 3 kernels, PyTorch FSDP2 training, evaluation, and checkpoint conversion tooling.
+Ternary-HRM-Text is a fork of [sapientinc/HRM-Text](https://github.com/sapientinc/HRM-Text) focused on 1.58-bit / ternary training experiments for HRM-style text models.
+
+The base repo gives us a real text pretraining stack: HRM recurrence, PrefixLM sequence packing, FlashAttention 3 kernels, PyTorch FSDP2 training, evaluation, and checkpoint conversion tooling. This fork adds the ternary path on top: ternary body layers, ternary/tied vocab experiments, packed export probes, and experiment notes aimed at lowering training and deployment cost.
+
+This is experimental. The current best lane is not "ternarize everything"; it is targeted vocab compression.
 
 ![](./assets/benchmark_scatter.png)
 
-## Launch the Pretraining 🚀
+## Current Ternary Result
+
+The strongest result so far is the mixed precision tied-vocab lane:
+
+| Recipe | Eval | Gap vs dense tied | Packed size | Compression |
+|---|---:|---:|---:|---:|
+| `dense_tied_vocab` | 5.3831 | +0.0000 | 34.76 MB | 1.00x |
+| `mixed_top512` | 5.3879 | +0.0048 | 5.11 MB | 6.85x |
+
+Plain-English read: keep the top 512 token rows dense, ternarize the rest of the tied vocab matrix, and the 2000-step loss gap is tiny at this scale.
+
+Start here:
+
+- [Experiment 14 - Mixed Top512 Long Run](experiments/Experiment%2014%20-%20Mixed%20Top512%20Long%20Run/README.md)
+- [Experiment 13 - Stacked Vocab + Body Ternary](experiments/Experiment%2013%20-%20Stacked%20Vocab%20%2B%20Body%20Ternary/README.md)
+- [Experiment 7 - Ternary Vocab Quantizer Sweep](experiments/Experiment%207%20-%20Ternary%20Vocab%20Quantizer%20Sweep/README.md)
+
+## What This Fork Changes
+
+- Adds `TernaryLinear158Init` for STE-based ternary linear layers.
+- Adds selective ternary targets for the HRM body, including MLP-only and projection-level targets.
+- Adds tied ternary vocab heads, mixed dense/ternary vocab rows, and packed checkpoint measurement.
+- Adds experiment folders with numbered runs, results, and decisions.
+- Keeps the original HRM-Text pretraining and evaluation stack intact.
+
+## Recommended Track
+
+For now, the clean path is:
+
+1. Keep the HRM body dense.
+2. Use tied vocab.
+3. Use `mixed_top512` for vocab compression.
+4. Test width scaling before adding body ternary back.
+
+Body ternary is still useful, but Experiment 13 showed that stacking body ternary with mixed vocab currently costs more quality than it saves.
+
+## Upstream HRM-Text Reference
+
+The sections below are the original HRM-Text launch and repo notes, kept because this fork still uses the same training stack.
+
+## Launch Pretraining
 
 ### Required Resources
 
@@ -242,7 +287,7 @@ For HRM and RINS, `half_layers: true` splits the configured layer count evenly b
 ## Repository Layout
 
 ```text
-HRM-Text/
+Ternary-HRM-Text/
 |-- config/                       # Hydra configs for model, data, and training
 |-- conversion/convert_to_hf.py    # FSDP2 checkpoint -> HF-style export
 |-- evaluation/                    # Evaluation engines, benchmark wrappers, configs
@@ -267,9 +312,9 @@ HRM-Text/
 
 ## Contributions
 
-We welcome contributions that make HRM-Text faster, stronger, or easier to use.
+This fork is focused on ternary HRM-Text experiments, packed export, low-cost training probes, and clear experiment notes.
 
-Please send data-pipeline changes to the companion `data_io` project. Send model, training, inference, evaluation, conversion, infrastructure, and documentation changes here.
+Please send data-pipeline changes to the companion `data_io` project. Send model, training, inference, evaluation, conversion, infrastructure, and documentation changes here if they support the ternary/low-cost track.
 
 Recommended PR categories:
 
