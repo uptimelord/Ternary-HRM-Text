@@ -37,10 +37,15 @@ packed MB while staying heavily compressed. Exp 23 then checked export behavior:
 hard-export eval was only `+0.0033` worse than Tequila train-mode eval, with
 the same `4.64 MB` packed size.
 
+Exp 25 pilot: stacking 2-bit attention on top of the combo cut packed size to
+`3.47 MB` (`10.08x`) while staying at the noise floor. This is a pilot result,
+not the deploy baseline until a 2 x 2 confirmation grid and export parity pass.
+
 Start here:
 
 - [Experiment 22 - Vocab Body Combo Confirmation](experiments/Experiment%2022%20-%20Vocab%20Body%20Combo%20Confirmation/README.md)
 - [Experiment 23 - Combo Export Parity](experiments/Experiment%2023%20-%20Combo%20Export%20Parity/README.md)
+- [Experiment 25 - Stacked Two Bit Compression](experiments/Experiment%2025%20-%20Stacked%20Two%20Bit%20Compression/README.md)
 - [Experiment Discipline](experiments/DISCIPLINE.md)
 - [Experiment 14 - Mixed Top512 Long Run](experiments/Experiment%2014%20-%20Mixed%20Top512%20Long%20Run/README.md)
 - [Experiment 13 - Stacked Vocab + Body Ternary](experiments/Experiment%2013%20-%20Stacked%20Vocab%20%2B%20Body%20Ternary/README.md)

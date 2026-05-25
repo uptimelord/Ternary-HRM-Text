@@ -1,6 +1,6 @@
 # Locked Vocab Recipe (2026-05-25)
 
-Evidence chain: Exp 14/16/19/20/19b/21/22/23.
+Evidence chain: Exp 14/16/19/20/19b/21/22/23/24/25.
 
 ## Deploy baseline (production export)
 
@@ -26,6 +26,11 @@ Exp 22 @ 5000 seeds 1/2/3: gap `-0.0063 +/- 0.0203` vs dense tied, quality/MB
 
 Exp 23 @ 500 seed 1 export parity: hard-export eval gap `+0.0033`, roundtrip
 error `6.10e-05`, packed size `4.64 MB` - **PASS**.
+
+Exp 25 @ 500 seed 1 pilot: `combo_2bit_attention` stacks 2-bit attention on
+top of this baseline, stays at noise floor (`+0.0011 +/- 0.0203`), and drops
+packed size to `3.47 MB` (`10.08x`). Treat as a confirmation candidate, not the
+deploy baseline, until the 2 x 2 grid and export parity pass.
 
 ## Fallback deploy baseline
 
@@ -88,6 +93,21 @@ packed MB and compression, not from claiming a decisive nats win.
 Exp 23 confirms packed hard-weight behavior, so this is now both the training
 candidate and deploy baseline.
 
+## Compression confirmation candidate
+
+**`combo_2bit_attention`** - current deploy baseline plus 2-bit H/L attention
+`gqkv` and `o` projections.
+
+| Setting | Value |
+|---|---|
+| base | `mixed_top512_tequila_L_mlp_gate_up` |
+| added body target | both-level attention `gqkv` and `o` |
+| added body precision | 2-bit `{-1, -1/3, +1/3, +1}` |
+| packed size | 3.47 MB in Exp 25 pilot |
+| compression | 10.08x in Exp 25 pilot |
+
+Use for: next 2 x 2 confirmation grid and export-parity check.
+
 ## Not recommended (current evidence)
 
 | Recipe | Why |
@@ -105,4 +125,5 @@ candidate and deploy baseline.
 | Export parity | `experiments/Experiment 20 - Tequila Export Parity/tequila_export_parity.py` |
 | Vocab + body combo | `experiments/Experiment 22 - Vocab Body Combo Confirmation/vocab_body_combo.py` |
 | Combo export parity | `experiments/Experiment 23 - Combo Export Parity/combo_export_parity.py` |
+| Stacked 2-bit compression | `experiments/Experiment 25 - Stacked Two Bit Compression/stacked_twobit_compression.py` |
 | Scaling probe grid | `experiments/scaling_probe.py` |

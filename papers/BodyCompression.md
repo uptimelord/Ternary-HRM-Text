@@ -19,12 +19,15 @@ This note is now partially stale:
 - Exp 24 started the 2-bit body path. The h=128, 500-step pilot found the
   strongest signal in `both_attention_gqkv` (`-0.0660 +/- 0.0203` vs dense),
   followed by `both_attention_o` and `both_mlp_gate_up`.
+- Exp 25 stacked 2-bit attention on the compressed combo baseline. The h=128,
+  500-step pilot found `combo_2bit_attention` at `3.47 MB` (`10.08x`) with
+  eval gap `+0.0011 +/- 0.0203` versus the combo baseline.
 
 The next useful body-compression confirmation is no longer "try 2-bit" in the
-abstract. It is a 2 x 2 grid on:
+abstract. It is a 2 x 2 grid on the stacked compressed baseline:
 
 ```text
-dense,both_attention_gqkv,both_attention_o,both_mlp_gate_up
+combo_baseline,combo_2bit_attention_gqkv,combo_2bit_attention
 hidden sizes: 128,256
 steps: 500,2000
 ```
