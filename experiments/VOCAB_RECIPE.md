@@ -1,6 +1,6 @@
 # Locked Vocab Recipe (2026-05-25)
 
-Evidence chain: Exp 14/16/19/20/19b/21/22/23/24/25/26.
+Evidence chain: Exp 14/16/19/20/19b/21/22/23/24/25/26/27.
 
 ## Global deploy baseline (production export)
 
@@ -27,11 +27,11 @@ Exp 22 @ 5000 seeds 1/2/3: gap `-0.0063 +/- 0.0203` vs dense tied, quality/MB
 Exp 23 @ 500 seed 1 export parity: hard-export eval gap `+0.0033`, roundtrip
 error `6.10e-05`, packed size `4.64 MB` - **PASS**.
 
-Exp 25/26: `combo_2bit_attention` is now promoted only for `hidden_size=256`.
-Keep this recipe as the global baseline because the stacked 2-bit recipe failed
-the raw-loss gate at `h128 / 2000`.
+Exp 25/26/27: `combo_2bit_attention` is export-clean at `hidden_size=256`, but
+it failed the second-seed wider-deploy gate. Keep this recipe as the global
+baseline.
 
-## H256 compressed deploy candidate
+## H256 export-clean compression candidate
 
 **`combo_2bit_attention`** - global deploy baseline plus 2-bit H/L attention
 `gqkv` and `o` projections.
@@ -42,11 +42,11 @@ the raw-loss gate at `h128 / 2000`.
 | hidden size | 256 only |
 | added body target | both-level attention `gqkv` and `o` |
 | added body precision | 2-bit `{-1, -1/3, +1/3, +1}` |
-| packed size | 9.15 MB in Exp 25/26 |
+| packed size | 9.15 MB in Exp 25/26/27 |
 | compression | 8.25x at h256 |
 
-Use for: `hidden_size=256` deploy/export targets where 2-bit attention packing
-is supported.
+Use for: controlled `hidden_size=256` compression experiments where 2-bit
+attention packing is supported. Do not use as the wider deploy replacement yet.
 
 Exp 25 h256 grid: at 2000 steps, eval gap stayed inside the noise floor
 (`+0.0134 +/- 0.0203`), packed size dropped from `13.82 MB` to `9.15 MB`, and
@@ -55,6 +55,10 @@ quality/MB improved from `0.01384` to `0.02085`.
 Exp 26 h256 export parity: hard-export eval gap `+0.0011 +/- 0.0203`, ternary
 roundtrip error `5.96e-05`, 2-bit roundtrip error `3.05e-05`, packed size
 `9.15 MB` - **PASS**.
+
+Exp 27 h256 frozen/generalization gate: frozen answer-loss did not fail, but
+seed 2 normal eval gap was `+0.0410 +/- 0.0203`, raising the two-seed mean eval
+gap to `+0.0272 +/- 0.0203` - **do not widen deploy**.
 
 ## Fallback deploy baseline
 
@@ -136,4 +140,5 @@ candidate and deploy baseline.
 | Combo export parity | `experiments/Experiment 23 - Combo Export Parity/combo_export_parity.py` |
 | Stacked 2-bit compression | `experiments/Experiment 25 - Stacked Two Bit Compression/stacked_twobit_compression.py` |
 | H256 2-bit export parity | `experiments/Experiment 26 - H256 Two Bit Attention Export Parity/h256_twobit_export_parity.py` |
+| H256 frozen generalization | `experiments/Experiment 27 - H256 Frozen Generalization Gate/h256_frozen_generalization.py` |
 | Scaling probe grid | `experiments/scaling_probe.py` |

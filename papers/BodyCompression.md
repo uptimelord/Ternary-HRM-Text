@@ -28,14 +28,18 @@ This note is now partially stale:
 - Exp 26 passed h=256 export parity for `combo_2bit_attention`: export gap
   `+0.0011 +/- 0.0203`, packed size `9.15 MB`, ternary roundtrip `5.96e-05`,
   and 2-bit roundtrip `3.05e-05`.
+- Exp 27 failed the wider-deploy gate. Frozen answer-loss did not fail, but the
+  second seed's normal eval gap was `+0.0410 +/- 0.0203`, so the two-seed mean
+  eval gap rose above the noise floor.
 
 The next useful body-compression confirmation is no longer "try 2-bit" in the
-abstract. The h=256 2-bit attention path is now export-clean; the next gate is
-a generalization check, not another packing check.
+abstract. The h=256 2-bit attention path is export-clean but not robust enough
+for wider deploy. The next gate is a less aggressive 2-bit attention variant,
+not another packing check.
 
 ```text
-combo_2bit_attention, hidden_size=256
-run frozen held-out benchmark + one more seed before wider deploy
+combo_2bit_attention_gqkv, hidden_size=256
+run seeds 1,2 at 2000 steps with the frozen answer-loss check
 ```
 
 ### What Works
