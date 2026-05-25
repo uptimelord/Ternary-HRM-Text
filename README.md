@@ -20,8 +20,8 @@ This is experimental. The current best lane is not "ternarize everything"; it is
 
 ## Current Ternary Result
 
-The promoted training candidate is `mixed_top512_tequila_L_mlp_gate_up`.
-The deploy baseline remains `mixed_top512` until the combo passes export parity.
+The current deploy and training baseline is `mixed_top512_tequila_L_mlp_gate_up`.
+Exp 23 confirmed hard-export parity for the combo.
 
 Exp 22, 5000 steps, seeds 1/2/3:
 
@@ -33,11 +33,14 @@ Exp 22, 5000 steps, seeds 1/2/3:
 
 Plain-English read: the raw loss gaps are within the measured noise floor, so
 the real win is size-normalized quality. The combo gives the best quality per
-packed MB while staying heavily compressed.
+packed MB while staying heavily compressed. Exp 23 then checked export behavior:
+hard-export eval was only `+0.0033` worse than Tequila train-mode eval, with
+the same `4.64 MB` packed size.
 
 Start here:
 
 - [Experiment 22 - Vocab Body Combo Confirmation](experiments/Experiment%2022%20-%20Vocab%20Body%20Combo%20Confirmation/README.md)
+- [Experiment 23 - Combo Export Parity](experiments/Experiment%2023%20-%20Combo%20Export%20Parity/README.md)
 - [Experiment Discipline](experiments/DISCIPLINE.md)
 - [Experiment 14 - Mixed Top512 Long Run](experiments/Experiment%2014%20-%20Mixed%20Top512%20Long%20Run/README.md)
 - [Experiment 13 - Stacked Vocab + Body Ternary](experiments/Experiment%2013%20-%20Stacked%20Vocab%20%2B%20Body%20Ternary/README.md)
@@ -55,8 +58,8 @@ Start here:
 
 For now, the clean path is:
 
-1. Keep `mixed_top512` as the deploy baseline until combo export parity passes.
-2. Use `mixed_top512_tequila_L_mlp_gate_up` as the training candidate.
+1. Use `mixed_top512_tequila_L_mlp_gate_up` as the current deploy/training baseline.
+2. Keep `mixed_top512` as the fallback if a downstream export target cannot handle body ternary.
 3. Run the next confirmation as a 2 hidden-size x 2 step-count trajectory.
 4. Report every gap with the `+/- 0.0203` noise floor and quality per packed MB.
 

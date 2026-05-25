@@ -1,8 +1,33 @@
 # Locked Vocab Recipe (2026-05-25)
 
-Evidence chain: Exp 14/16/19/20/19b/21/22.
+Evidence chain: Exp 14/16/19/20/19b/21/22/23.
 
 ## Deploy baseline (production export)
+
+**`mixed_top512_tequila_L_mlp_gate_up`** - Tequila STE on vocab ternary layer,
+plus L-level `mlp_gate_up` body ternary
+
+| Setting | Value |
+|---|---|
+| dense override rows | top 512 |
+| vocab ternary_ste_mode | tequila |
+| vocab threshold / group size | 0.25 / 32 |
+| vocab scale mode | mean_abs |
+| body target | L-level `mlp_gate_up` |
+| body ternary_ste_mode | tequila |
+| body threshold / group size | 0.5 / 128 |
+| packed size | ~4.64 MB (~7.55x vs dense tied) |
+
+Use for: packed checkpoint export, inference smoke, size-constrained deploy,
+and training smokes.
+
+Exp 22 @ 5000 seeds 1/2/3: gap `-0.0063 +/- 0.0203` vs dense tied, quality/MB
+`0.04179`, packed size `4.64 MB`.
+
+Exp 23 @ 500 seed 1 export parity: hard-export eval gap `+0.0033`, roundtrip
+error `6.10e-05`, packed size `4.64 MB` - **PASS**.
+
+## Fallback deploy baseline
 
 **`mixed_top512`** - standard STE, mixed tied vocab
 
@@ -15,7 +40,7 @@ Evidence chain: Exp 14/16/19/20/19b/21/22.
 | body | dense |
 | packed size | ~5.11 MB (~6.85x vs dense tied) |
 
-Use for: packed checkpoint export, inference smoke, size-constrained deploy.
+Use for: fallback export targets that cannot handle body ternary.
 
 Exp 14 @ 2000: gap `+0.0048` vs dense tied (reproduced in Exp 19 @ 2000).
 
@@ -60,8 +85,8 @@ Noise floor: `+/- 0.0203` eval loss from repeated dense-tied 5000-step rows.
 Read: raw loss is at the noise floor, so the promotion comes from quality per
 packed MB and compression, not from claiming a decisive nats win.
 
-Export parity for the combo is still missing, so deploy baseline remains
-`mixed_top512` until Exp 23 confirms packed hard-weight behavior.
+Exp 23 confirms packed hard-weight behavior, so this is now both the training
+candidate and deploy baseline.
 
 ## Not recommended (current evidence)
 
@@ -79,4 +104,5 @@ Export parity for the combo is still missing, so deploy baseline remains
 | Long training | `experiments/Experiment 19 - Long Training Data Scaling/long_training_data_scaling.py` |
 | Export parity | `experiments/Experiment 20 - Tequila Export Parity/tequila_export_parity.py` |
 | Vocab + body combo | `experiments/Experiment 22 - Vocab Body Combo Confirmation/vocab_body_combo.py` |
+| Combo export parity | `experiments/Experiment 23 - Combo Export Parity/combo_export_parity.py` |
 | Scaling probe grid | `experiments/scaling_probe.py` |
