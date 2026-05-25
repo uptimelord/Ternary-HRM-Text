@@ -8,6 +8,9 @@ generation_config:
   condition: "synth,cot"
 
 benchmarks:
+  # Frozen local smoke
+  - name: FrozenArithmetic200
+
   # CoT
   - name: GSM8k
   - name: MATH

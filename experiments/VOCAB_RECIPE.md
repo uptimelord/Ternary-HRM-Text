@@ -1,10 +1,10 @@
-# Locked Vocab Recipe (2026-05-24)
+# Locked Vocab Recipe (2026-05-25)
 
-Evidence chain: Exp 14/16/19/20/19b.
+Evidence chain: Exp 14/16/19/20/19b/21/22.
 
 ## Deploy baseline (production export)
 
-**`mixed_top512`** — standard STE, mixed tied vocab
+**`mixed_top512`** - standard STE, mixed tied vocab
 
 | Setting | Value |
 |---|---|
@@ -23,30 +23,53 @@ Exp 19b @ 5000: gap `+0.0301` vs dense tied (gap widened; single seed).
 
 ## Training candidate
 
-**`mixed_top512_tequila`** — Tequila STE on vocab ternary layer
+**`mixed_top512_tequila_L_mlp_gate_up`** - Tequila STE on vocab ternary layer,
+plus L-level `mlp_gate_up` body ternary
 
 | Setting | Value |
 |---|---|
 | (same as deploy baseline) | |
-| ternary_ste_mode | tequila |
+| vocab ternary_ste_mode | tequila |
+| body target | L-level `mlp_gate_up` |
+| body ternary_ste_mode | tequila |
+| body threshold / group size | 0.5 / 128 |
+| packed size | ~4.64 MB (~7.55x vs dense tied) |
 
-Use for: training smokes when optimizing eval loss.
+Use for: training smokes when optimizing eval loss and checking whether the
+body regularizer offsets vocab compression loss.
 
 Exp 19 @ 2000: gap `-0.0078` vs dense tied (single seed).
 
-Exp 19b @ 5000: gap `+0.0248` vs dense tied — **does not beat dense** at this
+Exp 19b @ 5000: gap `+0.0248` vs dense tied - **does not beat dense** at this
 length/seed, but beats standard compressed in the same run (`+0.0301`).
 
-Exp 20: export parity PASS — 5.11 MB confirmed; export eval within +0.0003 of
-training eval.
+Exp 20: export parity PASS - 5.11 MB confirmed; export eval within +0.0003 of
+training eval for vocab-only Tequila.
+
+Exp 22 @ 5000 seeds 1/2/3:
+
+Noise floor: `+/- 0.0203` eval loss from repeated dense-tied 5000-step rows.
+
+| Recipe | Mean eval | Gap +/- noise floor | Quality/MB | Packed size | Compression |
+|---|---:|---|---:|---:|---:|
+| `dense_tied_vocab` | 5.1633 | +0.0000 +/- 0.0203 (at noise floor) | 0.00557 | 34.76 MB | 1.00x |
+| `mixed_top512_tequila` | 5.1720 | +0.0087 +/- 0.0203 (at noise floor) | 0.03784 | 5.11 MB | 6.85x |
+| `dense_tied_vocab_L_mlp_gate_up` | 5.1555 | -0.0078 +/- 0.0203 (at noise floor) | 0.00566 | 34.28 MB | 1.01x |
+| `mixed_top512_tequila_L_mlp_gate_up` | 5.1570 | -0.0063 +/- 0.0203 (at noise floor) | 0.04179 | 4.64 MB | 7.55x |
+
+Read: raw loss is at the noise floor, so the promotion comes from quality per
+packed MB and compression, not from claiming a decisive nats win.
+
+Export parity for the combo is still missing, so deploy baseline remains
+`mixed_top512` until Exp 23 confirms packed hard-weight behavior.
 
 ## Not recommended (current evidence)
 
 | Recipe | Why |
 |---|---|
-| stacked (vocab + body ternary) | Interaction penalty; still worse than dense |
-| dense→ternary transition (mlp_gate_up) | Worse than scratch ternary on smoke |
-| body ternary (mlp_gate_up) | Tiny size win (~1% ternary params), marginal eval gain |
+| old stacked (mixed vocab + both-level body ternary) | Interaction penalty; L-only body is the current safer target |
+| dense-to-ternary transition (mlp_gate_up) | Worse than scratch ternary on smoke |
+| body-only ternary as deploy size feature | Tiny size win (~1% ternary params); useful mainly as a quality regularizer |
 
 ## Scripts
 
@@ -55,3 +78,5 @@ training eval.
 | Deploy lane eval | `experiments/Experiment 9 - Mixed Precision Vocab Rows/mixed_vocab_rows.py` |
 | Long training | `experiments/Experiment 19 - Long Training Data Scaling/long_training_data_scaling.py` |
 | Export parity | `experiments/Experiment 20 - Tequila Export Parity/tequila_export_parity.py` |
+| Vocab + body combo | `experiments/Experiment 22 - Vocab Body Combo Confirmation/vocab_body_combo.py` |
+| Scaling probe grid | `experiments/scaling_probe.py` |

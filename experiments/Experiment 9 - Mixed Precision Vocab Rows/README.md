@@ -109,3 +109,67 @@ python "experiments/Experiment 9 - Mixed Precision Vocab Rows/mixed_vocab_rows.p
 
 `selected_mean_abs` helps plain ternary vocab, but the best mixed-row score is
 still the original `mixed_top512` with `mean_abs`.
+
+## Results - 2000-step Confirmation
+
+Exp 9 originally noted `mixed_top512` "deserves a longer confirmation run".
+Ran here.
+
+Run:
+
+```bash
+python "experiments/Experiment 9 - Mixed Precision Vocab Rows/mixed_vocab_rows.py" \
+  --steps 2000 \
+  --variants dense_tied_vocab,ternary_tuned,mixed_top512 \
+  --device cuda
+```
+
+Same setup as the 500-step sweep (`threshold=0.25`, `group_size=32`,
+`scale_mode=mean_abs`, top-512 dense rows).
+
+| Variant | Eval | Gap vs dense tied | Packed size | Compression |
+| --- | ---: | ---: | ---: | ---: |
+| `dense_tied_vocab` | 5.3831 | 0.0000 | 34.76 MB | 1.00x |
+| `ternary_tuned` | 5.4994 | +0.1163 | 4.86 MB | 7.16x |
+| `mixed_top512` | 5.3879 | **+0.0048** | 5.11 MB | 6.85x |
+
+### Read
+
+The 500-step "beat dense" claim partially erodes at 2000 steps, but
+`mixed_top512` lands **essentially tied with the dense tied baseline**
+(+0.005 nats vs 5.38 — well inside noise from a single seed run).
+
+```text
+                       500 steps gap     2000 steps gap
+ternary_tuned             +0.0502          +0.1163       grew
+mixed_top512              -0.0241          +0.0048       neutral
+```
+
+`ternary_tuned`'s gap roughly doubled with more training (the early-training
+regularization advantage doesn't hold), while `mixed_top512` stayed within a
+noise-level margin of dense. The dense override rows are what keep it close
+to dense at convergence.
+
+### Cross-check vs Exp 13
+
+[[exp-13-stacked-vocab-body-ternary]] ran the same `mixed_top512` variant
+against an **untied** dense baseline at 2000 steps and got gap +0.012. The
+two numbers are consistent — the untied dense baseline (6.0064 → 5.3759) is
+itself slightly better than the tied baseline (5.9669 → 5.3831), so against
+untied dense `mixed_top512` looks slightly worse, but the absolute eval (5.39)
+is essentially the same in both runs.
+
+### Verdict
+
+`mixed_top512` remains the recommended compression default:
+
+```text
+threshold=0.25, group_size=32, scale_mode=mean_abs, top-512 dense rows
+2000-step eval: 5.3879 (vs dense_tied_vocab 5.3831, gap +0.005)
+packed size:    5.11 MB (6.85x compression)
+```
+
+Quality essentially indistinguishable from `dense_tied_vocab`, with ~6.85×
+model shrink. Plain `ternary_tuned` is dominated — same compression class as
+`mixed_top512` but 0.12 nats worse.
+

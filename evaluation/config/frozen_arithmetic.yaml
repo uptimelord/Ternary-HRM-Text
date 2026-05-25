@@ -1,0 +1,12 @@
+engine: SimpleEngine
+ckpt_path: null
+
+generation_config:
+  batch_size: 64
+  max_context: 256
+  max_tokens: 8
+  temperature: 0.0
+  condition: "direct"
+
+benchmarks:
+  - name: FrozenArithmetic200

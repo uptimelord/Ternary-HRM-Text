@@ -14,23 +14,31 @@ Ternary-HRM-Text is a fork of [sapientinc/HRM-Text](https://github.com/sapientin
 
 The base repo gives us a real text pretraining stack: HRM recurrence, PrefixLM sequence packing, FlashAttention 3 kernels, PyTorch FSDP2 training, evaluation, and checkpoint conversion tooling. This fork adds the ternary path on top: ternary body layers, ternary/tied vocab experiments, packed export probes, and experiment notes aimed at lowering training and deployment cost.
 
-This is experimental. The current best lane is not "ternarize everything"; it is targeted vocab compression.
+This is experimental. The current best lane is not "ternarize everything"; it is targeted vocab compression plus one narrow body regularizer.
 
 ![](./assets/benchmark_scatter.png)
 
 ## Current Ternary Result
 
-The strongest result so far is the mixed precision tied-vocab lane:
+The promoted training candidate is `mixed_top512_tequila_L_mlp_gate_up`.
+The deploy baseline remains `mixed_top512` until the combo passes export parity.
 
-| Recipe | Eval | Gap vs dense tied | Packed size | Compression |
-|---|---:|---:|---:|---:|
-| `dense_tied_vocab` | 5.3831 | +0.0000 | 34.76 MB | 1.00x |
-| `mixed_top512` | 5.3879 | +0.0048 | 5.11 MB | 6.85x |
+Exp 22, 5000 steps, seeds 1/2/3:
 
-Plain-English read: keep the top 512 token rows dense, ternarize the rest of the tied vocab matrix, and the 2000-step loss gap is tiny at this scale.
+| Recipe | Mean eval | Gap +/- noise floor | Quality/MB | Packed size | Compression |
+|---|---:|---|---:|---:|---:|
+| `dense_tied_vocab` | 5.1633 | +0.0000 +/- 0.0203 (at noise floor) | 0.00557 | 34.76 MB | 1.00x |
+| `mixed_top512_tequila` | 5.1720 | +0.0087 +/- 0.0203 (at noise floor) | 0.03784 | 5.11 MB | 6.85x |
+| `mixed_top512_tequila_L_mlp_gate_up` | 5.1570 | -0.0063 +/- 0.0203 (at noise floor) | 0.04179 | 4.64 MB | 7.55x |
+
+Plain-English read: the raw loss gaps are within the measured noise floor, so
+the real win is size-normalized quality. The combo gives the best quality per
+packed MB while staying heavily compressed.
 
 Start here:
 
+- [Experiment 22 - Vocab Body Combo Confirmation](experiments/Experiment%2022%20-%20Vocab%20Body%20Combo%20Confirmation/README.md)
+- [Experiment Discipline](experiments/DISCIPLINE.md)
 - [Experiment 14 - Mixed Top512 Long Run](experiments/Experiment%2014%20-%20Mixed%20Top512%20Long%20Run/README.md)
 - [Experiment 13 - Stacked Vocab + Body Ternary](experiments/Experiment%2013%20-%20Stacked%20Vocab%20%2B%20Body%20Ternary/README.md)
 - [Experiment 7 - Ternary Vocab Quantizer Sweep](experiments/Experiment%207%20-%20Ternary%20Vocab%20Quantizer%20Sweep/README.md)
@@ -47,12 +55,13 @@ Start here:
 
 For now, the clean path is:
 
-1. Keep the HRM body dense.
-2. Use tied vocab.
-3. Use `mixed_top512` for vocab compression.
-4. Test width scaling before adding body ternary back.
+1. Keep `mixed_top512` as the deploy baseline until combo export parity passes.
+2. Use `mixed_top512_tequila_L_mlp_gate_up` as the training candidate.
+3. Run the next confirmation as a 2 hidden-size x 2 step-count trajectory.
+4. Report every gap with the `+/- 0.0203` noise floor and quality per packed MB.
 
-Body ternary is still useful, but Experiment 13 showed that stacking body ternary with mixed vocab currently costs more quality than it saves.
+Body ternary is still not a blanket win. The promoted body lane is only the
+L-level `mlp_gate_up` slice; broad stacked body ternary remains rejected.
 
 ## Upstream HRM-Text Reference
 
