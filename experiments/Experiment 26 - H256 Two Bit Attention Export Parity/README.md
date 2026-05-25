@@ -27,4 +27,32 @@ rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
 
 ## Results
 
-Not run yet.
+Command:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 26 - H256 Two Bit Attention Export Parity/run_exp26_h256_export_parity.ps1"
+```
+
+Full result file: [`results_500_seed1_h256.md`](results_500_seed1_h256.md).
+
+| Check | Value | Limit | Pass |
+|---|---:|---:|---|
+| train eval | 5.7044 | - | yes |
+| export eval | 5.7055 | - | yes |
+| export eval gap | +0.0011 | <= 0.0203 | yes |
+| packed size | 9.15 MB | <= 9.40 MB | yes |
+| ternary roundtrip error | 5.96e-05 | <= 1e-4 | yes |
+| 2-bit roundtrip error | 3.05e-05 | <= 1e-3 | yes |
+| ternary modules | 3 | >= 3 | yes |
+| 2-bit modules | 8 | >= 4 | yes |
+| quality per packed MB | 0.01915 | - | yes |
+
+## Decision
+
+Promote `combo_2bit_attention` as the `h256` compressed deploy candidate.
+
+Do not promote it as the global baseline. Exp25 showed it fails the raw-loss
+gate at `h128 / 2000`, but passes both `h256` checkpoints. Exp26 confirms the
+`h256` export path: hard-export eval is only `+0.0011` worse than train-mode
+eval, packed size stays at `9.15 MB`, and both packed roundtrip checks pass.

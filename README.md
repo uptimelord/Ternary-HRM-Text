@@ -20,8 +20,13 @@ This is experimental. The current best lane is not "ternarize everything"; it is
 
 ## Current Ternary Result
 
-The current deploy and training baseline is `mixed_top512_tequila_L_mlp_gate_up`.
-Exp 23 confirmed hard-export parity for the combo.
+The current global deploy and training baseline is
+`mixed_top512_tequila_L_mlp_gate_up`. Exp 23 confirmed hard-export parity for
+the combo.
+
+For `hidden_size=256` only, Exp 26 promotes `combo_2bit_attention` as the
+compressed deploy candidate. It is not the global baseline because Exp 25 showed
+the same recipe fails the raw-loss gate at `h128 / 2000`.
 
 Exp 22, 5000 steps, seeds 1/2/3:
 
@@ -37,15 +42,17 @@ packed MB while staying heavily compressed. Exp 23 then checked export behavior:
 hard-export eval was only `+0.0033` worse than Tequila train-mode eval, with
 the same `4.64 MB` packed size.
 
-Exp 25 pilot: stacking 2-bit attention on top of the combo cut packed size to
-`3.47 MB` (`10.08x`) while staying at the noise floor. This is a pilot result,
-not the deploy baseline until a 2 x 2 confirmation grid and export parity pass.
+Exp 25/26 h256 result: stacking 2-bit attention on top of the combo cut packed
+size from `13.82 MB` to `9.15 MB` at `h256`, stayed inside the noise floor at
+both 500 and 2000 steps, and passed export parity with gap
+`+0.0011 +/- 0.0203`.
 
 Start here:
 
 - [Experiment 22 - Vocab Body Combo Confirmation](experiments/Experiment%2022%20-%20Vocab%20Body%20Combo%20Confirmation/README.md)
 - [Experiment 23 - Combo Export Parity](experiments/Experiment%2023%20-%20Combo%20Export%20Parity/README.md)
 - [Experiment 25 - Stacked Two Bit Compression](experiments/Experiment%2025%20-%20Stacked%20Two%20Bit%20Compression/README.md)
+- [Experiment 26 - H256 Two Bit Attention Export Parity](experiments/Experiment%2026%20-%20H256%20Two%20Bit%20Attention%20Export%20Parity/README.md)
 - [Experiment Discipline](experiments/DISCIPLINE.md)
 - [Experiment 14 - Mixed Top512 Long Run](experiments/Experiment%2014%20-%20Mixed%20Top512%20Long%20Run/README.md)
 - [Experiment 13 - Stacked Vocab + Body Ternary](experiments/Experiment%2013%20-%20Stacked%20Vocab%20%2B%20Body%20Ternary/README.md)
@@ -63,9 +70,9 @@ Start here:
 
 For now, the clean path is:
 
-1. Use `mixed_top512_tequila_L_mlp_gate_up` as the current deploy/training baseline.
-2. Keep `mixed_top512` as the fallback if a downstream export target cannot handle body ternary.
-3. Run the next confirmation as a 2 hidden-size x 2 step-count trajectory.
+1. Use `mixed_top512_tequila_L_mlp_gate_up` as the global deploy/training baseline.
+2. Use `combo_2bit_attention` only for `hidden_size=256` deploys that can handle 2-bit attention packing.
+3. Keep `mixed_top512` as the fallback if a downstream export target cannot handle body ternary.
 4. Report every gap with the `+/- 0.0203` noise floor and quality per packed MB.
 
 Body ternary is still not a blanket win. The promoted body lane is only the

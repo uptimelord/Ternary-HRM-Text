@@ -1,8 +1,8 @@
 # Locked Vocab Recipe (2026-05-25)
 
-Evidence chain: Exp 14/16/19/20/19b/21/22/23/24/25.
+Evidence chain: Exp 14/16/19/20/19b/21/22/23/24/25/26.
 
-## Deploy baseline (production export)
+## Global deploy baseline (production export)
 
 **`mixed_top512_tequila_L_mlp_gate_up`** - Tequila STE on vocab ternary layer,
 plus L-level `mlp_gate_up` body ternary
@@ -27,10 +27,34 @@ Exp 22 @ 5000 seeds 1/2/3: gap `-0.0063 +/- 0.0203` vs dense tied, quality/MB
 Exp 23 @ 500 seed 1 export parity: hard-export eval gap `+0.0033`, roundtrip
 error `6.10e-05`, packed size `4.64 MB` - **PASS**.
 
-Exp 25 @ 500 seed 1 pilot: `combo_2bit_attention` stacks 2-bit attention on
-top of this baseline, stays at noise floor (`+0.0011 +/- 0.0203`), and drops
-packed size to `3.47 MB` (`10.08x`). Treat as a confirmation candidate, not the
-deploy baseline, until the 2 x 2 grid and export parity pass.
+Exp 25/26: `combo_2bit_attention` is now promoted only for `hidden_size=256`.
+Keep this recipe as the global baseline because the stacked 2-bit recipe failed
+the raw-loss gate at `h128 / 2000`.
+
+## H256 compressed deploy candidate
+
+**`combo_2bit_attention`** - global deploy baseline plus 2-bit H/L attention
+`gqkv` and `o` projections.
+
+| Setting | Value |
+|---|---|
+| base | `mixed_top512_tequila_L_mlp_gate_up` |
+| hidden size | 256 only |
+| added body target | both-level attention `gqkv` and `o` |
+| added body precision | 2-bit `{-1, -1/3, +1/3, +1}` |
+| packed size | 9.15 MB in Exp 25/26 |
+| compression | 8.25x at h256 |
+
+Use for: `hidden_size=256` deploy/export targets where 2-bit attention packing
+is supported.
+
+Exp 25 h256 grid: at 2000 steps, eval gap stayed inside the noise floor
+(`+0.0134 +/- 0.0203`), packed size dropped from `13.82 MB` to `9.15 MB`, and
+quality/MB improved from `0.01384` to `0.02085`.
+
+Exp 26 h256 export parity: hard-export eval gap `+0.0011 +/- 0.0203`, ternary
+roundtrip error `5.96e-05`, 2-bit roundtrip error `3.05e-05`, packed size
+`9.15 MB` - **PASS**.
 
 ## Fallback deploy baseline
 
@@ -93,21 +117,6 @@ packed MB and compression, not from claiming a decisive nats win.
 Exp 23 confirms packed hard-weight behavior, so this is now both the training
 candidate and deploy baseline.
 
-## Compression confirmation candidate
-
-**`combo_2bit_attention`** - current deploy baseline plus 2-bit H/L attention
-`gqkv` and `o` projections.
-
-| Setting | Value |
-|---|---|
-| base | `mixed_top512_tequila_L_mlp_gate_up` |
-| added body target | both-level attention `gqkv` and `o` |
-| added body precision | 2-bit `{-1, -1/3, +1/3, +1}` |
-| packed size | 3.47 MB in Exp 25 pilot |
-| compression | 10.08x in Exp 25 pilot |
-
-Use for: next 2 x 2 confirmation grid and export-parity check.
-
 ## Not recommended (current evidence)
 
 | Recipe | Why |
@@ -126,4 +135,5 @@ Use for: next 2 x 2 confirmation grid and export-parity check.
 | Vocab + body combo | `experiments/Experiment 22 - Vocab Body Combo Confirmation/vocab_body_combo.py` |
 | Combo export parity | `experiments/Experiment 23 - Combo Export Parity/combo_export_parity.py` |
 | Stacked 2-bit compression | `experiments/Experiment 25 - Stacked Two Bit Compression/stacked_twobit_compression.py` |
+| H256 2-bit export parity | `experiments/Experiment 26 - H256 Two Bit Attention Export Parity/h256_twobit_export_parity.py` |
 | Scaling probe grid | `experiments/scaling_probe.py` |

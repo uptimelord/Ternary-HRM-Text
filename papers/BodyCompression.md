@@ -22,14 +22,20 @@ This note is now partially stale:
 - Exp 25 stacked 2-bit attention on the compressed combo baseline. The h=128,
   500-step pilot found `combo_2bit_attention` at `3.47 MB` (`10.08x`) with
   eval gap `+0.0011 +/- 0.0203` versus the combo baseline.
+- Exp 25 confirmation showed the result is size-sensitive: the same stacked
+  recipe failed at `h128 / 2000`, but `combo_2bit_attention` passed both h=256
+  checkpoints and saved `4.67 MB`.
+- Exp 26 passed h=256 export parity for `combo_2bit_attention`: export gap
+  `+0.0011 +/- 0.0203`, packed size `9.15 MB`, ternary roundtrip `5.96e-05`,
+  and 2-bit roundtrip `3.05e-05`.
 
 The next useful body-compression confirmation is no longer "try 2-bit" in the
-abstract. It is a 2 x 2 grid on the stacked compressed baseline:
+abstract. The h=256 2-bit attention path is now export-clean; the next gate is
+a generalization check, not another packing check.
 
 ```text
-combo_baseline,combo_2bit_attention_gqkv,combo_2bit_attention
-hidden sizes: 128,256
-steps: 500,2000
+combo_2bit_attention, hidden_size=256
+run frozen held-out benchmark + one more seed before wider deploy
 ```
 
 ### What Works
