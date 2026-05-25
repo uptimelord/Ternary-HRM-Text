@@ -9,6 +9,26 @@
 
 ## Current State of the Project
 
+### 2026-05-25 Update
+
+This note is now partially stale:
+
+- Exp 22 promoted `mixed_top512_tequila_L_mlp_gate_up`.
+- Exp 23 passed hard-export parity for that combo, so it is now the deploy
+  baseline.
+- Exp 24 started the 2-bit body path. The h=128, 500-step pilot found the
+  strongest signal in `both_attention_gqkv` (`-0.0660 +/- 0.0203` vs dense),
+  followed by `both_attention_o` and `both_mlp_gate_up`.
+
+The next useful body-compression confirmation is no longer "try 2-bit" in the
+abstract. It is a 2 x 2 grid on:
+
+```text
+dense,both_attention_gqkv,both_attention_o,both_mlp_gate_up
+hidden sizes: 128,256
+steps: 500,2000
+```
+
 ### What Works
 
 | Recipe | Gap vs dense | Packed size | Compression |
