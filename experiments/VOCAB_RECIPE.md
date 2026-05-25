@@ -1,6 +1,6 @@
 # Locked Vocab Recipe (2026-05-25)
 
-Evidence chain: Exp 14/16/19/20/19b/21/22/23/24/25/26/27.
+Evidence chain: Exp 14/16/19/20/19b/21/22/23/24/25/26/27/28.
 
 ## Global deploy baseline (production export)
 
@@ -27,9 +27,10 @@ Exp 22 @ 5000 seeds 1/2/3: gap `-0.0063 +/- 0.0203` vs dense tied, quality/MB
 Exp 23 @ 500 seed 1 export parity: hard-export eval gap `+0.0033`, roundtrip
 error `6.10e-05`, packed size `4.64 MB` - **PASS**.
 
-Exp 25/26/27: `combo_2bit_attention` is export-clean at `hidden_size=256`, but
-it failed the second-seed wider-deploy gate. Keep this recipe as the global
-baseline.
+Exp 25/26/27/28: full `combo_2bit_attention` is export-clean at
+`hidden_size=256`, but it failed the second-seed wider-deploy gate. The less
+aggressive `combo_2bit_attention_gqkv` path failed the frozen answer-loss gate
+on seed 1. Keep this recipe as the global baseline.
 
 ## H256 export-clean compression candidate
 
@@ -59,6 +60,10 @@ roundtrip error `5.96e-05`, 2-bit roundtrip error `3.05e-05`, packed size
 Exp 27 h256 frozen/generalization gate: frozen answer-loss did not fail, but
 seed 2 normal eval gap was `+0.0410 +/- 0.0203`, raising the two-seed mean eval
 gap to `+0.0272 +/- 0.0203` - **do not widen deploy**.
+
+Exp 28 h256 gqkv frozen gate: seed 1 normal eval gap stayed inside the noise
+floor (`+0.0059 +/- 0.0203`), but frozen answer-loss gap was
+`+0.5914 +/- 0.0203` - **reject gqkv path**.
 
 ## Fallback deploy baseline
 
@@ -141,4 +146,5 @@ candidate and deploy baseline.
 | Stacked 2-bit compression | `experiments/Experiment 25 - Stacked Two Bit Compression/stacked_twobit_compression.py` |
 | H256 2-bit export parity | `experiments/Experiment 26 - H256 Two Bit Attention Export Parity/h256_twobit_export_parity.py` |
 | H256 frozen generalization | `experiments/Experiment 27 - H256 Frozen Generalization Gate/h256_frozen_generalization.py` |
+| H256 gqkv frozen gate | `experiments/Experiment 28 - H256 GQKV Frozen Gate/h256_gqkv_frozen_gate.py` |
 | Scaling probe grid | `experiments/scaling_probe.py` |

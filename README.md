@@ -25,8 +25,10 @@ The current global deploy and training baseline is
 the combo.
 
 For `hidden_size=256`, Exp 26 made `combo_2bit_attention` export-clean, but
-Exp 27 failed the wider-deploy gate on seed 2. Keep it as an experimental h256
-compression candidate, not a replacement deploy path.
+Exp 27 failed the wider-deploy gate on seed 2. Exp 28 then rejected the less
+aggressive `combo_2bit_attention_gqkv` path because frozen answer-loss failed
+on seed 1. Keep h256 2-bit attention as an experimental compression lane, not a
+replacement deploy path.
 
 Exp 22, 5000 steps, seeds 1/2/3:
 
@@ -42,10 +44,12 @@ packed MB while staying heavily compressed. Exp 23 then checked export behavior:
 hard-export eval was only `+0.0033` worse than Tequila train-mode eval, with
 the same `4.64 MB` packed size.
 
-Exp 25/26/27 h256 result: stacking 2-bit attention on top of the combo cut
-packed size from `13.82 MB` to `9.15 MB` at `h256` and passed export parity.
+Exp 25/26/27/28 h256 result: stacking full 2-bit attention on top of the combo
+cut packed size from `13.82 MB` to `9.15 MB` at `h256` and passed export parity.
 The second-seed gate failed, though: normal eval gap reached
-`+0.0410 +/- 0.0203`, so this is not wider-deploy ready.
+`+0.0410 +/- 0.0203`. The less aggressive `gqkv` version saved `3.73 MB`, but
+its frozen answer-loss gap was `+0.5914 +/- 0.0203`. Neither path is
+wider-deploy ready.
 
 Start here:
 
@@ -54,6 +58,7 @@ Start here:
 - [Experiment 25 - Stacked Two Bit Compression](experiments/Experiment%2025%20-%20Stacked%20Two%20Bit%20Compression/README.md)
 - [Experiment 26 - H256 Two Bit Attention Export Parity](experiments/Experiment%2026%20-%20H256%20Two%20Bit%20Attention%20Export%20Parity/README.md)
 - [Experiment 27 - H256 Frozen Generalization Gate](experiments/Experiment%2027%20-%20H256%20Frozen%20Generalization%20Gate/README.md)
+- [Experiment 28 - H256 GQKV Frozen Gate](experiments/Experiment%2028%20-%20H256%20GQKV%20Frozen%20Gate/README.md)
 - [Experiment Discipline](experiments/DISCIPLINE.md)
 - [Experiment 14 - Mixed Top512 Long Run](experiments/Experiment%2014%20-%20Mixed%20Top512%20Long%20Run/README.md)
 - [Experiment 13 - Stacked Vocab + Body Ternary](experiments/Experiment%2013%20-%20Stacked%20Vocab%20%2B%20Body%20Ternary/README.md)
@@ -72,7 +77,7 @@ Start here:
 For now, the clean path is:
 
 1. Use `mixed_top512_tequila_L_mlp_gate_up` as the global deploy/training baseline.
-2. Keep `combo_2bit_attention` as an experimental `hidden_size=256` compression candidate, not a deploy replacement.
+2. Keep h256 2-bit attention variants as experimental compression candidates, not deploy replacements.
 3. Keep `mixed_top512` as the fallback if a downstream export target cannot handle body ternary.
 4. Report every gap with the `+/- 0.0203` noise floor and quality per packed MB.
 

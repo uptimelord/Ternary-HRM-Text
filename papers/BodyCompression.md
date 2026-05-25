@@ -31,15 +31,19 @@ This note is now partially stale:
 - Exp 27 failed the wider-deploy gate. Frozen answer-loss did not fail, but the
   second seed's normal eval gap was `+0.0410 +/- 0.0203`, so the two-seed mean
   eval gap rose above the noise floor.
+- Exp 28 tested the less aggressive h=256 `combo_2bit_attention_gqkv` path.
+  Normal eval looked fine on seed 1 (`+0.0059 +/- 0.0203`), but frozen
+  answer-loss failed hard (`+0.5914 +/- 0.0203`), so the run stopped early by
+  the pre-registered kill rule.
 
-The next useful body-compression confirmation is no longer "try 2-bit" in the
-abstract. The h=256 2-bit attention path is export-clean but not robust enough
-for wider deploy. The next gate is a less aggressive 2-bit attention variant,
-not another packing check.
+The next useful body-compression confirmation is no longer "try 2-bit attention"
+in the abstract. The h=256 2-bit attention path is export-clean but not robust
+enough for wider deploy, and the narrower gqkv path failed the frozen benchmark.
+Do not spend the next run on another attention-only packing check.
 
 ```text
-combo_2bit_attention_gqkv, hidden_size=256
-run seeds 1,2 at 2000 steps with the frozen answer-loss check
+keep mixed_top512_tequila_L_mlp_gate_up as deploy baseline
+move any next 2-bit body test away from attention, and keep the frozen gate
 ```
 
 ### What Works
