@@ -86,6 +86,29 @@ Result: Exp34.2 stayed balanced, but did not clear the promote bar. Frozen
 eval200 landed at H=2 54.5%, H=4 55.5%, H=6 54.5%, invalid 0.0%. Keep Exp34.1
 locked.
 
+## Exp34.1 Seed2 Repro
+
+Exp34.1 seed2 is the reproducibility check for the locked Phase 0 candidate. It
+reruns the full EqR pretrain from scratch with seed 2, then applies the same
+plain arithmetic bridge and EqR SFT recipe used by Exp34.1.
+
+```text
+seed2 EqR pretrain -> plain arithmetic SFT -> EqR SFT
+```
+
+Promote the lock from single-run candidate to reproducible Phase 0 preset if
+seed2 stays balanced at H=2/H=4/H=6 and lands near Exp34.1's 55-56% frozen
+eval200 band.
+
+Do not promote Phase 0 if seed2 collapses at deeper H, has nonzero invalids, or
+falls clearly below the locked seed1 candidate.
+
+Result: seed2 reproduced the stable shape but not the seed1 score. Frozen
+eval200 landed at H=2 40.5%, H=4 39.5%, H=6 38.0%, invalid 0.0%. Residuals
+still shrank with H: final residual H=2 20.6397, H=4 3.8197, H=6 1.9735. This
+means recurrence stayed stable, but the full seed2 training run learned a weaker
+arithmetic model. Do not promote Phase 0 from Exp34.1 yet.
+
 ## Command
 
 Run in the background:
@@ -147,6 +170,27 @@ rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
   "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_2_eval200_h246.ps1"
 ```
 
+Run Exp34.1 seed2 full reproducibility in the background:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_1_seed2_full_repro.ps1"
+```
+
+Run Exp34.1 seed2 eval200 after the final SFT checkpoint is written:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_1_seed2_eval200_h246.ps1"
+```
+
+Run Exp34.1 seed2 residual diagnostics:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/run_exp34_1_seed2_residual_h246.ps1"
+```
+
 ## Artifacts
 
 The runner writes:
@@ -189,6 +233,7 @@ Frozen eval200:
 | Exp34 | 45.0% | 44.5% | 40.5% |
 | Exp34.1 | 55.5% | 56.5% | 55.5% |
 | Exp34.2 | 54.5% | 55.5% | 54.5% |
+| Exp34.1 seed2 | 40.5% | 39.5% | 38.0% |
 
 Lock diagnostics:
 
