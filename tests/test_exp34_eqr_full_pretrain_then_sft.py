@@ -71,3 +71,42 @@ def test_exp34_1_eval_runner_uses_bridge_final_checkpoint():
     assert "--steps 0" in text
     assert '--eval-h-values "2,4,6"' in text
     assert "--generation-eval-limit 200" in text
+
+
+def test_exp34_2_runner_wires_four_stage_plain_v1_v2_bridge():
+    script = EXP34_DIR / "run_exp34_2_plain_v1_v2_then_eqr_sft.ps1"
+    assert script.exists()
+
+    text = script.read_text(encoding="utf-8")
+    assert text.count("arithmetic_sft_pilot.py") == 2
+    assert text.count("eqr_lite_recurrence_sft.py") == 1
+    assert "h256_exp34_eqr_d015_zl010_h246_bp4_steps50000_sft10000_seed1/pretrain/checkpoint_fp32.pt" in text
+    assert "data/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
+    assert "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
+    assert "plain_v1_sft/checkpoint_fp32.pt" in text
+    assert "plain_v2_sft/checkpoint_fp32.pt" in text
+    assert "eqr_sft" in text
+    assert text.count("--steps 2000") == 2
+    assert "--steps 10000" in text
+    assert text.count("--bp-steps 2") == 2
+    assert "--bp-steps 4" in text
+    assert '--train-h-values "2,4,6"' in text
+    assert '--eval-h-values "2,4,6"' in text
+    assert "--damping-lambda 0.15" in text
+    assert "--ri-z-l-std 0.10" in text
+
+
+def test_exp34_2_eval_runners_use_four_stage_final_checkpoint():
+    for filename, limit in [
+        ("run_exp34_2_eval50_h246.ps1", "50"),
+        ("run_exp34_2_eval200_h246.ps1", "200"),
+    ]:
+        script = EXP34_DIR / filename
+        assert script.exists()
+
+        text = script.read_text(encoding="utf-8")
+        assert "eqr_lite_recurrence_sft.py" in text
+        assert "h256_exp34_2_eqrpretrain_plainv1_2000_plainv2_2000_then_eqr_d015_zl010_h246_bp4_steps10000_seed1/eqr_sft/checkpoint_fp32.pt" in text
+        assert "--steps 0" in text
+        assert '--eval-h-values "2,4,6"' in text
+        assert f"--generation-eval-limit {limit}" in text

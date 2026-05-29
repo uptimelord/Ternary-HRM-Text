@@ -64,6 +64,28 @@ the final EqR SFT closes most of the gap versus Exp33.5.
 Kill if the plain bridge still leaves the raw model near zero or the final EqR
 checkpoint remains clearly below Exp34.
 
+## Exp34.2 Four-Stage Bridge Test
+
+Exp34.2 keeps the locked Exp34.1 EqR settings, but strengthens the plain
+arithmetic bridge before EqR SFT:
+
+```text
+Exp34 EqR pretrain -> plain v1 SFT -> plain v2 SFT -> EqR SFT
+```
+
+This isolates one question: does better raw arithmetic lift the balanced EqR
+curve, without changing recurrence settings?
+
+Promote Exp34.2 if H=2/H=4/H=6 stay balanced and move clearly above Exp34.1's
+55-56% frozen eval200 band.
+
+Kill if the extra plain v2 bridge improves raw arithmetic but breaks the stable
+H=2/H=4/H=6 EqR curve.
+
+Result: Exp34.2 stayed balanced, but did not clear the promote bar. Frozen
+eval200 landed at H=2 54.5%, H=4 55.5%, H=6 54.5%, invalid 0.0%. Keep Exp34.1
+locked.
+
 ## Command
 
 Run in the background:
@@ -102,6 +124,27 @@ rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
 
 rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
   "experiments/Experiment 34 - EqR Full Pretrain Then SFT/run_exp34_1_residual_h246.ps1"
+```
+
+Run Exp34.2 in the background:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_2_plain_v1_v2_then_eqr_sft.ps1"
+```
+
+Run Exp34.2 scout eval50 after the SFT checkpoint is written:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_2_eval50_h246.ps1"
+```
+
+Run Exp34.2 full eval200 only if the scout curve is worth locking:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_2_eval200_h246.ps1"
 ```
 
 ## Artifacts
@@ -145,6 +188,7 @@ Frozen eval200:
 | Exp33.5 | 57.5% | 50.0% | 46.0% |
 | Exp34 | 45.0% | 44.5% | 40.5% |
 | Exp34.1 | 55.5% | 56.5% | 55.5% |
+| Exp34.2 | 54.5% | 55.5% | 54.5% |
 
 Lock diagnostics:
 
