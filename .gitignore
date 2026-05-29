@@ -6,6 +6,11 @@
 /data/
 # checkpoints
 /checkpoints/
+/artifacts/
+/experiments/_logs/
+.tmp_papers/
+/papers/pdf/
+/papers/extracted/
 # old
 /old/
 /experimental/
