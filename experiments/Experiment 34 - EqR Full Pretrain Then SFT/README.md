@@ -1,5 +1,9 @@
 # Experiment 34 - EqR Full Pretrain Then SFT
 
+> **Status: Exp34.1 is the LOCKED Phase 0 candidate.** See [Locked Result](#locked-result)
+> for the frozen eval200 / diagnostics, [Exp34.1 Bridge Test](#exp341-bridge-test) for the
+> rationale, and [Command](#command) for the Exp34.1 run + diagnostic commands.
+
 ## Question
 
 What happens when EqR-style recurrence dynamics are present from the beginning
