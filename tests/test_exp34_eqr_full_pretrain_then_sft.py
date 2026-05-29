@@ -121,6 +121,50 @@ def test_exp34_1_seed2_eval_and_residual_use_seed2_final_checkpoint():
     assert "h256_exp34_1_seed2_bp4_residual_only_h246" in residual_text
 
 
+def test_exp34_1_seed2_pretrain_sftseed1_runner_isolates_sft_seed():
+    script = EXP34_DIR / "run_exp34_1_seed2pretrain_sftseed1_bridge.ps1"
+    assert script.exists()
+
+    text = script.read_text(encoding="utf-8")
+    assert text.count("arithmetic_sft_pilot.py") == 1
+    assert text.count("eqr_lite_recurrence_sft.py") == 1
+    assert "eqr_full_pretrain_then_sft.py" not in text
+    assert "h256_exp34_eqr_d015_zl010_h246_bp4_steps50000_seed2/pretrain/checkpoint_fp32.pt" in text
+    assert "h256_exp34_1_eqrpretrain_seed2_plain2000_sftseed1_then_eqr_d015_zl010_h246_bp4_steps10000_sftseed1/plain_sft/checkpoint_fp32.pt" in text
+    assert "h256_exp34_1_eqrpretrain_seed2_plain2000_sftseed1_then_eqr_d015_zl010_h246_bp4_steps10000_sftseed1/eqr_sft" in text
+    assert "data/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
+    assert "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
+    assert "--seed 1" in text
+    assert "--steps 2000" in text
+    assert "--steps 10000" in text
+    assert "--bp-steps 2" in text
+    assert "--bp-steps 4" in text
+    assert '--train-h-values "2,4,6"' in text
+    assert "--damping-lambda 0.15" in text
+
+
+def test_exp34_1_seed2_pretrain_sftseed1_eval_and_residual_use_isolation_checkpoint():
+    eval_script = EXP34_DIR / "run_exp34_1_seed2pretrain_sftseed1_eval200_h246.ps1"
+    residual_script = EXP34_DIR / "run_exp34_1_seed2pretrain_sftseed1_residual_h246.ps1"
+    assert eval_script.exists()
+    assert residual_script.exists()
+
+    checkpoint = (
+        "h256_exp34_1_eqrpretrain_seed2_plain2000_sftseed1_then_eqr_d015_zl010_h246_bp4_steps10000_sftseed1"
+        "/eqr_sft/checkpoint_fp32.pt"
+    )
+    eval_text = eval_script.read_text(encoding="utf-8")
+    residual_text = residual_script.read_text(encoding="utf-8")
+
+    assert checkpoint in eval_text
+    assert checkpoint in residual_text
+    assert "--steps 0" in eval_text
+    assert "--seed 1" in eval_text
+    assert "--generation-eval-limit 200" in eval_text
+    assert "--residual-batches 64" in residual_text
+    assert "h256_exp34_1_seed2pretrain_sftseed1_bp4_residual_only_h246" in residual_text
+
+
 def test_exp34_2_runner_wires_four_stage_plain_v1_v2_bridge():
     script = EXP34_DIR / "run_exp34_2_plain_v1_v2_then_eqr_sft.ps1"
     assert script.exists()

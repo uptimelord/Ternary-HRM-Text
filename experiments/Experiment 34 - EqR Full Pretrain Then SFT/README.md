@@ -109,6 +109,26 @@ still shrank with H: final residual H=2 20.6397, H=4 3.8197, H=6 1.9735. This
 means recurrence stayed stable, but the full seed2 training run learned a weaker
 arithmetic model. Do not promote Phase 0 from Exp34.1 yet.
 
+## Exp34.1 Seed2 Pretrain + SFT Seed1 Isolation
+
+This isolates the source of the weak seed2 reproducibility result. It reuses the
+existing seed2 EqR pretrain checkpoint, then reruns only the plain arithmetic
+bridge and EqR SFT with seed 1.
+
+```text
+seed2 EqR pretrain -> seed1 plain arithmetic SFT -> seed1 EqR SFT
+```
+
+If this recovers toward the seed1 lock, the weak seed2 result was mostly SFT
+seed variance. If it stays near 40%, the seed2 pretrain checkpoint is weaker in
+a way that the pretrain loss did not reveal.
+
+Result: no recovery. Frozen eval200 landed at H=2 38.5%, H=4 39.0%, H=6 34.0%,
+invalid 0.0%. Final residual still shrank with H: H=2 20.5897, H=4 4.2390,
+H=6 2.0076. This points away from SFT seed variance and toward the seed2
+pretrain checkpoint being weaker in downstream arithmetic despite similar
+pretrain loss.
+
 ## Command
 
 Run in the background:
@@ -191,6 +211,27 @@ rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
   "experiments/Experiment 34 - EqR Full Pretrain Then SFT/run_exp34_1_seed2_residual_h246.ps1"
 ```
 
+Run the seed2-pretrain / SFT-seed1 isolation in the background:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_1_seed2pretrain_sftseed1_bridge.ps1"
+```
+
+Run its eval200 after the final SFT checkpoint is written:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/start_exp34_1_seed2pretrain_sftseed1_eval200_h246.ps1"
+```
+
+Run its residual diagnostics:
+
+```powershell
+rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
+  "experiments/Experiment 34 - EqR Full Pretrain Then SFT/run_exp34_1_seed2pretrain_sftseed1_residual_h246.ps1"
+```
+
 ## Artifacts
 
 The runner writes:
@@ -234,6 +275,7 @@ Frozen eval200:
 | Exp34.1 | 55.5% | 56.5% | 55.5% |
 | Exp34.2 | 54.5% | 55.5% | 54.5% |
 | Exp34.1 seed2 | 40.5% | 39.5% | 38.0% |
+| Exp34.1 seed2 pretrain + SFT seed1 | 38.5% | 39.0% | 34.0% |
 
 Lock diagnostics:
 
