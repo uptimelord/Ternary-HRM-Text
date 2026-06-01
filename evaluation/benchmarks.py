@@ -1,5 +1,4 @@
 from typing import Any, Optional, Callable
-import json
 import re
 from collections import defaultdict, Counter
 from dataclasses import dataclass
@@ -9,6 +8,7 @@ from datasets import load_dataset, get_dataset_config_names
 from math_verify import parse, verify
 from lm_eval.tasks.drop.utils import process_results as drop_process_results, process_docs as drop_process_docs
 
+from evaluation.arithmetic_verifier import ArithmeticExactVerifier, load_arithmetic_tasks
 from utils.functions import last_boxed_only_string, compute_benchmark_micro_macro_avg
 
 class BaseBenchmark:
@@ -37,29 +37,23 @@ class FrozenArithmetic200(BaseBenchmark):
 
     def __init__(self, path: Optional[str] = None):
         super().__init__()
-        rows = [
-            json.loads(line)
-            for line in Path(path or self.DEFAULT_PATH).read_text(encoding="utf-8").splitlines()
-            if line.strip()
-        ]
+        rows = load_arithmetic_tasks(path or self.DEFAULT_PATH)
         if len(rows) != 200:
             raise ValueError(f"FrozenArithmetic200 expected 200 rows, got {len(rows)}")
 
+        self.tasks = rows
+        self.verifier = ArithmeticExactVerifier()
         self.prompts = [f"{row['prompt']}\nAnswer:" for row in rows]
         self.ground_truths = [str(row["answer"]).strip() for row in rows]
 
-    def _extract_answer(self, text: str) -> Optional[str]:
-        matches = re.findall(r"-?\d+", text.replace(",", ""))
-        return matches[-1] if matches else None
-
     def compute_metrics(self, generations: list[str]) -> dict:
         correct, invalid, total = 0, 0, len(generations)
-        for pred, truth in zip(generations, self.ground_truths):
-            answer = self._extract_answer(pred)
-            if answer is None:
-                invalid += 1
-            elif answer == truth:
+        for pred, task in zip(generations, self.tasks):
+            result = self.verifier.verify(task, pred)
+            if result["passed"]:
                 correct += 1
+            elif result["error"] in {"no_numeric_answer", "non_integer_numeric_answer"}:
+                invalid += 1
         return {
             "n": total,
             "acc": correct / max(1, total),
