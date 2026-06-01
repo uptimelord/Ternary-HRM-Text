@@ -7,6 +7,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import Any
 
+from evaluation.soft_checks import evaluate_soft_checks
 from evaluation.verifiers import VerifierResult
 
 
@@ -65,6 +66,7 @@ class ArithmeticExactVerifier:
 
     def verify(self, task: dict[str, Any], candidate: str) -> VerifierResult:
         start = time.perf_counter()
+        soft_checks = evaluate_soft_checks(candidate)
         task_id = str(task.get("id", ""))
         expected = _canonicalize_expected_answer(task.get("answer")) if "answer" in task else None
         evidence: dict[str, Any] = {
@@ -72,12 +74,13 @@ class ArithmeticExactVerifier:
             "expected": expected,
             "extracted": None,
             "extractor": None,
+            "soft_checks": soft_checks,
         }
 
         if expected is None:
             return {
                 "passed": False,
-                "score": None,
+                "score": soft_checks["score"],
                 "error": "missing_expected_answer",
                 "runtime_s": time.perf_counter() - start,
                 "evidence": evidence,
@@ -89,7 +92,7 @@ class ArithmeticExactVerifier:
         if not tokens:
             return {
                 "passed": False,
-                "score": None,
+                "score": soft_checks["score"],
                 "error": "no_numeric_answer",
                 "runtime_s": time.perf_counter() - start,
                 "evidence": evidence,
@@ -101,7 +104,7 @@ class ArithmeticExactVerifier:
             evidence["extracted"] = raw_token.replace(",", "")
             return {
                 "passed": False,
-                "score": None,
+                "score": soft_checks["score"],
                 "error": error,
                 "runtime_s": time.perf_counter() - start,
                 "evidence": evidence,
@@ -111,7 +114,7 @@ class ArithmeticExactVerifier:
         passed = canonical == expected
         return {
             "passed": passed,
-            "score": None,
+            "score": soft_checks["score"],
             "error": None if passed else "answer_mismatch",
             "runtime_s": time.perf_counter() - start,
             "evidence": evidence,

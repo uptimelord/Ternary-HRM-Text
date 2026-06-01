@@ -200,6 +200,10 @@ the 3050 Ti; PPO's value net would blow VRAM). Notes:
 6. **Phase 0.5 eval sets are already frozen**; keep the held-out guard active before any generated training signal.
 7. Defer rungs 3-4 until Phase 5 retrieval + a pretrain that has actually learned language.
 
+Soft checks are advisory only. Repetition/collapse and answer-form signals may
+fill `score` and `evidence`, but they must never decide `passed`; exact truth
+gates remain the only hard pass/fail path.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as

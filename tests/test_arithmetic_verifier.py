@@ -21,14 +21,17 @@ def test_contract_result_contains_required_keys_and_runtime():
 
     assert set(result) == {"passed", "score", "error", "runtime_s", "evidence"}
     assert result["passed"] is True
-    assert result["score"] is None
+    assert result["score"] == 1.0
     assert result["error"] is None
     assert result["runtime_s"] >= 0.0
-    assert result["evidence"] == {
-        "task_id": "arith_test",
-        "expected": "45",
-        "extracted": "45",
-        "extractor": "answer_marker",
+    assert result["evidence"]["task_id"] == "arith_test"
+    assert result["evidence"]["expected"] == "45"
+    assert result["evidence"]["extracted"] == "45"
+    assert result["evidence"]["extractor"] == "answer_marker"
+    assert result["evidence"]["soft_checks"] == {
+        "score": 1.0,
+        "flags": [],
+        "metrics": result["evidence"]["soft_checks"]["metrics"],
     }
 
 
@@ -36,6 +39,7 @@ def test_exact_answer_passes():
     result = ArithmeticExactVerifier().verify(_task(), "Answer: 45")
 
     assert result["passed"] is True
+    assert result["score"] == 1.0
 
 
 def test_ugly_but_correct_answer_passes():
@@ -100,6 +104,7 @@ def test_fluent_wrong_answer_fails():
 
     assert result["passed"] is False
     assert result["error"] == "answer_mismatch"
+    assert result["score"] == 1.0
 
 
 def test_no_numeric_answer_fails_cleanly():
@@ -134,6 +139,22 @@ def test_frozen_arithmetic_200_metrics_stay_stable_through_verifier():
     metrics = benchmark.compute_metrics(generations)
 
     assert metrics == {"n": 200, "acc": 1.0, "invalid": 0.0}
+
+
+def test_correct_repetitive_answer_still_passes_with_soft_collapse_flag():
+    candidate = "Answer: loop loop loop loop loop loop word word 45"
+
+    result = ArithmeticExactVerifier().verify(_task(), candidate)
+
+    assert result["passed"] is True
+    assert "repetition_collapse" in result["evidence"]["soft_checks"]["flags"]
+
+
+def test_no_marker_correct_answer_passes_with_missing_marker_flag():
+    result = ArithmeticExactVerifier().verify(_task(), "45")
+
+    assert result["passed"] is True
+    assert "missing_answer_marker" in result["evidence"]["soft_checks"]["flags"]
 
 
 def test_load_arithmetic_tasks_reads_train_visible_split():
