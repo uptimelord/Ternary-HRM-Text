@@ -1,0 +1,137 @@
+{
+  "config": {
+    "batch_size": 64,
+    "device": "cuda",
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "split_mode": "rule-family-ood",
+    "steps": 300,
+    "width": 48
+  },
+  "metrics": {
+    "direct_answer": {
+      "acc": 0.6845238095238095,
+      "acc_std": 0.025860338090748163,
+      "invalid": 0.0,
+      "n": 224
+    },
+    "field_rule": {
+      "acc": 0.5238095238095238,
+      "acc_std": 0.033671751485073675,
+      "invalid": 0.08333333333333333,
+      "n": 224
+    },
+    "sparse_rule": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 224,
+      "rule_counts": {
+        "modus_ponens": 112,
+        "or_elimination": 112
+      }
+    }
+  },
+  "results": [
+    {
+      "direct_answer": {
+        "acc": 0.6785714285714286,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "field_rule": {
+        "acc": 0.5,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "seed": 43,
+      "sparse_rule": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "rule_counts": {
+          "modus_ponens": 112,
+          "or_elimination": 112
+        }
+      }
+    },
+    {
+      "direct_answer": {
+        "acc": 0.71875,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "field_rule": {
+        "acc": 0.5,
+        "invalid": 0.07142857142857142,
+        "n": 224
+      },
+      "seed": 44,
+      "sparse_rule": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "rule_counts": {
+          "modus_ponens": 112,
+          "or_elimination": 112
+        }
+      }
+    },
+    {
+      "direct_answer": {
+        "acc": 0.65625,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "field_rule": {
+        "acc": 0.5714285714285714,
+        "invalid": 0.17857142857142858,
+        "n": 224
+      },
+      "seed": 45,
+      "sparse_rule": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "rule_counts": {
+          "modus_ponens": 112,
+          "or_elimination": 112
+        }
+      }
+    }
+  ],
+  "split": {
+    "eval_variants": [
+      "mp_false",
+      "mp_true",
+      "or_false",
+      "or_true"
+    ],
+    "n_eval": 224,
+    "n_train": 1296,
+    "train_variants": [
+      "and_false",
+      "and_true",
+      "contradiction_false",
+      "contradiction_true",
+      "mt_false",
+      "mt_true",
+      "transitive_false",
+      "transitive_true"
+    ]
+  },
+  "wall_s": 9.42
+}
