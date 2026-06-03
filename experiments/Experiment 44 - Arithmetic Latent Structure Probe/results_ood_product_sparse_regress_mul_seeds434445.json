@@ -1,0 +1,97 @@
+{
+  "aggregate": {
+    "mul": {
+      "ones_partial": {
+        "acc_mean": 1.0,
+        "acc_std": 0.0,
+        "n_eval": 586,
+        "n_held_keys": 148
+      },
+      "tens_partial": {
+        "acc_mean": 1.0,
+        "acc_std": 0.0,
+        "n_eval": 592,
+        "n_held_keys": 148
+      }
+    }
+  },
+  "config": {
+    "batch_size": 256,
+    "device": "cuda",
+    "input_mode": "product",
+    "ood_holdout_fraction": 0.2,
+    "ood_split_seed": 7,
+    "prediction_mode": "sparse-regress",
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "steps": 500,
+    "tasks": [
+      "mul"
+    ],
+    "train_limit": null,
+    "width": 64
+  },
+  "results": [
+    {
+      "seed": 43,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 1.0,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 1.0,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 1.0,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 1.0,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        }
+      }
+    },
+    {
+      "seed": 45,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 1.0,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 1.0,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        }
+      }
+    }
+  ],
+  "wall_s": 20.6
+}

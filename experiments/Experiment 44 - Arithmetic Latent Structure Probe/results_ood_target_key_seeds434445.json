@@ -1,0 +1,266 @@
+{
+  "aggregate": {
+    "add": {
+      "ones_sum": {
+        "acc_mean": 0.0009592326139088729,
+        "acc_std": 0.001356559772060523,
+        "n_eval": 695,
+        "n_held_keys": 19
+      },
+      "tens_sum": {
+        "acc_mean": 0.01603017444601603,
+        "acc_std": 0.011393725576232507,
+        "n_eval": 707,
+        "n_held_keys": 19
+      }
+    },
+    "add_sub": {
+      "add_ones_sum": {
+        "acc_mean": 0.0003658982802780827,
+        "acc_std": 0.0005174583104182566,
+        "n_eval": 911,
+        "n_held_keys": 19
+      },
+      "add_tens_sum": {
+        "acc_mean": 0.003148366784730421,
+        "acc_std": 0.0044524630062907355,
+        "n_eval": 847,
+        "n_held_keys": 19
+      }
+    },
+    "mul": {
+      "ones_partial": {
+        "acc_mean": 0.1427758816837315,
+        "acc_std": 0.008957915670093073,
+        "n_eval": 586,
+        "n_held_keys": 148
+      },
+      "tens_partial": {
+        "acc_mean": 0.09515765765765766,
+        "acc_std": 0.004213578138258941,
+        "n_eval": 592,
+        "n_held_keys": 148
+      }
+    },
+    "sub": {
+      "ones_diff": {
+        "acc_mean": 0.0,
+        "acc_std": 0.0,
+        "n_eval": 712,
+        "n_held_keys": 19
+      },
+      "tens_diff": {
+        "acc_mean": 0.0,
+        "acc_std": 0.0,
+        "n_eval": 729,
+        "n_held_keys": 19
+      }
+    }
+  },
+  "config": {
+    "batch_size": 256,
+    "device": "cuda",
+    "ood_holdout_fraction": 0.2,
+    "ood_split_seed": 7,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "steps": 500,
+    "tasks": [
+      "add",
+      "sub",
+      "mul",
+      "add_sub"
+    ],
+    "train_limit": null,
+    "width": 64
+  },
+  "results": [
+    {
+      "seed": 43,
+      "tasks": {
+        "add": {
+          "ones_sum": {
+            "acc": 0.0028776978417266188,
+            "n_eval": 695,
+            "n_held_keys": 19,
+            "n_train": 3027
+          },
+          "tens_sum": {
+            "acc": 0.02545968882602546,
+            "n_eval": 707,
+            "n_held_keys": 19,
+            "n_train": 3015
+          }
+        },
+        "add_sub": {
+          "add_ones_sum": {
+            "acc": 0.0010976948408342481,
+            "n_eval": 911,
+            "n_held_keys": 19,
+            "n_train": 3839
+          },
+          "add_tens_sum": {
+            "acc": 0.009445100354191263,
+            "n_eval": 847,
+            "n_held_keys": 19,
+            "n_train": 3903
+          }
+        },
+        "mul": {
+          "ones_partial": {
+            "acc": 0.1348122866894198,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.09628378378378379,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        },
+        "sub": {
+          "ones_diff": {
+            "acc": 0.0,
+            "n_eval": 712,
+            "n_held_keys": 19,
+            "n_train": 3072
+          },
+          "tens_diff": {
+            "acc": 0.0,
+            "n_eval": 729,
+            "n_held_keys": 19,
+            "n_train": 3055
+          }
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "tasks": {
+        "add": {
+          "ones_sum": {
+            "acc": 0.0,
+            "n_eval": 695,
+            "n_held_keys": 19,
+            "n_train": 3027
+          },
+          "tens_sum": {
+            "acc": 0.0,
+            "n_eval": 707,
+            "n_held_keys": 19,
+            "n_train": 3015
+          }
+        },
+        "add_sub": {
+          "add_ones_sum": {
+            "acc": 0.0,
+            "n_eval": 911,
+            "n_held_keys": 19,
+            "n_train": 3839
+          },
+          "add_tens_sum": {
+            "acc": 0.0,
+            "n_eval": 847,
+            "n_held_keys": 19,
+            "n_train": 3903
+          }
+        },
+        "mul": {
+          "ones_partial": {
+            "acc": 0.1552901023890785,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.09966216216216216,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        },
+        "sub": {
+          "ones_diff": {
+            "acc": 0.0,
+            "n_eval": 712,
+            "n_held_keys": 19,
+            "n_train": 3072
+          },
+          "tens_diff": {
+            "acc": 0.0,
+            "n_eval": 729,
+            "n_held_keys": 19,
+            "n_train": 3055
+          }
+        }
+      }
+    },
+    {
+      "seed": 45,
+      "tasks": {
+        "add": {
+          "ones_sum": {
+            "acc": 0.0,
+            "n_eval": 695,
+            "n_held_keys": 19,
+            "n_train": 3027
+          },
+          "tens_sum": {
+            "acc": 0.02263083451202263,
+            "n_eval": 707,
+            "n_held_keys": 19,
+            "n_train": 3015
+          }
+        },
+        "add_sub": {
+          "add_ones_sum": {
+            "acc": 0.0,
+            "n_eval": 911,
+            "n_held_keys": 19,
+            "n_train": 3839
+          },
+          "add_tens_sum": {
+            "acc": 0.0,
+            "n_eval": 847,
+            "n_held_keys": 19,
+            "n_train": 3903
+          }
+        },
+        "mul": {
+          "ones_partial": {
+            "acc": 0.13822525597269625,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.08952702702702703,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        },
+        "sub": {
+          "ones_diff": {
+            "acc": 0.0,
+            "n_eval": 712,
+            "n_held_keys": 19,
+            "n_train": 3072
+          },
+          "tens_diff": {
+            "acc": 0.0,
+            "n_eval": 729,
+            "n_held_keys": 19,
+            "n_train": 3055
+          }
+        }
+      }
+    }
+  ],
+  "wall_s": 53.18
+}

@@ -1,0 +1,40 @@
+{"answer": "102", "id": "arith_0129", "prompt": "Compute 90 + 12.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "102", "id": "arith_0020", "prompt": "Compute (74 + 35) - 7.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "105", "id": "arith_0068", "prompt": "Compute (78 + 46) - 19.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "102", "id": "arith_0164", "prompt": "Compute (86 + 21) - 5.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "116", "id": "arith_0200", "prompt": "Compute (89 + 41) - 14.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "116", "id": "arith_0128", "prompt": "Compute (83 + 48) - 15.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "54", "id": "arith_0084", "prompt": "Compute (24 + 34) - 4.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "80", "id": "arith_0044", "prompt": "Compute (76 + 17) - 13.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "78", "id": "arith_0053", "prompt": "Compute 56 + 22.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "69", "id": "arith_0056", "prompt": "Compute (77 + 8) - 16.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "56", "id": "arith_0112", "prompt": "Compute (54 + 13) - 11.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "60", "id": "arith_0109", "prompt": "Compute 33 + 27.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "67", "id": "arith_0100", "prompt": "Compute (53 + 22) - 8.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "32", "id": "arith_0036", "prompt": "Compute (20 + 23) - 11.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "30", "id": "arith_0013", "prompt": "Compute 25 + 5.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "126", "id": "arith_0093", "prompt": "Compute 87 + 39.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "86", "id": "arith_0041", "prompt": "Compute 55 + 31.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "81", "id": "arith_0136", "prompt": "Compute (56 + 42) - 17.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "45", "id": "arith_0052", "prompt": "Compute (49 + 11) - 15.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "59", "id": "arith_0181", "prompt": "Compute 39 + 20.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "57", "id": "arith_0030", "prompt": "Compute 61 - 4.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "32", "id": "arith_0146", "prompt": "Compute 43 - 11.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "9", "id": "arith_0062", "prompt": "Compute 36 - 27.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "37", "id": "arith_0006", "prompt": "Compute 59 - 22.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "54", "id": "arith_0106", "prompt": "Compute 95 - 41.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "84", "id": "arith_0142", "prompt": "Compute 98 - 14.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "22", "id": "arith_0134", "prompt": "Compute 42 - 20.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "94", "id": "arith_0154", "prompt": "Compute 99 - 5.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "63", "id": "arith_0150", "prompt": "Compute 71 - 8.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "30", "id": "arith_0054", "prompt": "Compute 63 - 33.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "33", "id": "arith_0099", "prompt": "Compute 11 * 3.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "25", "id": "arith_0107", "prompt": "Compute 5 * 5.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "234", "id": "arith_0187", "prompt": "Compute 39 * 6.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "470", "id": "arith_0051", "prompt": "Compute 47 * 10.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "63", "id": "arith_0039", "prompt": "Compute 9 * 7.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "75", "id": "arith_0031", "prompt": "Compute 15 * 5.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "27", "id": "arith_0047", "prompt": "Compute 3 * 9.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "72", "id": "arith_0027", "prompt": "Compute 18 * 4.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "380", "id": "arith_0087", "prompt": "Compute 20 * 19.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}
+{"answer": "8", "id": "arith_0171", "prompt": "Compute 4 * 2.", "split": "frozen_arithmetic_200", "version": "2026-05-25"}

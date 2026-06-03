@@ -1,0 +1,96 @@
+{
+  "aggregate": {
+    "mul": {
+      "ones_partial": {
+        "acc_mean": 0.13936291240045506,
+        "acc_std": 0.0016088891494574439,
+        "n_eval": 586,
+        "n_held_keys": 148
+      },
+      "tens_partial": {
+        "acc_mean": 0.10078828828828829,
+        "acc_std": 0.0021067890691294734,
+        "n_eval": 592,
+        "n_held_keys": 148
+      }
+    }
+  },
+  "config": {
+    "batch_size": 256,
+    "device": "cuda",
+    "input_mode": "product",
+    "ood_holdout_fraction": 0.2,
+    "ood_split_seed": 7,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "steps": 500,
+    "tasks": [
+      "mul"
+    ],
+    "train_limit": null,
+    "width": 64
+  },
+  "results": [
+    {
+      "seed": 43,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 0.13822525597269625,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.10304054054054054,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 0.13822525597269625,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.10135135135135136,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        }
+      }
+    },
+    {
+      "seed": 45,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 0.1416382252559727,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.09797297297297297,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        }
+      }
+    }
+  ],
+  "wall_s": 27.93
+}

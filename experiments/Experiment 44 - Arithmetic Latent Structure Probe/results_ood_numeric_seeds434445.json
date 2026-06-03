@@ -1,0 +1,267 @@
+{
+  "aggregate": {
+    "add": {
+      "ones_sum": {
+        "acc_mean": 0.8470023980815348,
+        "acc_std": 0.04526216110274926,
+        "n_eval": 695,
+        "n_held_keys": 19
+      },
+      "tens_sum": {
+        "acc_mean": 0.8048090523338048,
+        "acc_std": 0.09233945541131239,
+        "n_eval": 707,
+        "n_held_keys": 19
+      }
+    },
+    "add_sub": {
+      "add_ones_sum": {
+        "acc_mean": 0.6871569703622393,
+        "acc_std": 0.06314051663455429,
+        "n_eval": 911,
+        "n_held_keys": 19
+      },
+      "add_tens_sum": {
+        "acc_mean": 0.8040141676505312,
+        "acc_std": 0.015150237351373622,
+        "n_eval": 847,
+        "n_held_keys": 19
+      }
+    },
+    "mul": {
+      "ones_partial": {
+        "acc_mean": 0.13879408418657566,
+        "acc_std": 0.0008044445747287219,
+        "n_eval": 586,
+        "n_held_keys": 148
+      },
+      "tens_partial": {
+        "acc_mean": 0.09797297297297297,
+        "acc_std": 0.0013792171975130479,
+        "n_eval": 592,
+        "n_held_keys": 148
+      }
+    },
+    "sub": {
+      "ones_diff": {
+        "acc_mean": 0.9915730337078652,
+        "acc_std": 0.003440294582560629,
+        "n_eval": 712,
+        "n_held_keys": 19
+      },
+      "tens_diff": {
+        "acc_mean": 0.9995427526291724,
+        "acc_std": 0.0006466454331838365,
+        "n_eval": 729,
+        "n_held_keys": 19
+      }
+    }
+  },
+  "config": {
+    "batch_size": 256,
+    "device": "cuda",
+    "input_mode": "numeric",
+    "ood_holdout_fraction": 0.2,
+    "ood_split_seed": 7,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "steps": 500,
+    "tasks": [
+      "add",
+      "sub",
+      "mul",
+      "add_sub"
+    ],
+    "train_limit": null,
+    "width": 64
+  },
+  "results": [
+    {
+      "seed": 43,
+      "tasks": {
+        "add": {
+          "ones_sum": {
+            "acc": 0.8575539568345324,
+            "n_eval": 695,
+            "n_held_keys": 19,
+            "n_train": 3027
+          },
+          "tens_sum": {
+            "acc": 0.8882602545968883,
+            "n_eval": 707,
+            "n_held_keys": 19,
+            "n_train": 3015
+          }
+        },
+        "add_sub": {
+          "add_ones_sum": {
+            "acc": 0.70801317233809,
+            "n_eval": 911,
+            "n_held_keys": 19,
+            "n_train": 3839
+          },
+          "add_tens_sum": {
+            "acc": 0.820543093270366,
+            "n_eval": 847,
+            "n_held_keys": 19,
+            "n_train": 3903
+          }
+        },
+        "mul": {
+          "ones_partial": {
+            "acc": 0.13993174061433447,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.09966216216216216,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        },
+        "sub": {
+          "ones_diff": {
+            "acc": 0.9957865168539326,
+            "n_eval": 712,
+            "n_held_keys": 19,
+            "n_train": 3072
+          },
+          "tens_diff": {
+            "acc": 0.9986282578875172,
+            "n_eval": 729,
+            "n_held_keys": 19,
+            "n_train": 3055
+          }
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "tasks": {
+        "add": {
+          "ones_sum": {
+            "acc": 0.7870503597122303,
+            "n_eval": 695,
+            "n_held_keys": 19,
+            "n_train": 3027
+          },
+          "tens_sum": {
+            "acc": 0.6760961810466761,
+            "n_eval": 707,
+            "n_held_keys": 19,
+            "n_train": 3015
+          }
+        },
+        "add_sub": {
+          "add_ones_sum": {
+            "acc": 0.601536772777168,
+            "n_eval": 911,
+            "n_held_keys": 19,
+            "n_train": 3839
+          },
+          "add_tens_sum": {
+            "acc": 0.7839433293978748,
+            "n_eval": 847,
+            "n_held_keys": 19,
+            "n_train": 3903
+          }
+        },
+        "mul": {
+          "ones_partial": {
+            "acc": 0.13822525597269625,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.09628378378378379,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        },
+        "sub": {
+          "ones_diff": {
+            "acc": 0.9915730337078652,
+            "n_eval": 712,
+            "n_held_keys": 19,
+            "n_train": 3072
+          },
+          "tens_diff": {
+            "acc": 1.0,
+            "n_eval": 729,
+            "n_held_keys": 19,
+            "n_train": 3055
+          }
+        }
+      }
+    },
+    {
+      "seed": 45,
+      "tasks": {
+        "add": {
+          "ones_sum": {
+            "acc": 0.8964028776978418,
+            "n_eval": 695,
+            "n_held_keys": 19,
+            "n_train": 3027
+          },
+          "tens_sum": {
+            "acc": 0.8500707213578501,
+            "n_eval": 707,
+            "n_held_keys": 19,
+            "n_train": 3015
+          }
+        },
+        "add_sub": {
+          "add_ones_sum": {
+            "acc": 0.75192096597146,
+            "n_eval": 911,
+            "n_held_keys": 19,
+            "n_train": 3839
+          },
+          "add_tens_sum": {
+            "acc": 0.807556080283353,
+            "n_eval": 847,
+            "n_held_keys": 19,
+            "n_train": 3903
+          }
+        },
+        "mul": {
+          "ones_partial": {
+            "acc": 0.13822525597269625,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158
+          },
+          "tens_partial": {
+            "acc": 0.09797297297297297,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152
+          }
+        },
+        "sub": {
+          "ones_diff": {
+            "acc": 0.9873595505617978,
+            "n_eval": 712,
+            "n_held_keys": 19,
+            "n_train": 3072
+          },
+          "tens_diff": {
+            "acc": 1.0,
+            "n_eval": 729,
+            "n_held_keys": 19,
+            "n_train": 3055
+          }
+        }
+      }
+    }
+  ],
+  "wall_s": 73.54
+}

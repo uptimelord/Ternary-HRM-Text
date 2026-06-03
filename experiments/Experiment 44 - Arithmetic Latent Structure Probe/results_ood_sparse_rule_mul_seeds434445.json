@@ -1,0 +1,125 @@
+{
+  "aggregate": {
+    "mul": {
+      "ones_partial": {
+        "acc_mean": 1.0,
+        "acc_std": 0.0,
+        "n_eval": 586,
+        "n_held_keys": 148,
+        "rule_expression": "a * ones(b)",
+        "rule_name": "a_times_b_ones"
+      },
+      "tens_partial": {
+        "acc_mean": 1.0,
+        "acc_std": 0.0,
+        "n_eval": 592,
+        "n_held_keys": 148,
+        "rule_expression": "a * tens_place(b)",
+        "rule_name": "a_times_b_tens_place"
+      }
+    }
+  },
+  "config": {
+    "batch_size": 256,
+    "device": "cuda",
+    "input_mode": "categorical",
+    "ood_holdout_fraction": 0.2,
+    "ood_split_seed": 7,
+    "prediction_mode": "sparse-rule",
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "steps": 500,
+    "tasks": [
+      "mul"
+    ],
+    "train_limit": null,
+    "width": 64
+  },
+  "results": [
+    {
+      "seed": 43,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 1.0,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158,
+            "rule_expression": "a * ones(b)",
+            "rule_name": "a_times_b_ones",
+            "train_rule_acc": 1.0,
+            "train_rule_mae": 0.0
+          },
+          "tens_partial": {
+            "acc": 1.0,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152,
+            "rule_expression": "a * tens_place(b)",
+            "rule_name": "a_times_b_tens_place",
+            "train_rule_acc": 1.0,
+            "train_rule_mae": 0.0
+          }
+        }
+      }
+    },
+    {
+      "seed": 44,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 1.0,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158,
+            "rule_expression": "a * ones(b)",
+            "rule_name": "a_times_b_ones",
+            "train_rule_acc": 1.0,
+            "train_rule_mae": 0.0
+          },
+          "tens_partial": {
+            "acc": 1.0,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152,
+            "rule_expression": "a * tens_place(b)",
+            "rule_name": "a_times_b_tens_place",
+            "train_rule_acc": 1.0,
+            "train_rule_mae": 0.0
+          }
+        }
+      }
+    },
+    {
+      "seed": 45,
+      "tasks": {
+        "mul": {
+          "ones_partial": {
+            "acc": 1.0,
+            "n_eval": 586,
+            "n_held_keys": 148,
+            "n_train": 3158,
+            "rule_expression": "a * ones(b)",
+            "rule_name": "a_times_b_ones",
+            "train_rule_acc": 1.0,
+            "train_rule_mae": 0.0
+          },
+          "tens_partial": {
+            "acc": 1.0,
+            "n_eval": 592,
+            "n_held_keys": 148,
+            "n_train": 3152,
+            "rule_expression": "a * tens_place(b)",
+            "rule_name": "a_times_b_tens_place",
+            "train_rule_acc": 1.0,
+            "train_rule_mae": 0.0
+          }
+        }
+      }
+    }
+  ],
+  "wall_s": 8.87
+}
