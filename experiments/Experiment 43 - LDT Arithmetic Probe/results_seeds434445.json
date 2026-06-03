@@ -1,0 +1,114 @@
+{
+  "config": {
+    "steps": 2000,
+    "batch_size": 256,
+    "d_model": 128,
+    "layers": 4,
+    "heads": 4,
+    "recurrent_steps": 4,
+    "lr": 0.0003,
+    "eval_every": 200,
+    "eval_limit": null,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "device": "auto",
+    "no_detach_state": false,
+    "smoke": false,
+    "out": "experiments/Experiment 43 - LDT Arithmetic Probe/results_seeds434445.json"
+  },
+  "results": [
+    {
+      "seed": 43,
+      "device": "cuda",
+      "best_valid_acc": 0.055,
+      "train_visible": {
+        "n": 160,
+        "acc": 0.03125,
+        "invalid": 0.0
+      },
+      "held_out": {
+        "n": 40,
+        "acc": 0.025,
+        "invalid": 0.0
+      },
+      "frozen_eval200": {
+        "n": 200,
+        "acc": 0.03,
+        "invalid": 0.0
+      },
+      "n_train_parsable": 16000,
+      "n_frozen_parsable": 200,
+      "n_held_out_parsable": 40,
+      "wall_s": 819.6
+    },
+    {
+      "seed": 44,
+      "device": "cuda",
+      "best_valid_acc": 0.0515,
+      "train_visible": {
+        "n": 160,
+        "acc": 0.06875,
+        "invalid": 0.0
+      },
+      "held_out": {
+        "n": 40,
+        "acc": 0.075,
+        "invalid": 0.0
+      },
+      "frozen_eval200": {
+        "n": 200,
+        "acc": 0.07,
+        "invalid": 0.0
+      },
+      "n_train_parsable": 16000,
+      "n_frozen_parsable": 200,
+      "n_held_out_parsable": 40,
+      "wall_s": 834.5
+    },
+    {
+      "seed": 45,
+      "device": "cuda",
+      "best_valid_acc": 0.054,
+      "train_visible": {
+        "n": 160,
+        "acc": 0.05625,
+        "invalid": 0.0
+      },
+      "held_out": {
+        "n": 40,
+        "acc": 0.1,
+        "invalid": 0.0
+      },
+      "frozen_eval200": {
+        "n": 200,
+        "acc": 0.065,
+        "invalid": 0.0
+      },
+      "n_train_parsable": 16000,
+      "n_frozen_parsable": 200,
+      "n_held_out_parsable": 40,
+      "wall_s": 612.5
+    }
+  ],
+  "frozen_eval200_acc": {
+    "mean": 0.055,
+    "std": 0.017795130420052187,
+    "per_seed": [
+      0.03,
+      0.07,
+      0.065
+    ]
+  },
+  "held_out_acc": {
+    "mean": 0.06666666666666667,
+    "std": 0.03118047822311618,
+    "per_seed": [
+      0.025,
+      0.075,
+      0.1
+    ]
+  }
+}
