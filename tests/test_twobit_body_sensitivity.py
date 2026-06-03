@@ -3,7 +3,9 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
 import torch
+import torch.nn.functional as F
 
 
 def _stub_flash_attention_modules():
@@ -65,6 +67,37 @@ def test_twobit_linear_uses_four_signed_levels():
     assert torch.unique(torch.sign(hard)).tolist() == [-1.0, 1.0]
 
 
+def test_normalized_hadamard_transform_is_orthonormal():
+    eye = torch.eye(4)
+
+    transformed = EXP24.normalized_hadamard_transform(eye)
+
+    assert torch.allclose(transformed @ transformed.T, eye, atol=1e-6)
+
+
+def test_hadamard_twobit_matches_dense_when_rotated_weight_is_not_quantized(monkeypatch):
+    layer = EXP24.HadamardTwoBitLinearInit(4, 2, bias=True, two_bit_group_size=4)
+    x = torch.tensor([[1.0, -2.0, 0.5, 3.0], [-1.0, 0.0, 2.0, 1.5]])
+    with torch.no_grad():
+        layer.weight.copy_(
+            torch.tensor(
+                [
+                    [0.20, -0.40, 0.60, -0.80],
+                    [1.00, -1.20, 1.40, -1.60],
+                ]
+            )
+        )
+        layer.bias.copy_(torch.tensor([0.25, -0.5]))
+
+    monkeypatch.setattr(
+        layer,
+        "hard_quantized_weight",
+        lambda: EXP24.normalized_hadamard_transform(layer.weight, dim=1),
+    )
+
+    assert torch.allclose(layer(x), F.linear(x, layer.weight, layer.bias), atol=1e-6)
+
+
 def test_l_gate_up_variant_swaps_only_l_level_gate_up_to_twobit():
     hrm = _build_hrm("L_mlp_gate_up")
 
@@ -106,3 +139,42 @@ def test_twobit_packed_bytes_are_smaller_than_fp32_for_twobit_layers():
 
     assert packed < fp32
     assert EXP24.count_params(model)["two_bit"] > 0
+
+
+def test_exp24_append_row_can_include_frozen_gate_metrics(tmp_path):
+    path = tmp_path / "results.md"
+    row = {
+        "variant": "both_attention_gqkv",
+        "seed": 1,
+        "first_eval": 5.2,
+        "final_eval": 5.1,
+        "last_train_loss": 5.0,
+        "params_total": 100,
+        "params_two_bit": 25,
+        "packed_disk_mb": 4.0,
+        "compression_x": 2.0,
+        "tokens_per_sec": 123.0,
+        "frozen_loss": 6.02,
+        "frozen_gap": 0.02,
+        "frozen_token_acc": 0.25,
+        "frozen_exact_acc": 0.125,
+        "frozen_passed": True,
+    }
+    EXP24.write_header(
+        path,
+        steps=500,
+        hidden_size=128,
+        seeds=[1],
+        variants=["dense", "both_attention_gqkv"],
+        body_threshold=1.0,
+        body_group_size=128,
+        noise_floor=0.0203,
+        run_frozen_gate=True,
+        frozen_path=Path("evaluation/frozen/frozen_arithmetic_200.jsonl"),
+    )
+
+    EXP24.append_row(path, row, 5.08, noise_floor=0.0203, include_frozen=True)
+
+    text = path.read_text(encoding="utf-8")
+    assert "frozen_loss" in text
+    assert "| 6.0200 | +0.0200 +/- 0.0203 (at noise floor) | 0.2500 | 0.1250 | pass |" in text

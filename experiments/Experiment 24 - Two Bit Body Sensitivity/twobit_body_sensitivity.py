@@ -19,6 +19,7 @@ from typing import NamedTuple
 import torch
 import torch.nn.functional as F
 from torch import Tensor, nn
+from tokenizers import Tokenizer
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
@@ -42,6 +43,10 @@ EXP21 = _load_module(
 )
 
 from experiments import discipline  # noqa: E402
+
+
+def _tokenizer_path(path: Path) -> Path:
+    return path / "tokenizer.json" if path.is_dir() else path
 from models.baselines.hrm_nocarry_bp_warmup import HierarchicalReasoningModel  # noqa: E402
 from models.layers import LinearInit  # noqa: E402
 from models.lm_head import LMHead  # noqa: E402
@@ -50,6 +55,32 @@ from models.lm_head import LMHead  # noqa: E402
 SUPPORTED_TARGETS = EXP21.SUPPORTED_TARGETS
 BodyVariant = EXP21.BodyVariant
 parse_variant = EXP21.parse_variant
+
+
+def _check_power_of_two(n: int) -> None:
+    if n <= 0 or (n & (n - 1)) != 0:
+        raise ValueError(f"Hadamard transform requires a positive power-of-two dimension, got {n}")
+
+
+def normalized_hadamard_transform(x: Tensor, *, dim: int = -1) -> Tensor:
+    """Apply an orthonormal Walsh-Hadamard transform along one dimension."""
+    n = x.shape[dim]
+    _check_power_of_two(n)
+    if n == 1:
+        return x
+
+    moved = x.movedim(dim, -1)
+    original_shape = moved.shape
+    work = moved.reshape(-1, n)
+    h = 1
+    while h < n:
+        work = work.reshape(-1, n // (2 * h), 2, h)
+        left = work[:, :, 0, :]
+        right = work[:, :, 1, :]
+        work = torch.cat((left + right, left - right), dim=-1)
+        h *= 2
+    work = work.reshape(original_shape) / math.sqrt(n)
+    return work.movedim(-1, dim)
 
 
 class TwoBitLinearInit(LinearInit):
@@ -131,14 +162,50 @@ class TwoBitLinearInit(LinearInit):
         return F.linear(input, self.effective_weight(), self.bias)
 
 
+class HadamardTwoBitLinearInit(TwoBitLinearInit):
+    """2-bit linear layer with matched activation/weight Hadamard rotation."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        _check_power_of_two(self.in_features)
+
+    def two_bit_components(self) -> tuple[Tensor, Tensor, int]:
+        rotated_weight = normalized_hadamard_transform(self.weight, dim=1)
+        return self.two_bit_components_for_weight(rotated_weight)
+
+    def hard_quantized_weight(self) -> Tensor:
+        codes, scale, pad = self.two_bit_components()
+        hard_weight = (codes * scale).reshape(-1)
+        if pad:
+            hard_weight = hard_weight[:-pad]
+        return hard_weight.reshape_as(self.weight)
+
+    def two_bit_components_for_weight(self, weight: Tensor) -> tuple[Tensor, Tensor, int]:
+        flat_weight = weight.reshape(-1)
+        pad = (self.two_bit_group_size - (flat_weight.numel() % self.two_bit_group_size)) % self.two_bit_group_size
+        if pad:
+            flat_weight = F.pad(flat_weight, (0, pad))
+        groups = flat_weight.reshape(-1, self.two_bit_group_size)
+        codes = self._two_bit_codes(groups, self._normalization_scale(groups))
+        denom = codes.square().sum(dim=1, keepdim=True).clamp_min(self.two_bit_eps)
+        scale = (groups * codes).sum(dim=1, keepdim=True) / denom
+        scale = scale.abs().clamp_min(self.two_bit_eps)
+        return codes, scale, pad
+
+    def forward(self, input: Tensor) -> Tensor:
+        return F.linear(normalized_hadamard_transform(input), self.effective_weight(), self.bias)
+
+
 def _new_twobit_from_linear(
     old: LinearInit,
     *,
     group_size: int,
     threshold: float,
     scale_mode: str,
+    hadamard: bool = False,
 ) -> TwoBitLinearInit:
-    new = TwoBitLinearInit(
+    cls = HadamardTwoBitLinearInit if hadamard else TwoBitLinearInit
+    new = cls(
         old.weight.shape[1],
         old.weight.shape[0],
         bias=old.bias is not None,
@@ -155,14 +222,28 @@ def _new_twobit_from_linear(
     return new
 
 
-def _swap_attr(parent: nn.Module, attr: str, *, group_size: int, threshold: float, scale_mode: str) -> None:
+def _swap_attr(
+    parent: nn.Module,
+    attr: str,
+    *,
+    group_size: int,
+    threshold: float,
+    scale_mode: str,
+    hadamard: bool,
+) -> None:
     old = getattr(parent, attr)
     if not isinstance(old, LinearInit):
         raise TypeError(f"expected LinearInit at {attr}, got {type(old)!r}")
     setattr(
         parent,
         attr,
-        _new_twobit_from_linear(old, group_size=group_size, threshold=threshold, scale_mode=scale_mode),
+        _new_twobit_from_linear(
+            old,
+            group_size=group_size,
+            threshold=threshold,
+            scale_mode=scale_mode,
+            hadamard=hadamard,
+        ),
     )
 
 
@@ -184,12 +265,20 @@ def _target_attrs(target: str) -> tuple[str, ...]:
     raise ValueError(f"unknown target {target!r}")
 
 
-def _swap_block_target(block: nn.Module, target: str, *, group_size: int, threshold: float, scale_mode: str) -> int:
+def _swap_block_target(
+    block: nn.Module,
+    target: str,
+    *,
+    group_size: int,
+    threshold: float,
+    scale_mode: str,
+    hadamard: bool,
+) -> int:
     count = 0
     for path in _target_attrs(target):
         first, second = path.split(".")
         parent = getattr(block, first)
-        _swap_attr(parent, second, group_size=group_size, threshold=threshold, scale_mode=scale_mode)
+        _swap_attr(parent, second, group_size=group_size, threshold=threshold, scale_mode=scale_mode, hadamard=hadamard)
         count += 1
     return count
 
@@ -201,6 +290,7 @@ def apply_twobit_to_hrm(
     group_size: int,
     threshold: float,
     scale_mode: str,
+    hadamard: bool = False,
 ) -> int:
     if variant.scope == "dense":
         return 0
@@ -221,6 +311,7 @@ def apply_twobit_to_hrm(
                 group_size=group_size,
                 threshold=threshold,
                 scale_mode=scale_mode,
+                hadamard=hadamard,
             )
     return count
 
@@ -394,8 +485,17 @@ def train_variant(
     body_group_size: int,
     body_threshold: float,
     body_scale_mode: str,
+    frozen_sequences: list[discipline.FrozenSequence] | None = None,
+    frozen_batch_size: int = 32,
+    frozen_prefix_len: int = 96,
+    frozen_answer_len: int = 16,
+    frozen_baseline_loss: float | None = None,
+    frozen_noise_floor: float = 0.0203,
 ) -> dict:
     total_len = prefix_len + causal_len
+    model_max_seq_len = total_len
+    if frozen_sequences is not None:
+        model_max_seq_len = max(model_max_seq_len, frozen_prefix_len + frozen_answer_len)
     torch.manual_seed(seed)
     if device.type == "cuda":
         torch.cuda.manual_seed_all(seed)
@@ -409,7 +509,7 @@ def train_variant(
         n_layers=n_layers,
         num_heads=num_heads,
         expansion=expansion,
-        max_seq_len=total_len,
+        max_seq_len=model_max_seq_len,
         bp_warmup_ratio=bp_warmup_ratio,
         bp_min_steps=bp_min_steps,
         bp_max_steps=bp_max_steps,
@@ -481,6 +581,20 @@ def train_variant(
     elapsed = time.perf_counter() - start
 
     final_eval = evaluate()
+    frozen_result = None
+    if frozen_sequences is not None:
+        frozen_result = discipline.evaluate_frozen_gate(
+            model,
+            sequences=frozen_sequences,
+            baseline_loss=frozen_baseline_loss,
+            device=device,
+            vocab_size=vocab_size,
+            batch_size=frozen_batch_size,
+            bp_min_steps=bp_min_steps,
+            fixed_prefix_len=frozen_prefix_len,
+            fixed_answer_len=frozen_answer_len,
+            noise_floor=frozen_noise_floor,
+        )
     params = count_params(model)
     fp32_bytes = fp32_state_dict_bytes(model)
     packed_bytes = packed_state_dict_bytes(model)
@@ -490,7 +604,7 @@ def train_variant(
     if device.type == "cuda":
         torch.cuda.empty_cache()
 
-    return {
+    row = {
         "variant": name,
         "seed": seed,
         "first_eval": first_eval,
@@ -504,6 +618,20 @@ def train_variant(
         "peak_vram_mb": peak_vram_mb,
         "tokens_per_sec": (steps * numseqs * total_len) / max(1e-9, elapsed),
     }
+    if frozen_result is not None:
+        row.update(
+            {
+                "frozen_loss": frozen_result.frozen_loss,
+                "frozen_gap": frozen_result.frozen_gap,
+                "frozen_token_acc": frozen_result.frozen_token_acc,
+                "frozen_exact_acc": frozen_result.frozen_exact_acc,
+                "frozen_tokens": frozen_result.frozen_tokens,
+                "frozen_examples": frozen_result.frozen_examples,
+                "frozen_passed": frozen_result.passed,
+                "frozen_reason": frozen_result.reason,
+            }
+        )
+    return row
 
 
 def write_header(
@@ -516,24 +644,49 @@ def write_header(
     body_threshold: float,
     body_group_size: int,
     noise_floor: float,
+    run_frozen_gate: bool = False,
+    frozen_path: Path | None = None,
 ) -> None:
+    frozen_line = f"frozen_path={frozen_path.as_posix()}\n" if run_frozen_gate and frozen_path is not None else ""
+    frozen_cols = (
+        " frozen_loss | frozen_gap | frozen_token_acc | frozen_exact_acc | frozen_gate |"
+        if run_frozen_gate
+        else ""
+    )
+    frozen_rule = "|---:|---|---:|---:|---|" if run_frozen_gate else ""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "# Experiment 24 live results\n\n"
         f"steps={steps}, hidden_size={hidden_size}, seeds={seeds}, variants={variants}\n"
         f"body: 2-bit, threshold={body_threshold}, group_size={body_group_size}\n"
+        f"{frozen_line}"
         f"noise_floor={noise_floor:.4f}\n"
         "vocab: untied dense\n\n"
-        "| variant | seed | first_eval | final_eval | gap_vs_dense | noise_floor | gap_read | quality_per_mb | last_train | params | two_bit% | packed_MB | compr | tok/s |\n"
-        "|---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|\n",
+        f"| variant | seed | first_eval | final_eval | gap_vs_dense | noise_floor | gap_read | quality_per_mb | last_train | params | two_bit% | packed_MB | compr | tok/s |{frozen_cols}\n"
+        f"|---|---:|---:|---:|---:|---:|---|---:|---:|---:|---:|---:|---:|---:|{frozen_rule}\n",
         encoding="utf-8",
     )
 
 
-def append_row(path: Path, row: dict, dense_eval: float | None, *, noise_floor: float) -> None:
+def append_row(
+    path: Path,
+    row: dict,
+    dense_eval: float | None,
+    *,
+    noise_floor: float,
+    include_frozen: bool = False,
+) -> None:
     gap = row["final_eval"] - dense_eval if dense_eval is not None else float("nan")
     pct = 100.0 * row["params_two_bit"] / row["params_total"] if row["params_total"] else 0.0
     quality = discipline.quality_per_packed_mb(loss=row["final_eval"], packed_mb=row["packed_disk_mb"])
+    frozen_cols = ""
+    if include_frozen:
+        frozen_cols = (
+            f" {row['frozen_loss']:.4f} | "
+            f"{discipline.format_gap_with_noise(row['frozen_gap'], noise_floor)} | "
+            f"{row['frozen_token_acc']:.4f} | {row['frozen_exact_acc']:.4f} | "
+            f"{'pass' if row['frozen_passed'] else 'fail'} |"
+        )
     with path.open("a", encoding="utf-8") as fh:
         fh.write(
             f"| {row['variant']} | {row['seed']} | {row['first_eval']:.4f} | "
@@ -541,7 +694,7 @@ def append_row(path: Path, row: dict, dense_eval: float | None, *, noise_floor: 
             f"{discipline.format_gap_with_noise(gap, noise_floor)} | {quality:.5f} | "
             f"{row['last_train_loss']:.4f} | {row['params_total']:,} | {pct:.1f}% | "
             f"{row['packed_disk_mb']:.2f} | {row['compression_x']:.2f}x | "
-            f"{row['tokens_per_sec']:.0f} |\n"
+            f"{row['tokens_per_sec']:.0f} |{frozen_cols}\n"
         )
 
 
@@ -578,6 +731,20 @@ def main() -> int:
     )
     parser.add_argument("--eval-fraction", type=float, default=0.2)
     parser.add_argument("--noise-floor", type=float, default=None)
+    parser.add_argument("--run-frozen-gate", action="store_true")
+    parser.add_argument(
+        "--frozen-path",
+        type=Path,
+        default=REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl",
+    )
+    parser.add_argument(
+        "--tokenizer-path",
+        type=Path,
+        default=Path(r"C:/Users/Dos/Documents/GRAM/data_io/trained_tokenizers/bpe/tokenizer.json"),
+    )
+    parser.add_argument("--frozen-batch-size", type=int, default=32)
+    parser.add_argument("--max-frozen-prefix-tokens", type=int, default=96)
+    parser.add_argument("--max-frozen-answer-tokens", type=int, default=16)
     parser.add_argument("--append-md", type=Path, default=None)
     args = parser.parse_args()
 
@@ -614,6 +781,18 @@ def main() -> int:
     print(f"noise_floor={noise_floor:.4f}")
     print("vocab: untied dense")
 
+    frozen_sequences = None
+    if args.run_frozen_gate:
+        tokenizer = Tokenizer.from_file(str(_tokenizer_path(args.tokenizer_path)))
+        frozen_rows = discipline.load_frozen_arithmetic(args.frozen_path)
+        frozen_sequences = discipline.tokenize_frozen_arithmetic(
+            frozen_rows,
+            tokenizer,
+            max_prefix_tokens=args.max_frozen_prefix_tokens,
+            max_answer_tokens=args.max_frozen_answer_tokens,
+        )
+        print(f"frozen_rows={len(frozen_rows)}, frozen_sequences={len(frozen_sequences)}")
+
     if args.append_md is not None:
         write_header(
             args.append_md,
@@ -624,6 +803,8 @@ def main() -> int:
             body_threshold=args.body_threshold,
             body_group_size=args.body_group_size,
             noise_floor=noise_floor,
+            run_frozen_gate=args.run_frozen_gate,
+            frozen_path=args.frozen_path,
         )
 
     common = dict(
@@ -648,16 +829,24 @@ def main() -> int:
         body_group_size=args.body_group_size,
         body_threshold=args.body_threshold,
         body_scale_mode=args.body_scale_mode,
+        frozen_sequences=frozen_sequences,
+        frozen_batch_size=args.frozen_batch_size,
+        frozen_prefix_len=args.max_frozen_prefix_tokens,
+        frozen_answer_len=args.max_frozen_answer_tokens,
+        frozen_noise_floor=noise_floor,
     )
 
     rows: list[dict] = []
     for seed in seeds:
         dense_eval = None
+        dense_frozen_loss = None
         for variant in variants:
-            row = train_variant(variant, seed=seed, **common)
+            row = train_variant(variant, seed=seed, frozen_baseline_loss=dense_frozen_loss, **common)
             rows.append(row)
             if variant == "dense":
                 dense_eval = row["final_eval"]
+                if args.run_frozen_gate:
+                    dense_frozen_loss = row["frozen_loss"]
             gap = row["final_eval"] - dense_eval if dense_eval is not None else float("nan")
             pct = 100.0 * row["params_two_bit"] / row["params_total"] if row["params_total"] else 0.0
             quality = discipline.quality_per_packed_mb(loss=row["final_eval"], packed_mb=row["packed_disk_mb"])
@@ -669,8 +858,22 @@ def main() -> int:
                 f"packed={row['packed_disk_mb']:.2f} MB, compr={row['compression_x']:.2f}x, "
                 f"peak={row['peak_vram_mb']:.1f} MB, tok/s={row['tokens_per_sec']:.0f}"
             )
+            if args.run_frozen_gate:
+                print(
+                    f"  frozen_loss={row['frozen_loss']:.4f}, "
+                    f"frozen_gap={discipline.format_gap_with_noise(row['frozen_gap'], noise_floor)}, "
+                    f"frozen_token_acc={row['frozen_token_acc']:.4f}, "
+                    f"frozen_exact_acc={row['frozen_exact_acc']:.4f}, "
+                    f"frozen_gate={'pass' if row['frozen_passed'] else 'fail'}"
+                )
             if args.append_md is not None:
-                append_row(args.append_md, row, dense_eval, noise_floor=noise_floor)
+                append_row(
+                    args.append_md,
+                    row,
+                    dense_eval,
+                    noise_floor=noise_floor,
+                    include_frozen=args.run_frozen_gate,
+                )
 
     print("summary:")
     for variant in variants:
@@ -699,6 +902,24 @@ def main() -> int:
             f"mean_quality_per_mb={mean_quality:.5f}, two_bit={pct:.1f}%, "
             f"mean_tok/s={mean_tok:.0f}, mean_peak_vram_mb={mean_vram:.1f}"
         )
+        if args.run_frozen_gate:
+            mean_frozen = sum(row["frozen_loss"] for row in group) / len(group)
+            baseline_frozen = [
+                row
+                for row in rows
+                if row["variant"] == "dense"
+                and row["seed"] in {item["seed"] for item in group}
+            ]
+            mean_base_frozen = (
+                sum(row["frozen_loss"] for row in baseline_frozen) / len(baseline_frozen)
+                if baseline_frozen
+                else float("nan")
+            )
+            mean_frozen_gap = mean_frozen - mean_base_frozen
+            print(
+                f"{variant}: mean_frozen_loss={mean_frozen:.4f}, "
+                f"mean_frozen_gap={discipline.format_gap_with_noise(mean_frozen_gap, noise_floor)}"
+            )
     return 0
 
 

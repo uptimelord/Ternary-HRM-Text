@@ -3,6 +3,7 @@ import sys
 import types
 from pathlib import Path
 
+import pytest
 import torch
 
 
@@ -80,6 +81,74 @@ def test_gqkv_variant_stacks_twobit_attention_on_current_combo():
             assert isinstance(block.attn.o_proj, LinearInit)
 
 
+def test_hadamard_gqkv_variant_stacks_hadamard_twobit_attention_on_current_combo():
+    model = _build("combo_hadamard_2bit_attention_gqkv")
+
+    assert isinstance(model.tied_vocab, TernaryLinear158Init)
+    for block in model.model.L_level.core.layers:
+        assert isinstance(block.mlp.gate_up_proj, TernaryLinear158Init)
+    for level in (model.model.H_level, model.model.L_level):
+        for block in level.core.layers:
+            assert isinstance(block.attn.gqkv_proj, EXP24.HadamardTwoBitLinearInit)
+            assert isinstance(block.attn.o_proj, LinearInit)
+
+
+def test_hadamard_mlp_gate_up_variant_stacks_hadamard_twobit_body_on_current_combo():
+    model = _build("combo_hadamard_2bit_mlp_gate_up")
+
+    assert isinstance(model.tied_vocab, TernaryLinear158Init)
+    for level in (model.model.H_level, model.model.L_level):
+        for block in level.core.layers:
+            assert isinstance(block.mlp.gate_up_proj, EXP24.HadamardTwoBitLinearInit)
+            assert isinstance(block.mlp.down_proj, LinearInit)
+            assert isinstance(block.attn.gqkv_proj, LinearInit)
+
+
+def test_hadamard_mlp_variant_stacks_hadamard_twobit_full_mlp_on_current_combo():
+    model = _build("combo_hadamard_2bit_mlp")
+
+    assert isinstance(model.tied_vocab, TernaryLinear158Init)
+    for level in (model.model.H_level, model.model.L_level):
+        for block in level.core.layers:
+            assert isinstance(block.mlp.gate_up_proj, EXP24.HadamardTwoBitLinearInit)
+            assert isinstance(block.mlp.down_proj, EXP24.HadamardTwoBitLinearInit)
+            assert isinstance(block.attn.gqkv_proj, LinearInit)
+
+
+def test_ternary_L_mlp_down_only_changes_L_level_down_projection():
+    model = _build("combo_ternary_L_mlp_down")
+
+    assert isinstance(model.tied_vocab, TernaryLinear158Init)
+    for block in model.model.L_level.core.layers:
+        assert isinstance(block.mlp.gate_up_proj, TernaryLinear158Init)
+        assert isinstance(block.mlp.down_proj, TernaryLinear158Init)
+        assert block.mlp.down_proj.ternary_ste_mode == "tequila"
+        assert block.mlp.down_proj.ternary_threshold == pytest.approx(0.5)
+        assert block.mlp.down_proj.ternary_group_size == 128
+        assert block.mlp.down_proj.ternary_scale_mode == "mean_abs"
+        assert isinstance(block.attn.gqkv_proj, LinearInit)
+        assert isinstance(block.attn.o_proj, LinearInit)
+
+    for block in model.model.H_level.core.layers:
+        assert isinstance(block.mlp.gate_up_proj, LinearInit)
+        assert isinstance(block.mlp.down_proj, LinearInit)
+        assert isinstance(block.attn.gqkv_proj, LinearInit)
+        assert isinstance(block.attn.o_proj, LinearInit)
+
+
+def test_ternary_L_mlp_gate_up_down_keeps_attention_dense():
+    model = _build("combo_ternary_L_mlp_gate_up_down")
+
+    for block in model.model.L_level.core.layers:
+        assert isinstance(block.mlp.gate_up_proj, TernaryLinear158Init)
+        assert isinstance(block.mlp.down_proj, TernaryLinear158Init)
+        assert isinstance(block.attn.gqkv_proj, LinearInit)
+        assert isinstance(block.attn.o_proj, LinearInit)
+    for block in model.model.H_level.core.layers:
+        assert isinstance(block.mlp.gate_up_proj, LinearInit)
+        assert isinstance(block.mlp.down_proj, LinearInit)
+
+
 def test_full_attention_variant_stacks_both_attention_projections():
     model = _build("combo_2bit_attention")
 
@@ -96,3 +165,43 @@ def test_twobit_attention_reduces_packed_size_vs_combo_baseline():
     assert EXP25.packed_state_dict_bytes(gqkv) < EXP25.packed_state_dict_bytes(baseline)
     assert EXP25.count_params(gqkv)["ternary"] > 0
     assert EXP25.count_params(gqkv)["two_bit"] > 0
+
+
+def test_append_row_can_include_frozen_gate_metrics(tmp_path):
+    path = tmp_path / "results.md"
+    row = {
+        "variant": "combo_ternary_L_mlp_down",
+        "seed": 1,
+        "first_eval": 5.2,
+        "final_eval": 5.1,
+        "last_train_loss": 5.0,
+        "params_total": 100,
+        "params_ternary": 25,
+        "params_two_bit": 0,
+        "packed_disk_mb": 4.0,
+        "compression_x": 2.0,
+        "tokens_per_sec": 123.0,
+        "frozen_loss": 6.02,
+        "frozen_gap": 0.02,
+        "frozen_token_acc": 0.25,
+        "frozen_exact_acc": 0.125,
+        "frozen_passed": True,
+    }
+    EXP25.write_header(
+        path,
+        steps=500,
+        hidden_size=128,
+        seeds=[1],
+        variants=["combo_baseline", "combo_ternary_L_mlp_down"],
+        noise_floor=0.0203,
+        run_frozen_gate=True,
+        frozen_path=Path("evaluation/frozen/frozen_arithmetic_200.jsonl"),
+    )
+
+    EXP25.append_row(path, row, 5.08, 4.5, noise_floor=0.0203, include_frozen=True)
+
+    text = path.read_text(encoding="utf-8")
+    assert "frozen_loss" in text
+    assert "frozen_gap" in text
+    assert "| combo_ternary_L_mlp_down | 1 |" in text
+    assert "| 6.0200 | +0.0200 +/- 0.0203 (at noise floor) | 0.2500 | 0.1250 | pass |" in text

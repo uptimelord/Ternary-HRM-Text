@@ -29,6 +29,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
 from models.common import IGNORE_LABEL_ID  # noqa: E402
+from evaluation.guard_rail import check_no_held_out_leak  # noqa: E402
 
 
 DEFAULT_BASE_CHECKPOINT = (
@@ -76,7 +77,9 @@ def load_exp29():
     )
 
 
-def read_jsonl(path: Path) -> list[dict[str, Any]]:
+def read_jsonl(path: Path, *, guard_held_out: bool = True) -> list[dict[str, Any]]:
+    if guard_held_out:
+        check_no_held_out_leak([path], verbose=False)
     with path.open(encoding="utf-8") as f:
         return [json.loads(line) for line in f if line.strip()]
 

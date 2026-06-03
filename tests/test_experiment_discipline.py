@@ -56,6 +56,16 @@ def test_quality_per_mb_is_inverse_loss_per_packed_mb():
     assert score == pytest.approx((1 / 5.1570) / 4.64)
 
 
+def test_frozen_gap_gate_uses_positive_noise_limit():
+    good = discipline.frozen_gate_decision(frozen_gap=0.0203, noise_floor=0.0203)
+    bad = discipline.frozen_gate_decision(frozen_gap=0.0204, noise_floor=0.0203)
+
+    assert good.passed
+    assert good.reason == "frozen_gap +0.0203 within noise floor +/- 0.0203"
+    assert not bad.passed
+    assert bad.reason == "frozen_gap +0.0204 exceeds noise floor +/- 0.0203"
+
+
 def test_markdown_rows_get_quality_and_noisy_gap_columns():
     rows = [
         {"variant": "dense", "final_eval": 5.0, "gap": 0.0, "packed_MB": 10.0},
@@ -66,6 +76,16 @@ def test_markdown_rows_get_quality_and_noisy_gap_columns():
 
     assert enriched[1]["gap_with_noise"] == "+0.1000 +/- 0.0200 (above noise floor)"
     assert enriched[1]["quality_per_mb"] == pytest.approx((1 / 5.1) / 2.0)
+
+
+def test_markdown_rows_use_live_training_packed_disk_mb_for_quality():
+    rows = [
+        {"variant": "compressed", "final_eval": 5.1, "gap": 0.0, "packed_disk_mb": 2.0},
+    ]
+
+    enriched = discipline.enrich_rows(rows, noise=0.02)
+
+    assert enriched[0]["quality_per_mb"] == pytest.approx((1 / 5.1) / 2.0)
 
 
 def test_frozen_micro_benchmark_has_200_locked_problems():

@@ -97,6 +97,8 @@ class TernaryLinear158Init(LinearInit):
                  ternary_eps: float = 1e-6,
                  ternary_scale_mode: Literal["mean_abs", "selected_mean_abs", "rms"] = "mean_abs",
                  ternary_ste_mode: Literal["standard", "tequila"] = "standard",
+                 ternary_nm_n: int = 0,
+                 ternary_nm_m: int = 0,
                  **kwargs):
         super().__init__(in_features, out_features, bias, batch_out_features, init_std, **kwargs)
         if ternary_group_size <= 0:
@@ -105,12 +107,19 @@ class TernaryLinear158Init(LinearInit):
             raise ValueError(f"Unsupported ternary_scale_mode: {ternary_scale_mode}")
         if ternary_ste_mode not in ("standard", "tequila"):
             raise ValueError(f"Unsupported ternary_ste_mode: {ternary_ste_mode}")
+        # N:M semi-structured sparsity (Sparse-BitNet 2603.05168). Opt-in: both > 0.
+        if (ternary_nm_n > 0) != (ternary_nm_m > 0):
+            raise ValueError("ternary_nm_n and ternary_nm_m must both be set or both be 0.")
+        if ternary_nm_m and not (0 < ternary_nm_n < ternary_nm_m):
+            raise ValueError("require 0 < ternary_nm_n < ternary_nm_m for N:M sparsity.")
 
         self.ternary_group_size = ternary_group_size
         self.ternary_threshold = ternary_threshold
         self.ternary_eps = ternary_eps
         self.ternary_scale_mode = ternary_scale_mode
         self.ternary_ste_mode = ternary_ste_mode
+        self.ternary_nm_n = ternary_nm_n
+        self.ternary_nm_m = ternary_nm_m
         self.bits_per_weight = math.log2(3)
 
     def _grouped_weight(self) -> tuple[Tensor, int]:
@@ -164,6 +173,46 @@ class TernaryLinear158Init(LinearInit):
         scale = self._output_scale(groups, ternary)
         return ternary, scale, pad
 
+    def _nm_mask(self) -> Tensor:
+        """Binary N:M mask from continuous (pre-quant) master weights.
+
+        Sparse-BitNet (2603.05168): per contiguous group of M weights keep the
+        N largest by magnitude. Computed from the continuous master weights to
+        preserve fine-grained magnitude rankings. Returned detached — gradient
+        flows densely via the STE wrapper in effective_weight (Dual-STE).
+        """
+        n, m = self.ternary_nm_n, self.ternary_nm_m
+        flat = self.weight.detach().reshape(-1)
+        pad = (m - (flat.numel() % m)) % m
+        if pad:
+            flat = F.pad(flat, (0, pad))
+        groups = flat.reshape(-1, m)
+        keep_idx = groups.abs().topk(n, dim=1).indices
+        mask = torch.zeros_like(groups)
+        mask.scatter_(1, keep_idx, 1.0)
+        mask = mask.reshape(-1)
+        if pad:
+            mask = mask[:-pad]
+        return mask.reshape_as(self.weight)
+
+    def _apply_nm(self, eff: Tensor) -> Tensor:
+        """Quant-then-mask with dense (Dual-STE) gradient flow.
+
+        Forward = eff * nm_mask (real N:M sparsity). Backward = identity to eff,
+        so masked-out master weights still receive dense updates and can re-enter
+        the top-N set. No-op when N:M sparsity is disabled.
+        """
+        if not self.ternary_nm_m:
+            return eff
+        nm = self._nm_mask()
+        return eff + (eff * nm - eff).detach()
+
+    def nm_sparsity_fraction(self) -> float:
+        """Fraction of weights zeroed by the N:M mask (0.0 if disabled)."""
+        if not self.ternary_nm_m:
+            return 0.0
+        return 1.0 - (self.ternary_nm_n / self.ternary_nm_m)
+
     def quantized_weight(self) -> Tensor:
         ternary, scale, pad = self.ternary_components()
         hard_weight = (ternary * scale).reshape(-1)
@@ -175,7 +224,7 @@ class TernaryLinear158Init(LinearInit):
 
     def effective_weight(self) -> Tensor:
         if self.ternary_ste_mode == "standard":
-            return self.quantized_weight()
+            return self._apply_nm(self.quantized_weight())
 
         ternary, scale, pad = self.ternary_components()
         active_mask = (ternary != 0).to(dtype=self.weight.dtype).reshape(-1)
@@ -187,7 +236,7 @@ class TernaryLinear158Init(LinearInit):
         active_mask = active_mask.reshape_as(self.weight)
         hard_weight = hard_weight.reshape_as(self.weight)
         ste_weight = self.weight + (hard_weight - self.weight).detach()
-        return ste_weight * active_mask + self.weight * (1 - active_mask)
+        return self._apply_nm(ste_weight * active_mask + self.weight * (1 - active_mask))
 
     def forward(self, input: Tensor) -> Tensor:
         return F.linear(input, self.effective_weight(), self.bias)
@@ -227,6 +276,8 @@ class Attention(nn.Module):
                  gqkv_linear_cls=None, o_linear_cls=None,
                  gqkv_linear_kwargs: Optional[dict[str, Any]] = None,
                  o_linear_kwargs: Optional[dict[str, Any]] = None,
+                 qk_norm: bool = False,
+                 qk_norm_eps: float = 1e-6,
                  **kwargs):
         super().__init__()
         self.head_dim = head_dim
@@ -244,6 +295,16 @@ class Attention(nn.Module):
         self.o_proj = o_linear_cls(head_dim * num_heads, hidden_size,
                                    bias=False, init_std=init_std_out, **kwargs, **o_linear_kwargs)
 
+        # QK-Norm (Spectra 1.1 2506.23025): per-head RMSNorm on Q and K over
+        # head_dim, applied before RoPE, with a learnable per-head_dim scale.
+        # Opt-in stability enabler; default off keeps the existing dense path.
+        self.qk_norm = qk_norm
+        self.qk_norm_eps = qk_norm_eps
+        if qk_norm:
+            factory = {k: v for k, v in kwargs.items() if k in ("device", "dtype")}
+            self.q_norm_weight = nn.Parameter(torch.ones(head_dim, **factory))
+            self.k_norm_weight = nn.Parameter(torch.ones(head_dim, **factory))
+
     def forward(self, hidden_states: Tensor, cos_sin: Optional[CosSin], cache: Optional[Cache] = None, cache_lengths: Optional[Tensor] = None, **seq_info) -> Tensor:
         # hidden_states, gqkv: [..., seq_len, hidden_size]
         gqkv = self.gqkv_proj(hidden_states)
@@ -252,6 +313,10 @@ class Attention(nn.Module):
         gqkv = rearrange(gqkv, "... (h hd) -> ... h hd", h=2 * self.num_heads + 2 * self.num_key_value_heads)
         gate, query, key, value = gqkv.split((self.num_heads, self.num_heads, self.num_key_value_heads, self.num_key_value_heads), dim=-2)
         # query, key, value: [..., seq_len, num_heads, head_dim]
+        # QK-Norm (per-head RMSNorm over head_dim, before RoPE)
+        if self.qk_norm:
+            query = F.rms_norm(query, (self.head_dim,), self.q_norm_weight, self.qk_norm_eps)
+            key = F.rms_norm(key, (self.head_dim,), self.k_norm_weight, self.qk_norm_eps)
         # RoPE
         if cos_sin is not None:
             query = apply_rotary_pos_emb(query, cos_sin)

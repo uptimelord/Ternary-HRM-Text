@@ -20,6 +20,7 @@ from typing import NamedTuple
 
 import torch
 from torch import nn
+from tokenizers import Tokenizer
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
@@ -42,8 +43,13 @@ EXP16 = _load_module(
     REPO_ROOT / "experiments" / "Experiment 16 - Tequila Dynamic Bias" / "tequila_dynamic_bias.py",
 )
 
+from experiments import discipline  # noqa: E402
 from models.baselines.hrm_nocarry_bp_warmup import HierarchicalReasoningModel  # noqa: E402
 from models.lm_head import LMHead  # noqa: E402
+
+
+def _tokenizer_path(path: Path) -> Path:
+    return path / "tokenizer.json" if path.is_dir() else path
 
 
 SUPPORTED_TARGETS = {
@@ -199,8 +205,17 @@ def train_variant(name: str, *, train_tokens: torch.Tensor, eval_tokens: torch.T
                   eval_batches: int, vocab_size: int, bp_warmup_ratio: float,
                   bp_min_steps: int, bp_max_steps: int, body_group_size: int,
                   body_threshold: float, body_scale_mode: str,
-                  body_ste_mode: str) -> dict:
+                  body_ste_mode: str,
+                  frozen_sequences: list[discipline.FrozenSequence] | None = None,
+                  frozen_batch_size: int = 32,
+                  frozen_prefix_len: int = 96,
+                  frozen_answer_len: int = 16,
+                  frozen_baseline_loss: float | None = None,
+                  frozen_noise_floor: float = 0.0203) -> dict:
     total_len = prefix_len + causal_len
+    model_max_seq_len = total_len
+    if frozen_sequences is not None:
+        model_max_seq_len = max(model_max_seq_len, frozen_prefix_len + frozen_answer_len)
     torch.manual_seed(seed)
     if device.type == "cuda":
         torch.cuda.manual_seed_all(seed)
@@ -215,7 +230,7 @@ def train_variant(name: str, *, train_tokens: torch.Tensor, eval_tokens: torch.T
         n_layers=n_layers,
         num_heads=num_heads,
         expansion=expansion,
-        max_seq_len=total_len,
+        max_seq_len=model_max_seq_len,
         bp_warmup_ratio=bp_warmup_ratio,
         bp_min_steps=bp_min_steps,
         bp_max_steps=bp_max_steps,
@@ -291,6 +306,20 @@ def train_variant(name: str, *, train_tokens: torch.Tensor, eval_tokens: torch.T
     elapsed = time.perf_counter() - start
 
     final_eval = evaluate()
+    frozen_result = None
+    if frozen_sequences is not None:
+        frozen_result = discipline.evaluate_frozen_gate(
+            model,
+            sequences=frozen_sequences,
+            baseline_loss=frozen_baseline_loss,
+            device=device,
+            vocab_size=vocab_size,
+            batch_size=frozen_batch_size,
+            bp_min_steps=bp_min_steps,
+            fixed_prefix_len=frozen_prefix_len,
+            fixed_answer_len=frozen_answer_len,
+            noise_floor=frozen_noise_floor,
+        )
     params = EXP16.count_params(model)
     fp32_bytes = EXP16.fp32_state_dict_bytes(model)
     packed_bytes = EXP16.packed_state_dict_bytes(model)
@@ -300,7 +329,7 @@ def train_variant(name: str, *, train_tokens: torch.Tensor, eval_tokens: torch.T
     if device.type == "cuda":
         torch.cuda.empty_cache()
 
-    return {
+    row = {
         "variant": name,
         "seed": seed,
         "first_eval": first_eval,
@@ -314,31 +343,62 @@ def train_variant(name: str, *, train_tokens: torch.Tensor, eval_tokens: torch.T
         "peak_vram_mb": peak_vram_mb,
         "tokens_per_sec": (steps * numseqs * total_len) / max(1e-9, elapsed),
     }
+    if frozen_result is not None:
+        row.update(
+            {
+                "frozen_loss": frozen_result.frozen_loss,
+                "frozen_gap": frozen_result.frozen_gap,
+                "frozen_token_acc": frozen_result.frozen_token_acc,
+                "frozen_exact_acc": frozen_result.frozen_exact_acc,
+                "frozen_tokens": frozen_result.frozen_tokens,
+                "frozen_examples": frozen_result.frozen_examples,
+                "frozen_passed": frozen_result.passed,
+                "frozen_reason": frozen_result.reason,
+            }
+        )
+    return row
 
 
 def write_header(path: Path, *, steps: int, seeds: list[int], variants: list[str],
-                 body_threshold: float, body_group_size: int, body_ste_mode: str) -> None:
+                 body_threshold: float, body_group_size: int, body_ste_mode: str,
+                 run_frozen_gate: bool = False, frozen_path: Path | None = None) -> None:
+    frozen_line = f"frozen_path={frozen_path.as_posix()}\n" if run_frozen_gate and frozen_path is not None else ""
+    frozen_cols = (
+        " frozen_loss | frozen_gap | frozen_token_acc | frozen_exact_acc | frozen_gate |"
+        if run_frozen_gate
+        else ""
+    )
+    frozen_rule = "|---:|---|---:|---:|---|" if run_frozen_gate else ""
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(
         "# Experiment 21 live results\n\n"
         f"steps={steps}, seeds={seeds}, variants={variants}\n"
         f"body: threshold={body_threshold}, group_size={body_group_size}, ste={body_ste_mode}\n"
+        f"{frozen_line}"
         "vocab: untied dense\n\n"
-        "| variant | seed | first_eval | final_eval | gap_vs_dense | last_train | params | tern% | packed_MB | compr | tok/s |\n"
-        "|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|\n",
+        f"| variant | seed | first_eval | final_eval | gap_vs_dense | last_train | params | tern% | packed_MB | compr | tok/s |{frozen_cols}\n"
+        f"|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|{frozen_rule}\n",
         encoding="utf-8",
     )
 
 
-def append_row(path: Path, row: dict, dense_eval: float | None) -> None:
+def append_row(path: Path, row: dict, dense_eval: float | None, *, include_frozen: bool = False) -> None:
     gap = row["final_eval"] - dense_eval if dense_eval is not None else float("nan")
     pct = 100.0 * row["params_ternary"] / row["params_total"] if row["params_total"] else 0.0
+    frozen_cols = ""
+    if include_frozen:
+        frozen_cols = (
+            f" {row['frozen_loss']:.4f} | "
+            f"{discipline.format_gap_with_noise(row['frozen_gap'], 0.0203)} | "
+            f"{row['frozen_token_acc']:.4f} | {row['frozen_exact_acc']:.4f} | "
+            f"{'pass' if row['frozen_passed'] else 'fail'} |"
+        )
     with path.open("a", encoding="utf-8") as fh:
         fh.write(
             f"| {row['variant']} | {row['seed']} | {row['first_eval']:.4f} | "
             f"{row['final_eval']:.4f} | {gap:+.4f} | {row['last_train_loss']:.4f} | "
             f"{row['params_total']:,} | {pct:.1f}% | {row['packed_disk_mb']:.2f} | "
-            f"{row['compression_x']:.2f}x | {row['tokens_per_sec']:.0f} |\n"
+            f"{row['compression_x']:.2f}x | {row['tokens_per_sec']:.0f} |{frozen_cols}\n"
         )
 
 
@@ -371,6 +431,20 @@ def main() -> int:
     parser.add_argument("--body-ste-mode", choices=["standard", "tequila"], default="tequila")
     parser.add_argument("--tokens-path", type=Path, default=Path(r"C:/Users/Dos/Documents/GRAM/data_io/data_laptop_hrm_slice/tokens_flat.npy"))
     parser.add_argument("--eval-fraction", type=float, default=0.2)
+    parser.add_argument("--run-frozen-gate", action="store_true")
+    parser.add_argument(
+        "--frozen-path",
+        type=Path,
+        default=REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl",
+    )
+    parser.add_argument(
+        "--tokenizer-path",
+        type=Path,
+        default=Path(r"C:/Users/Dos/Documents/GRAM/data_io/trained_tokenizers/bpe/tokenizer.json"),
+    )
+    parser.add_argument("--frozen-batch-size", type=int, default=32)
+    parser.add_argument("--max-frozen-prefix-tokens", type=int, default=96)
+    parser.add_argument("--max-frozen-answer-tokens", type=int, default=16)
     parser.add_argument("--append-md", type=Path, default=None)
     args = parser.parse_args()
 
@@ -398,6 +472,18 @@ def main() -> int:
     )
     print("vocab: untied dense")
 
+    frozen_sequences = None
+    if args.run_frozen_gate:
+        tokenizer = Tokenizer.from_file(str(_tokenizer_path(args.tokenizer_path)))
+        frozen_rows = discipline.load_frozen_arithmetic(args.frozen_path)
+        frozen_sequences = discipline.tokenize_frozen_arithmetic(
+            frozen_rows,
+            tokenizer,
+            max_prefix_tokens=args.max_frozen_prefix_tokens,
+            max_answer_tokens=args.max_frozen_answer_tokens,
+        )
+        print(f"frozen_rows={len(frozen_rows)}, frozen_sequences={len(frozen_sequences)}")
+
     if args.append_md is not None:
         write_header(
             args.append_md,
@@ -407,6 +493,8 @@ def main() -> int:
             body_threshold=args.body_threshold,
             body_group_size=args.body_group_size,
             body_ste_mode=args.body_ste_mode,
+            run_frozen_gate=args.run_frozen_gate,
+            frozen_path=args.frozen_path,
         )
 
     common = dict(
@@ -432,16 +520,23 @@ def main() -> int:
         body_threshold=args.body_threshold,
         body_scale_mode=args.body_scale_mode,
         body_ste_mode=args.body_ste_mode,
+        frozen_sequences=frozen_sequences,
+        frozen_batch_size=args.frozen_batch_size,
+        frozen_prefix_len=args.max_frozen_prefix_tokens,
+        frozen_answer_len=args.max_frozen_answer_tokens,
     )
 
     rows: list[dict] = []
     for seed in seeds:
         dense_eval = None
+        dense_frozen_loss = None
         for variant in variants:
-            row = train_variant(variant, seed=seed, **common)
+            row = train_variant(variant, seed=seed, frozen_baseline_loss=dense_frozen_loss, **common)
             rows.append(row)
             if variant == "dense":
                 dense_eval = row["final_eval"]
+                if args.run_frozen_gate:
+                    dense_frozen_loss = row["frozen_loss"]
             gap = row["final_eval"] - dense_eval if dense_eval is not None else float("nan")
             pct = 100.0 * row["params_ternary"] / row["params_total"] if row["params_total"] else 0.0
             print(
@@ -451,8 +546,16 @@ def main() -> int:
                 f"packed={row['packed_disk_mb']:.2f} MB, compr={row['compression_x']:.2f}x, "
                 f"peak={row['peak_vram_mb']:.1f} MB, tok/s={row['tokens_per_sec']:.0f}"
             )
+            if args.run_frozen_gate:
+                print(
+                    f"  frozen_loss={row['frozen_loss']:.4f}, "
+                    f"frozen_gap={discipline.format_gap_with_noise(row['frozen_gap'], 0.0203)}, "
+                    f"frozen_token_acc={row['frozen_token_acc']:.4f}, "
+                    f"frozen_exact_acc={row['frozen_exact_acc']:.4f}, "
+                    f"frozen_gate={'pass' if row['frozen_passed'] else 'fail'}"
+                )
             if args.append_md is not None:
-                append_row(args.append_md, row, dense_eval)
+                append_row(args.append_md, row, dense_eval, include_frozen=args.run_frozen_gate)
 
     print("summary:")
     for variant in variants:
@@ -467,6 +570,24 @@ def main() -> int:
             f"{variant}: runs={len(group)}, mean_final_eval={mean_eval:.4f}, "
             f"ternary={pct:.1f}%, mean_tok/s={mean_tok:.0f}, mean_peak_vram_mb={mean_vram:.1f}"
         )
+        if args.run_frozen_gate:
+            mean_frozen = sum(row["frozen_loss"] for row in group) / len(group)
+            baseline_frozen = [
+                row
+                for row in rows
+                if row["variant"] == "dense"
+                and row["seed"] in {item["seed"] for item in group}
+            ]
+            mean_base_frozen = (
+                sum(row["frozen_loss"] for row in baseline_frozen) / len(baseline_frozen)
+                if baseline_frozen
+                else float("nan")
+            )
+            mean_frozen_gap = mean_frozen - mean_base_frozen
+            print(
+                f"{variant}: mean_frozen_loss={mean_frozen:.4f}, "
+                f"mean_frozen_gap={discipline.format_gap_with_noise(mean_frozen_gap, 0.0203)}"
+            )
     return 0
 
 

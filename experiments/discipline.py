@@ -8,11 +8,15 @@ noise floor, and packed-size tradeoffs get a simple quality-per-MB score.
 from __future__ import annotations
 
 import argparse
+import json
 import math
 import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable
+
+import torch
+from torch import nn
 
 
 @dataclass(frozen=True)
@@ -74,7 +78,7 @@ def enrich_rows(rows: list[dict], *, noise: float) -> list[dict]:
         item = dict(row)
         gap = float(item.get("gap", item.get("gap_vs_dense_tied", float("nan"))))
         loss = float(item.get("final_eval", item.get("loss", float("nan"))))
-        packed = float(item.get("packed_MB", item.get("packed_mb", float("nan"))))
+        packed = float(item.get("packed_MB", item.get("packed_mb", item.get("packed_disk_mb", float("nan")))))
         item["gap_with_noise"] = format_gap_with_noise(gap, noise)
         item["quality_per_mb"] = quality_per_packed_mb(loss=loss, packed_mb=packed)
         enriched.append(item)
@@ -121,6 +125,217 @@ def dense_tied_5000_noise_floor(repo_root: Path) -> float:
 
 def assert_preregistered_readme(path: Path) -> DecisionRule:
     return extract_preregistered_decision_rule(path.read_text(encoding="utf-8"))
+
+
+@dataclass(frozen=True)
+class FrozenSequence:
+    """A frozen arithmetic sequence with prompt and answer tokens."""
+    prompt_tokens: list[int]
+    answer_tokens: list[int]
+
+
+@dataclass(frozen=True)
+class FrozenGateDecision:
+    """Pass/fail decision for the frozen arithmetic gate."""
+    passed: bool
+    reason: str
+
+
+@dataclass(frozen=True)
+class FrozenGateResult:
+    """Result from frozen answer-loss gate evaluation."""
+    frozen_loss: float
+    frozen_gap: float
+    frozen_token_acc: float
+    frozen_exact_acc: float
+    frozen_tokens: float
+    frozen_examples: float
+    passed: bool
+    reason: str
+
+
+def frozen_gate_decision(*, frozen_gap: float, noise_floor: float) -> FrozenGateDecision:
+    if abs(frozen_gap) <= noise_floor:
+        return FrozenGateDecision(
+            passed=True,
+            reason=f"frozen_gap {frozen_gap:+.4f} within noise floor +/- {noise_floor:.4f}",
+        )
+    return FrozenGateDecision(
+        passed=False,
+        reason=f"frozen_gap {frozen_gap:+.4f} exceeds noise floor +/- {noise_floor:.4f}",
+    )
+
+
+def load_frozen_arithmetic(path: Path) -> list[dict[str, str]]:
+    """Load frozen arithmetic evaluation file."""
+    rows = [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    if len(rows) != 200:
+        raise ValueError(f"expected 200 frozen arithmetic rows, got {len(rows)}")
+    ids = [row["id"] for row in rows]
+    if len(set(ids)) != len(ids):
+        raise ValueError("frozen arithmetic rows contain duplicate ids")
+    return rows
+
+
+def tokenize_frozen_arithmetic(
+    rows: list[dict[str, str]],
+    tokenizer,
+    *,
+    max_prefix_tokens: int,
+    max_answer_tokens: int,
+) -> list[FrozenSequence]:
+    """Tokenize frozen arithmetic rows into sequences."""
+    sequences: list[FrozenSequence] = []
+    for row in rows:
+        prompt_text = f"{row['prompt']}\nAnswer:"
+        answer_text = f" {row['answer']}"
+        prompt_tokens = tokenizer.encode(prompt_text, add_special_tokens=False).ids[-max_prefix_tokens:]
+        answer_tokens = tokenizer.encode(answer_text, add_special_tokens=False).ids[:max_answer_tokens]
+        if not prompt_tokens or not answer_tokens:
+            continue
+        sequences.append(FrozenSequence(prompt_tokens=list(prompt_tokens), answer_tokens=list(answer_tokens)))
+    if not sequences:
+        raise ValueError("no frozen arithmetic sequences survived tokenization")
+    return sequences
+
+
+def make_frozen_answer_batch(
+    sequences: list[FrozenSequence],
+    *,
+    device: torch.device,
+    vocab_size: int,
+    fixed_prefix_len: int | None = None,
+    fixed_answer_len: int | None = None,
+    pad_token_id: int = 0,
+) -> dict[str, torch.Tensor]:
+    """Create a batch for frozen answer-loss evaluation."""
+    from models.common import IGNORE_LABEL_ID
+
+    inputs: list[int] = []
+    labels: list[int] = []
+    prefix_lens: list[int] = []
+    causal_lens: list[int] = []
+    cu = [0]
+    position_ids: list[int] = []
+
+    for seq in sequences:
+        target_prefix_len = fixed_prefix_len or max(1, max(len(item.prompt_tokens) for item in sequences))
+        target_answer_len = fixed_answer_len or max(1, max(len(item.answer_tokens) for item in sequences))
+        prompt_raw = [min(max(0, int(tok)), vocab_size - 1) for tok in seq.prompt_tokens[-target_prefix_len:]]
+        answer_raw = [min(max(0, int(tok)), vocab_size - 1) for tok in seq.answer_tokens[:target_answer_len]]
+        prompt = [pad_token_id] * (target_prefix_len - len(prompt_raw)) + prompt_raw
+        answer = answer_raw + [pad_token_id] * (target_answer_len - len(answer_raw))
+        tokens = prompt + answer
+        seq_labels = [IGNORE_LABEL_ID] * len(tokens)
+        start = max(0, target_prefix_len - 1)
+        for i, token in enumerate(answer_raw):
+            seq_labels[start + i] = token
+
+        inputs.extend(tokens)
+        labels.extend(seq_labels)
+        prefix_lens.append(target_prefix_len)
+        causal_lens.append(target_answer_len)
+        position_ids.extend(range(len(tokens)))
+        cu.append(cu[-1] + len(tokens))
+
+    return {
+        "inputs": torch.tensor(inputs, dtype=torch.long, device=device),
+        "labels": torch.tensor(labels, dtype=torch.long, device=device),
+        "prefix_lens": torch.tensor(prefix_lens, dtype=torch.int32, device=device),
+        "causal_lens": torch.tensor(causal_lens, dtype=torch.int32, device=device),
+        "cu_seqlens": torch.tensor(cu, dtype=torch.int32, device=device),
+        "position_ids": torch.tensor(position_ids, dtype=torch.long, device=device),
+        "total_seqlen": torch.tensor(len(inputs), dtype=torch.int64, device=device),
+        "numseqs": torch.tensor(len(sequences), dtype=torch.int64, device=device),
+        "max_seqlen_prefix": torch.tensor(max(prefix_lens), dtype=torch.int64, device=device),
+        "max_seqlen_causal": torch.tensor(max(causal_lens), dtype=torch.int64, device=device),
+        "max_seqlen_all": torch.tensor(max(p + c for p, c in zip(prefix_lens, causal_lens)), dtype=torch.int64, device=device),
+    }
+
+
+@torch.no_grad()
+def evaluate_frozen_gate(
+    model: nn.Module,
+    *,
+    sequences: list[FrozenSequence],
+    baseline_loss: float | None,
+    device: torch.device,
+    vocab_size: int,
+    batch_size: int,
+    bp_min_steps: int,
+    fixed_prefix_len: int,
+    fixed_answer_len: int,
+    noise_floor: float,
+) -> FrozenGateResult:
+    """Evaluate model on frozen arithmetic and return pass/fail result.
+
+    Args:
+        model: The model to evaluate
+        sequences: Frozen arithmetic sequences
+        baseline_loss: Baseline frozen loss for gap calculation (None for baseline itself)
+        device: Device to run on
+        vocab_size: Vocabulary size
+        batch_size: Batch size for evaluation
+        bp_min_steps: Minimum backprop steps
+        fixed_prefix_len: Fixed prefix length
+        fixed_answer_len: Fixed answer length
+        noise_floor: Noise floor threshold for pass/fail
+
+    Returns:
+        FrozenGateResult with metrics and pass/fail status
+    """
+    model.eval()
+    total_loss = 0.0
+    total_valid = 0
+    total_correct = 0
+    total_exact = 0
+    total_exact_count = 0
+
+    for start in range(0, len(sequences), batch_size):
+        batch = make_frozen_answer_batch(
+            sequences[start : start + batch_size],
+            device=device,
+            vocab_size=vocab_size,
+            fixed_prefix_len=fixed_prefix_len,
+            fixed_answer_len=fixed_answer_len,
+        )
+        _carry, _loss, metrics = model(carry=None, batch=batch, bp_steps=bp_min_steps)
+        loss_sum, valid_count = metrics["loss"]
+        correct, _correct_count = metrics["accuracy"]
+        exact_correct, exact_count = metrics["exact_accuracy"]
+        total_loss += float(loss_sum.detach().cpu())
+        total_valid += int(valid_count.detach().cpu())
+        total_correct += int(correct.detach().cpu())
+        total_exact += int(exact_correct.detach().cpu())
+        total_exact_count += int(exact_count.detach().cpu())
+
+    model.train()
+
+    frozen_loss = total_loss / max(1, total_valid)
+    frozen_token_acc = total_correct / max(1, total_valid)
+    frozen_exact_acc = total_exact / max(1, total_exact_count)
+    frozen_gap = frozen_loss - baseline_loss if baseline_loss is not None else 0.0
+
+    # Pass/fail logic
+    if baseline_loss is None:
+        # This is the baseline itself
+        passed = True
+        reason = "baseline"
+    else:
+        decision = frozen_gate_decision(frozen_gap=frozen_gap, noise_floor=noise_floor)
+        passed = decision.passed
+        reason = decision.reason
+
+    return FrozenGateResult(
+        frozen_loss=frozen_loss,
+        frozen_gap=frozen_gap,
+        frozen_token_acc=frozen_token_acc,
+        frozen_exact_acc=frozen_exact_acc,
+        frozen_tokens=float(total_valid),
+        frozen_examples=float(total_exact_count),
+        passed=passed,
+        reason=reason,
+    )
 
 
 def main() -> int:
