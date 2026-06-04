@@ -1,0 +1,89 @@
+{
+  "config": {
+    "adversarial_only": false,
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "supported_only": true
+  },
+  "metrics": {
+    "counts": {
+      "fail_closed": 0,
+      "parsed_correct": 6,
+      "parsed_wrong": 0
+    },
+    "expected_counts": {
+      "expected_fail_closed": 0,
+      "expected_parsed_correct": 6
+    },
+    "fail_closed": 0.0,
+    "n": 6,
+    "outcomes": [
+      {
+        "case_id": "supported_modus_ponens",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1, and p0 holds, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_tollens",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1, and p1 does not hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_transitive_implication",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1. p1 implies p2. p0 holds. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_and_elimination",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Both p0 and p1 are true; does p0 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Either p0 or p1 is true, while p0 is false. does p1 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_contradiction_check",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true, while p0 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      }
+    ],
+    "parsed_correct": 1.0,
+    "parsed_wrong": 0.0,
+    "unexpected": []
+  },
+  "wall_s": 0.01
+}

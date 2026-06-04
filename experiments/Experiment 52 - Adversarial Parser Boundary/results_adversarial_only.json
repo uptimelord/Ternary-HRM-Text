@@ -1,0 +1,107 @@
+{
+  "config": {
+    "adversarial_only": true,
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "supported_only": false
+  },
+  "metrics": {
+    "counts": {
+      "fail_closed": 8,
+      "parsed_correct": 0,
+      "parsed_wrong": 0
+    },
+    "expected_counts": {
+      "expected_fail_closed": 8,
+      "expected_parsed_correct": 0
+    },
+    "fail_closed": 1.0,
+    "n": 8,
+    "outcomes": [
+      {
+        "case_id": "adversarial_modal_fact",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p0 might hold. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p0 might hold, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "adversarial_unless_clause",
+        "error": "unsupported logic prompt grammar: 'if p0 then p1. unless p2. p0 is true. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p1, unless p2. p0 holds. Does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "adversarial_not_false_equivocation",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p0 is not false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p0 is not false, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "adversarial_reported_claim",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p0 is true. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p0 holds. Does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "adversarial_uncertain_false_fact",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 might not hold. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p1 might not hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "adversarial_double_negative_fact",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 is not true. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p1 is not true, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "adversarial_or_uncertain_false",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true. p0 might be false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true, while p0 might be false. Does p1 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "adversarial_or_reported_false",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true. someone says p0 is false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "adversarial",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true. Someone says p0 is false. Does p1 hold?",
+        "rule_used": "or_elimination"
+      }
+    ],
+    "parsed_correct": 0.0,
+    "parsed_wrong": 0.0,
+    "unexpected": []
+  },
+  "wall_s": 0.01
+}

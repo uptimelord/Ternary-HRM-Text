@@ -216,6 +216,10 @@ Exp51 joins Exp49 and Exp50: noisy raw logic prompts are parsed into fields,
 the locked Phase 0 checkpoint supplies frozen prompt features from the noisy
 text, and Phase 1 ranks candidates before exact rule execution.
 
+Exp52 tests the parser safety boundary: supported controlled wording must parse
+exactly, unsupported adversarial wording must fail closed, and parsed-wrong
+cases are treated as the dangerous failure mode.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as
