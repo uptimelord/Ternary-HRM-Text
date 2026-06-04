@@ -220,6 +220,11 @@ Exp52 tests the parser safety boundary: supported controlled wording must parse
 exactly, unsupported adversarial wording must fail closed, and parsed-wrong
 cases are treated as the dangerous failure mode.
 
+Exp53 scales that parser boundary with generated supported and unsafe prompt
+variants across all tiny logic rule families. The locked result is 72/72
+supported parses correct, 80/80 unsafe prompts fail closed, and 0 parsed-wrong
+cases.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as

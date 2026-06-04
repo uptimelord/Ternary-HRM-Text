@@ -1,0 +1,774 @@
+{
+  "config": {
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "per_rule": 4,
+    "supported_only": false,
+    "unsafe_only": true
+  },
+  "metrics": {
+    "by_family": {
+      "unsafe_exception": {
+        "fail_closed": 24,
+        "parsed_correct": 0,
+        "parsed_wrong": 0
+      },
+      "unsafe_negation_trap": {
+        "fail_closed": 8,
+        "parsed_correct": 0,
+        "parsed_wrong": 0
+      },
+      "unsafe_reported_claim": {
+        "fail_closed": 24,
+        "parsed_correct": 0,
+        "parsed_wrong": 0
+      },
+      "unsafe_uncertainty": {
+        "fail_closed": 24,
+        "parsed_correct": 0,
+        "parsed_wrong": 0
+      }
+    },
+    "counts": {
+      "fail_closed": 80,
+      "parsed_correct": 0,
+      "parsed_wrong": 0
+    },
+    "fail_closed": 1.0,
+    "n": 80,
+    "outcomes": [
+      {
+        "case_id": "unsafe_modus_ponens_0_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p0 might hold. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p0 might hold, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_0_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p1. unless p_extra. p0 is true. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p1, unless p_extra. p0 holds. does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_0_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p0 is true. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p0 holds. does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_0_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p0 is not false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p0 is not false, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_1_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p0 might not hold. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p0 might not hold, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_1_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p1. unless p_extra. p0 is false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p1, unless p_extra. p0 does not hold. does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_1_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p0 is false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p0 does not hold. does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_1_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p0 is not true. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p0 is not true, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_2_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p0 might hold. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p0 might hold, does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_2_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p2. unless p_extra. p0 is true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p2, unless p_extra. p0 holds. does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_2_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. someone claims p0 is true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2. Someone claims p0 holds. does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_2_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p0 is not false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p0 is not false, does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_3_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p0 might not hold. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p0 might not hold, does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_3_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p2. unless p_extra. p0 is false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p2, unless p_extra. p0 does not hold. does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_3_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. someone claims p0 is false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2. Someone claims p0 does not hold. does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_ponens_3_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p0 is not true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p0 is not true, does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_0_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 might not hold. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p1 might not hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_0_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p1. unless p_extra. p1 is false. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p1, unless p_extra. p1 does not hold. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_0_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p1 is false. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p1 does not hold. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_0_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 is not true. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p1 is not true, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_1_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 might hold. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p1 might hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_1_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p1. unless p_extra. p1 is true. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p1, unless p_extra. p1 holds. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_1_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p1 is true. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p1 holds. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_1_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 is not false. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1, and p1 is not false, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_2_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p2 might not hold. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p2 might not hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_2_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p2. unless p_extra. p2 is false. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p2, unless p_extra. p2 does not hold. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_2_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. someone claims p2 is false. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2. Someone claims p2 does not hold. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_2_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p2 is not true. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p2 is not true, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_3_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p2 might hold. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p2 might hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_3_1",
+        "error": "unsupported logic prompt grammar: 'if p0 then p2. unless p_extra. p2 is true. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "If p0 then p2, unless p_extra. p2 holds. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_3_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. someone claims p2 is true. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2. Someone claims p2 holds. does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_modus_tollens_3_3",
+        "error": "unsupported logic prompt grammar: 'p0 implies p2. p2 is not false. is p0 false?'",
+        "expected": "fail_closed",
+        "family": "unsafe_negation_trap",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p2, and p2 is not false, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_0_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 possibly implies p2. p0 is true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 possibly implies p2. p0 holds. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_0_1",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 implies p2. unless p_extra. p0 is true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 implies p2, unless p_extra. p0 holds. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_0_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p1 implies p2. p0 is true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p1 implies p2. p0 holds. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_1_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 possibly implies p2. p0 is false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 possibly implies p2. p0 does not hold. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_1_1",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 implies p2. unless p_extra. p0 is false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 implies p2, unless p_extra. p0 does not hold. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_1_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p1 implies p2. p0 is false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p1 implies p2. p0 does not hold. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_2_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 possibly implies p3. p0 is true. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 possibly implies p3. p0 holds. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_2_1",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 implies p3. unless p_extra. p0 is true. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 implies p3, unless p_extra. p0 holds. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_2_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p1 implies p3. p0 is true. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p1 implies p3. p0 holds. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_3_0",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 possibly implies p3. p0 is false. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 possibly implies p3. p0 does not hold. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_3_1",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. p1 implies p3. unless p_extra. p0 is false. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. p1 implies p3, unless p_extra. p0 does not hold. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_transitive_implication_3_2",
+        "error": "unsupported logic prompt grammar: 'p0 implies p1. someone claims p1 implies p3. p0 is false. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Given that p0 implies p1. Someone claims p1 implies p3. p0 does not hold. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "unsafe_and_elimination_0_0",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 might be true. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 might be true; does p0 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_0_1",
+        "error": "unsupported logic prompt grammar: 'someone claims both p0 and p1 are true. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone claims both p0 and p1 are true; does p0 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_0_2",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 are true unless p_extra. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 are true unless p_extra; does p0 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_1_0",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 might be true. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 might be true; does p1 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_1_1",
+        "error": "unsupported logic prompt grammar: 'someone claims both p0 and p1 are true. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone claims both p0 and p1 are true; does p1 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_1_2",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 are true unless p_extra. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 are true unless p_extra; does p1 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_2_0",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 might be true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 might be true; does p2 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_2_1",
+        "error": "unsupported logic prompt grammar: 'someone claims both p0 and p1 are true. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone claims both p0 and p1 are true; does p2 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_2_2",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 are true unless p_extra. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 are true unless p_extra; does p2 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_3_0",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 might be true. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 might be true; does p3 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_3_1",
+        "error": "unsupported logic prompt grammar: 'someone claims both p0 and p1 are true. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone claims both p0 and p1 are true; does p3 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_and_elimination_3_2",
+        "error": "unsupported logic prompt grammar: 'both p0 and p1 are true unless p_extra. is p3 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Both p0 and p1 are true unless p_extra; does p3 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_0_0",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true. p0 might be false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true, while p0 might be false. does p1 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_0_1",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true. someone says p0 is false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true. Someone says p0 is false. does p1 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_0_2",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true unless p_extra. p0 is false. is p1 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true unless p_extra. p0 is false. does p1 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_1_0",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true. p0 might be false. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true, while p0 might be false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_1_1",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true. someone says p0 is false. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true. Someone says p0 is false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_1_2",
+        "error": "unsupported logic prompt grammar: 'either p0 or p1 is true unless p_extra. p0 is false. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p1 is true unless p_extra. p0 is false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_2_0",
+        "error": "unsupported logic prompt grammar: 'either p0 or p2 is true. p0 might be false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p2 is true, while p0 might be false. does p2 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_2_1",
+        "error": "unsupported logic prompt grammar: 'either p0 or p2 is true. someone says p0 is false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p2 is true. Someone says p0 is false. does p2 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_2_2",
+        "error": "unsupported logic prompt grammar: 'either p0 or p2 is true unless p_extra. p0 is false. is p2 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p2 is true unless p_extra. p0 is false. does p2 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_3_0",
+        "error": "unsupported logic prompt grammar: 'either p0 or p2 is true. p0 might be false. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p2 is true, while p0 might be false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_3_1",
+        "error": "unsupported logic prompt grammar: 'either p0 or p2 is true. someone says p0 is false. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p2 is true. Someone says p0 is false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_or_elimination_3_2",
+        "error": "unsupported logic prompt grammar: 'either p0 or p2 is true unless p_extra. p0 is false. is p0 true?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "Either p0 or p2 is true unless p_extra. p0 is false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_0_0",
+        "error": "unsupported logic prompt grammar: 'p0 might be true. p0 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "p0 might be true, while p0 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_0_1",
+        "error": "unsupported logic prompt grammar: 'someone says p0 is true. p0 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone says p0 is true, while p0 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_0_2",
+        "error": "unsupported logic prompt grammar: 'p0 is true unless p_extra. p0 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "p0 is true unless p_extra, while p0 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_1_0",
+        "error": "unsupported logic prompt grammar: 'p0 might be true. p1 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "p0 might be true, while p1 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_1_1",
+        "error": "unsupported logic prompt grammar: 'someone says p0 is true. p1 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone says p0 is true, while p1 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_1_2",
+        "error": "unsupported logic prompt grammar: 'p0 is true unless p_extra. p1 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "p0 is true unless p_extra, while p1 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_2_0",
+        "error": "unsupported logic prompt grammar: 'p0 might be true. p2 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "p0 might be true, while p2 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_2_1",
+        "error": "unsupported logic prompt grammar: 'someone says p0 is true. p2 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone says p0 is true, while p2 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_2_2",
+        "error": "unsupported logic prompt grammar: 'p0 is true unless p_extra. p2 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "p0 is true unless p_extra, while p2 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_3_0",
+        "error": "unsupported logic prompt grammar: 'p0 might be true. p3 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_uncertainty",
+        "kind": "fail_closed",
+        "prompt": "p0 might be true, while p3 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_3_1",
+        "error": "unsupported logic prompt grammar: 'someone says p0 is true. p3 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_reported_claim",
+        "kind": "fail_closed",
+        "prompt": "Someone says p0 is true, while p3 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "unsafe_contradiction_check_3_2",
+        "error": "unsupported logic prompt grammar: 'p0 is true unless p_extra. p3 is false. is there a contradiction?'",
+        "expected": "fail_closed",
+        "family": "unsafe_exception",
+        "kind": "fail_closed",
+        "prompt": "p0 is true unless p_extra, while p3 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      }
+    ],
+    "parsed_correct": 0.0,
+    "parsed_wrong": 0.0,
+    "unexpected": []
+  },
+  "wall_s": 0.02
+}

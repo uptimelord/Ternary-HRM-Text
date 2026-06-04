@@ -1,0 +1,697 @@
+{
+  "config": {
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "per_rule": 4,
+    "supported_only": true,
+    "unsafe_only": false
+  },
+  "metrics": {
+    "by_family": {
+      "supported_strict": {
+        "fail_closed": 0,
+        "parsed_correct": 24,
+        "parsed_wrong": 0
+      },
+      "supported_surface": {
+        "fail_closed": 0,
+        "parsed_correct": 24,
+        "parsed_wrong": 0
+      },
+      "supported_synonym": {
+        "fail_closed": 0,
+        "parsed_correct": 24,
+        "parsed_wrong": 0
+      }
+    },
+    "counts": {
+      "fail_closed": 0,
+      "parsed_correct": 72,
+      "parsed_wrong": 0
+    },
+    "fail_closed": 0.0,
+    "n": 72,
+    "outcomes": [
+      {
+        "case_id": "supported_modus_ponens_0_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. p0 is true. Is p1 true?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_0_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. p0 is true. Is p1 true? Give true or false.",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_0_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1, and p0 holds, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_1_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. p0 is false. Is p1 true?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_1_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. p0 is false. Is p1 true? Give true or false.",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_1_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1, and p0 does not hold, does p1 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_2_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p2. p0 is true. Is p2 true?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_2_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p2. p0 is true. Is p2 true? Give true or false.",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_2_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p2, and p0 holds, does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_3_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p2. p0 is false. Is p2 true?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_3_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p2. p0 is false. Is p2 true? Give true or false.",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_ponens_3_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p2, and p0 does not hold, does p2 hold?",
+        "rule_used": "modus_ponens"
+      },
+      {
+        "case_id": "supported_modus_tollens_0_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. p1 is false. Is p0 false?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_0_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. p1 is false. Is p0 false? Give true or false.",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_0_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1, and p1 does not hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_1_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. p1 is true. Is p0 false?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_1_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. p1 is true. Is p0 false? Give true or false.",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_1_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1, and p1 holds, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_2_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p2. p2 is false. Is p0 false?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_2_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p2. p2 is false. Is p0 false? Give true or false.",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_2_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p2, and p2 does not hold, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_3_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p2. p2 is true. Is p0 false?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_3_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p2. p2 is true. Is p0 false? Give true or false.",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_modus_tollens_3_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p2, and p2 holds, does p0 not hold?",
+        "rule_used": "modus_tollens"
+      },
+      {
+        "case_id": "supported_transitive_implication_0_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. If p1 then p2. p0 is true. Is p2 true?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_0_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. If p1 then p2. p0 is true. Is p2 true? Give true or false.",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_0_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1. p1 implies p2. p0 holds. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_1_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. If p1 then p2. p0 is false. Is p2 true?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_1_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. If p1 then p2. p0 is false. Is p2 true? Give true or false.",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_1_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1. p1 implies p2. p0 does not hold. does p2 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_2_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. If p1 then p3. p0 is true. Is p3 true?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_2_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. If p1 then p3. p0 is true. Is p3 true? Give true or false.",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_2_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1. p1 implies p3. p0 holds. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_3_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "If p0 then p1. If p1 then p3. p0 is false. Is p3 true?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_3_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: If p0 then p1. If p1 then p3. p0 is false. Is p3 true? Give true or false.",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_transitive_implication_3_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Given that p0 implies p1. p1 implies p3. p0 does not hold. does p3 hold?",
+        "rule_used": "transitive_implication"
+      },
+      {
+        "case_id": "supported_and_elimination_0_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 and p1 are true. Is p0 true?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_0_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 and p1 are true. Is p0 true? Give true or false.",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_0_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Both p0 and p1 are true; does p0 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_1_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 and p1 are true. Is p1 true?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_1_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 and p1 are true. Is p1 true? Give true or false.",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_1_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Both p0 and p1 are true; does p1 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_2_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 and p1 are true. Is p2 true?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_2_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 and p1 are true. Is p2 true? Give true or false.",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_2_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Both p0 and p1 are true; does p2 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_3_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 and p1 are true. Is p3 true?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_3_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 and p1 are true. Is p3 true? Give true or false.",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_and_elimination_3_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Both p0 and p1 are true; does p3 hold?",
+        "rule_used": "and_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_0_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 or p1 is true. p0 is false. Is p1 true?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_0_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 or p1 is true. p0 is false. Is p1 true? Give true or false.",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_0_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Either p0 or p1 is true, while p0 is false. does p1 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_1_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 or p1 is true. p0 is false. Is p0 true?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_1_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 or p1 is true. p0 is false. Is p0 true? Give true or false.",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_1_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Either p0 or p1 is true, while p0 is false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_2_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 or p2 is true. p0 is false. Is p2 true?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_2_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 or p2 is true. p0 is false. Is p2 true? Give true or false.",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_2_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Either p0 or p2 is true, while p0 is false. does p2 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_3_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 or p2 is true. p0 is false. Is p0 true?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_3_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 or p2 is true. p0 is false. Is p0 true? Give true or false.",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_or_elimination_3_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "Either p0 or p2 is true, while p0 is false. does p0 hold?",
+        "rule_used": "or_elimination"
+      },
+      {
+        "case_id": "supported_contradiction_check_0_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true. p0 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_0_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 is true. p0 is false. Is there a contradiction? Give true or false.",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_0_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true, while p0 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_1_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true. p1 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_1_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 is true. p1 is false. Is there a contradiction? Give true or false.",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_1_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true, while p1 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_2_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true. p2 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_2_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 is true. p2 is false. Is there a contradiction? Give true or false.",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_2_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true, while p2 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_3_strict",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_strict",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true. p3 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_3_surface",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_surface",
+        "kind": "parsed_correct",
+        "prompt": "Please decide using the stated facts only: p0 is true. p3 is false. Is there a contradiction? Give true or false.",
+        "rule_used": "contradiction_check"
+      },
+      {
+        "case_id": "supported_contradiction_check_3_synonym",
+        "error": "",
+        "expected": "parsed_correct",
+        "family": "supported_synonym",
+        "kind": "parsed_correct",
+        "prompt": "p0 is true, while p3 is false. Is there a contradiction?",
+        "rule_used": "contradiction_check"
+      }
+    ],
+    "parsed_correct": 1.0,
+    "parsed_wrong": 0.0,
+    "unexpected": []
+  },
+  "wall_s": 0.02
+}
