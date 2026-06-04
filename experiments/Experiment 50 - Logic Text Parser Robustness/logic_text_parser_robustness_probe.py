@@ -176,8 +176,7 @@ def _synonym_prompt(row: dict[str, Any]) -> str:
         false_predicate = next(predicate for predicate, truth in facts.items() if truth is False)
         return f"Either {left} or {right} is true, while {false_predicate} is false. {query_text}"
     if rule == "contradiction_check":
-        true_predicate = next(predicate for predicate, truth in facts.items() if truth is True)
-        false_predicate = next(predicate for predicate, truth in facts.items() if truth is False)
+        true_predicate, false_predicate = predicates[:2]
         return f"{true_predicate} is true, while {false_predicate} is false. Is there a contradiction?"
     raise LogicParseError(f"unsupported rule for synonym noise: {rule!r}")
 

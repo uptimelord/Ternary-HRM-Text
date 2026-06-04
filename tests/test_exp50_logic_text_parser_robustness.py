@@ -32,6 +32,15 @@ def test_synonym_noise_changes_prompt_but_preserves_fields_under_robust_parse():
         assert probe.canonical_logic_fields(parsed) == probe.canonical_logic_fields(original), rule_name
 
 
+def test_synonym_noise_handles_same_predicate_contradiction():
+    row = next(row for row in probe.generate_logic_rows(n_predicates=4) if row["variant"] == "contradiction_true")
+
+    noisy = probe.make_noisy_logic_row(row, style="synonym")
+    parsed = probe.parse_logic_text(noisy["prompt"])
+
+    assert probe.canonical_logic_fields(parsed) == probe.canonical_logic_fields(row)
+
+
 def test_parser_metrics_surface_noise_separates_strict_from_robust():
     rows = probe.generate_logic_rows(n_predicates=4)[:12]
     noisy_rows = [probe.make_noisy_logic_row(row, style="surface") for row in rows]

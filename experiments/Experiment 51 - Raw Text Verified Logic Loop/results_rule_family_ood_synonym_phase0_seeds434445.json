@@ -1,0 +1,323 @@
+{
+  "config": {
+    "base_checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_first_pretrain\\h256_steps50000_seed1_exportcalib3000\\checkpoint_fp32.pt",
+    "batch_size": 64,
+    "device": "cuda",
+    "feature_batch_size": 16,
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "noise_style": "synonym",
+    "phase0_feature_mode": "checkpoint",
+    "phase0_feature_source": "locked_phase0_checkpoint",
+    "prompt_feature_dim": 256,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "split_mode": "rule-family-ood",
+    "steps": 300,
+    "tokenizer_path": "C:\\Users\\Dos\\Documents\\GRAM\\data_io\\trained_tokenizers\\bpe\\tokenizer.json",
+    "width": 48
+  },
+  "metrics": {
+    "robust_parser_oracle_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "field_match": 1.0,
+      "invalid": 0.0,
+      "n": 224,
+      "parse_success": 1.0
+    },
+    "robust_parser_phase0_frozen_adapter_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "field_match": 1.0,
+      "invalid": 0.0,
+      "n": 224,
+      "parse_success": 1.0
+    },
+    "robust_parser_semantic_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "field_match": 1.0,
+      "invalid": 0.0,
+      "n": 224,
+      "parse_success": 1.0
+    },
+    "strict_parser_semantic_ranker": {
+      "acc": 0.0,
+      "acc_std": 0.0,
+      "field_match": 0.0,
+      "invalid": 1.0,
+      "n": 224,
+      "parse_success": 0.0
+    }
+  },
+  "parser": {
+    "robust": {
+      "examples": [],
+      "field_match": 1.0,
+      "invalid": 0.0,
+      "n": 224,
+      "parse_success": 1.0
+    },
+    "strict": {
+      "examples": [
+        {
+          "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 holds, does p1 hold?'",
+          "id": "logic_00001",
+          "prompt": "Given that p0 implies p1, and p0 holds, does p1 hold?"
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 does not hold, does p1 hold?'",
+          "id": "logic_00002",
+          "prompt": "Given that p0 implies p1, and p0 does not hold, does p1 hold?"
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p1 hold?'",
+          "id": "logic_00007",
+          "prompt": "Either p0 or p1 is true, while p0 is false. does p1 hold?"
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p0 hold?'",
+          "id": "logic_00008",
+          "prompt": "Either p0 or p1 is true, while p0 is false. does p0 hold?"
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Given that p0 implies p2, and p0 holds, does p2 hold?'",
+          "id": "logic_00028",
+          "prompt": "Given that p0 implies p2, and p0 holds, does p2 hold?"
+        }
+      ],
+      "field_match": 0.0,
+      "invalid": 1.0,
+      "n": 224,
+      "parse_success": 0.0
+    }
+  },
+  "results": [
+    {
+      "robust_parser_oracle_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "robust_parser_phase0_frozen_adapter_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "robust_parser_semantic_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "seed": 43,
+      "strict_parser_semantic_ranker": {
+        "acc": 0.0,
+        "examples": [
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 holds, does p1 hold?'",
+            "id": "logic_00001",
+            "prompt": "Given that p0 implies p1, and p0 holds, does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 does not hold, does p1 hold?'",
+            "id": "logic_00002",
+            "prompt": "Given that p0 implies p1, and p0 does not hold, does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p1 hold?'",
+            "id": "logic_00007",
+            "prompt": "Either p0 or p1 is true, while p0 is false. does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p0 hold?'",
+            "id": "logic_00008",
+            "prompt": "Either p0 or p1 is true, while p0 is false. does p0 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p2, and p0 holds, does p2 hold?'",
+            "id": "logic_00028",
+            "prompt": "Given that p0 implies p2, and p0 holds, does p2 hold?"
+          }
+        ],
+        "field_match": 0.0,
+        "invalid": 1.0,
+        "n": 224,
+        "parse_success": 0.0
+      }
+    },
+    {
+      "robust_parser_oracle_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "robust_parser_phase0_frozen_adapter_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "robust_parser_semantic_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "seed": 44,
+      "strict_parser_semantic_ranker": {
+        "acc": 0.0,
+        "examples": [
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 holds, does p1 hold?'",
+            "id": "logic_00001",
+            "prompt": "Given that p0 implies p1, and p0 holds, does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 does not hold, does p1 hold?'",
+            "id": "logic_00002",
+            "prompt": "Given that p0 implies p1, and p0 does not hold, does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p1 hold?'",
+            "id": "logic_00007",
+            "prompt": "Either p0 or p1 is true, while p0 is false. does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p0 hold?'",
+            "id": "logic_00008",
+            "prompt": "Either p0 or p1 is true, while p0 is false. does p0 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p2, and p0 holds, does p2 hold?'",
+            "id": "logic_00028",
+            "prompt": "Given that p0 implies p2, and p0 holds, does p2 hold?"
+          }
+        ],
+        "field_match": 0.0,
+        "invalid": 1.0,
+        "n": 224,
+        "parse_success": 0.0
+      }
+    },
+    {
+      "robust_parser_oracle_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "robust_parser_phase0_frozen_adapter_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "robust_parser_semantic_ranker": {
+        "acc": 1.0,
+        "examples": [],
+        "field_match": 1.0,
+        "invalid": 0.0,
+        "n": 224,
+        "parse_success": 1.0
+      },
+      "seed": 45,
+      "strict_parser_semantic_ranker": {
+        "acc": 0.0,
+        "examples": [
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 holds, does p1 hold?'",
+            "id": "logic_00001",
+            "prompt": "Given that p0 implies p1, and p0 holds, does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p1, and p0 does not hold, does p1 hold?'",
+            "id": "logic_00002",
+            "prompt": "Given that p0 implies p1, and p0 does not hold, does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p1 hold?'",
+            "id": "logic_00007",
+            "prompt": "Either p0 or p1 is true, while p0 is false. does p1 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Either p0 or p1 is true, while p0 is false. does p0 hold?'",
+            "id": "logic_00008",
+            "prompt": "Either p0 or p1 is true, while p0 is false. does p0 hold?"
+          },
+          {
+            "error": "unsupported logic prompt grammar: 'Given that p0 implies p2, and p0 holds, does p2 hold?'",
+            "id": "logic_00028",
+            "prompt": "Given that p0 implies p2, and p0 holds, does p2 hold?"
+          }
+        ],
+        "field_match": 0.0,
+        "invalid": 1.0,
+        "n": 224,
+        "parse_success": 0.0
+      }
+    }
+  ],
+  "split": {
+    "eval_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "eval_variants": [
+      "mp_false",
+      "mp_true",
+      "or_false",
+      "or_true"
+    ],
+    "n_eval": 224,
+    "n_train": 1296,
+    "train_rules": [
+      "and_elimination",
+      "contradiction_check",
+      "modus_tollens",
+      "transitive_implication"
+    ],
+    "train_variants": [
+      "and_false",
+      "and_true",
+      "contradiction_false",
+      "contradiction_true",
+      "mt_false",
+      "mt_true",
+      "transitive_false",
+      "transitive_true"
+    ]
+  },
+  "wall_s": 57.46
+}
