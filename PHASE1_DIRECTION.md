@@ -208,6 +208,10 @@ Exp49 adds the first Phase 0 -> Phase 1 adapter socket: the locked h256 Phase 0
 checkpoint stays frozen, emits prompt features, and a tiny Phase 1 ranker head
 selects structured logic rule candidates before exact rule execution.
 
+Exp50 isolates the text-to-structure boundary: controlled noisy logic prompts
+are normalized into the strict grammar, then checked against exact field
+recovery before the verifier/ranker path sees them.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as

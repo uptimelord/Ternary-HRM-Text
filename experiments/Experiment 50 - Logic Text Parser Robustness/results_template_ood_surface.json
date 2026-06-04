@@ -1,0 +1,94 @@
+{
+  "config": {
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "noise_style": "surface",
+    "split_mode": "template-ood"
+  },
+  "metrics": {
+    "robust_parser": {
+      "exact_rule_acc": 1.0,
+      "examples": [],
+      "field_match": 1.0,
+      "invalid": 0.0,
+      "n": 728,
+      "parse_success": 1.0
+    },
+    "strict_parser": {
+      "exact_rule_acc": 0.0,
+      "examples": [
+        {
+          "error": "unsupported logic prompt grammar: 'Please decide using the stated facts only: If p0 then p1. p0 is false. Is p1 true? Give true or false.'",
+          "id": "logic_00002",
+          "prompt": "Please decide using the stated facts only: If p0 then p1. p0 is false. Is p1 true? Give true or false."
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Please decide using the stated facts only: If p0 then p1. If p1 then p2. p0 is false. Is p2 true? Give true or false.'",
+          "id": "logic_00011",
+          "prompt": "Please decide using the stated facts only: If p0 then p1. If p1 then p2. p0 is false. Is p2 true? Give true or false."
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Please decide using the stated facts only: p0 and p1 are true. Is p2 true? Give true or false.'",
+          "id": "logic_00012",
+          "prompt": "Please decide using the stated facts only: p0 and p1 are true. Is p2 true? Give true or false."
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Please decide using the stated facts only: If p0 then p1. If p1 then p3. p0 is false. Is p3 true? Give true or false.'",
+          "id": "logic_00014",
+          "prompt": "Please decide using the stated facts only: If p0 then p1. If p1 then p3. p0 is false. Is p3 true? Give true or false."
+        },
+        {
+          "error": "unsupported logic prompt grammar: 'Please decide using the stated facts only: p0 and p1 are true. Is p3 true? Give true or false.'",
+          "id": "logic_00015",
+          "prompt": "Please decide using the stated facts only: p0 and p1 are true. Is p3 true? Give true or false."
+        }
+      ],
+      "field_match": 0.0,
+      "invalid": 1.0,
+      "n": 728,
+      "parse_success": 0.0
+    }
+  },
+  "split": {
+    "eval_rules": [
+      "and_elimination",
+      "modus_ponens",
+      "transitive_implication"
+    ],
+    "eval_variants": [
+      "and_false",
+      "mp_false",
+      "transitive_false"
+    ],
+    "n_eval": 728,
+    "n_train": 792,
+    "train_rules": [
+      "and_elimination",
+      "contradiction_check",
+      "modus_ponens",
+      "modus_tollens",
+      "or_elimination",
+      "transitive_implication"
+    ],
+    "train_variants": [
+      "and_true",
+      "contradiction_false",
+      "contradiction_true",
+      "mp_true",
+      "mt_false",
+      "mt_true",
+      "or_false",
+      "or_true",
+      "transitive_true"
+    ]
+  },
+  "wall_s": 0.06
+}
