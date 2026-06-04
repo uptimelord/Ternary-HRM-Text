@@ -1,0 +1,156 @@
+{
+  "config": {
+    "batch_size": 64,
+    "device": "cuda",
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "noisy_eval": true,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "split_mode": "template-ood",
+    "steps": 300,
+    "width": 48
+  },
+  "metrics": {
+    "bow_candidate_ranker": {
+      "acc": 0.9404761904761905,
+      "acc_std": 0.02460627993139997,
+      "invalid": 0.0,
+      "n": 728
+    },
+    "oracle_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 728
+    },
+    "semantic_candidate_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 728
+    },
+    "semantic_oracle_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 728
+    }
+  },
+  "results": [
+    {
+      "bow_candidate_ranker": {
+        "acc": 0.9752747252747253,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "seed": 43,
+      "semantic_candidate_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "semantic_oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      }
+    },
+    {
+      "bow_candidate_ranker": {
+        "acc": 0.9230769230769231,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "seed": 44,
+      "semantic_candidate_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "semantic_oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      }
+    },
+    {
+      "bow_candidate_ranker": {
+        "acc": 0.9230769230769231,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "seed": 45,
+      "semantic_candidate_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      },
+      "semantic_oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 728
+      }
+    }
+  ],
+  "split": {
+    "eval_rules": [
+      "and_elimination",
+      "modus_ponens",
+      "transitive_implication"
+    ],
+    "eval_variants": [
+      "and_false",
+      "mp_false",
+      "transitive_false"
+    ],
+    "n_eval": 728,
+    "n_train": 792,
+    "train_rules": [
+      "and_elimination",
+      "contradiction_check",
+      "modus_ponens",
+      "modus_tollens",
+      "or_elimination",
+      "transitive_implication"
+    ],
+    "train_variants": [
+      "and_true",
+      "contradiction_false",
+      "contradiction_true",
+      "mp_true",
+      "mt_false",
+      "mt_true",
+      "or_false",
+      "or_true",
+      "transitive_true"
+    ]
+  },
+  "wall_s": 53.43
+}
