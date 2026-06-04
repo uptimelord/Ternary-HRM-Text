@@ -1,0 +1,180 @@
+{
+  "config": {
+    "base_checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_first_pretrain\\h256_steps50000_seed1_exportcalib3000\\checkpoint_fp32.pt",
+    "batch_size": 64,
+    "device": "cuda",
+    "feature_batch_size": 16,
+    "held_out_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "held_out_variants": [
+      "mp_false",
+      "transitive_false",
+      "and_false"
+    ],
+    "n_predicates": 8,
+    "noisy_eval": true,
+    "phase0_feature_mode": "checkpoint",
+    "phase0_feature_source": "locked_phase0_checkpoint",
+    "prompt_feature_dim": 256,
+    "seeds": [
+      43,
+      44,
+      45
+    ],
+    "split_mode": "rule-family-ood",
+    "steps": 300,
+    "tokenizer_path": "C:\\Users\\Dos\\Documents\\GRAM\\data_io\\trained_tokenizers\\bpe\\tokenizer.json",
+    "width": 48
+  },
+  "metrics": {
+    "bow_candidate_ranker": {
+      "acc": 0.5,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 224
+    },
+    "oracle_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 224
+    },
+    "phase0_frozen_adapter_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 224
+    },
+    "semantic_candidate_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 224
+    },
+    "semantic_oracle_ranker": {
+      "acc": 1.0,
+      "acc_std": 0.0,
+      "invalid": 0.0,
+      "n": 224
+    }
+  },
+  "results": [
+    {
+      "bow_candidate_ranker": {
+        "acc": 0.5,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "phase0_frozen_adapter_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "seed": 43,
+      "semantic_candidate_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "semantic_oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      }
+    },
+    {
+      "bow_candidate_ranker": {
+        "acc": 0.5,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "phase0_frozen_adapter_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "seed": 44,
+      "semantic_candidate_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "semantic_oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      }
+    },
+    {
+      "bow_candidate_ranker": {
+        "acc": 0.5,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "phase0_frozen_adapter_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "seed": 45,
+      "semantic_candidate_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      },
+      "semantic_oracle_ranker": {
+        "acc": 1.0,
+        "invalid": 0.0,
+        "n": 224
+      }
+    }
+  ],
+  "split": {
+    "eval_rules": [
+      "modus_ponens",
+      "or_elimination"
+    ],
+    "eval_variants": [
+      "mp_false",
+      "mp_true",
+      "or_false",
+      "or_true"
+    ],
+    "n_eval": 224,
+    "n_train": 1296,
+    "train_rules": [
+      "and_elimination",
+      "contradiction_check",
+      "modus_tollens",
+      "transitive_implication"
+    ],
+    "train_variants": [
+      "and_false",
+      "and_true",
+      "contradiction_false",
+      "contradiction_true",
+      "mt_false",
+      "mt_true",
+      "transitive_false",
+      "transitive_true"
+    ]
+  },
+  "wall_s": 84.85
+}

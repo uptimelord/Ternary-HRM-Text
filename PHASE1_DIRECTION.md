@@ -204,6 +204,10 @@ Soft checks are advisory only. Repetition/collapse and answer-form signals may
 fill `score` and `evidence`, but they must never decide `passed`; exact truth
 gates remain the only hard pass/fail path.
 
+Exp49 adds the first Phase 0 -> Phase 1 adapter socket: the locked h256 Phase 0
+checkpoint stays frozen, emits prompt features, and a tiny Phase 1 ranker head
+selects structured logic rule candidates before exact rule execution.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as
