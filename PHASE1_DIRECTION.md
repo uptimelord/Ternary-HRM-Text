@@ -230,6 +230,11 @@ lattice over `[-9999, 9999]`, recurrent keep logits, threshold projection, and
 singleton-or-abstain solve. Seed54/500 steps did not learn arithmetic
 (frozen eval200 argmax 0.5%, solver coverage 0%), so this is no promote.
 
+Exp55 moves arithmetic structure into the lattice: two-digit addition cells are
+ones/carry0/tens/carry1/hundreds, with monotone candidate elimination and CLS
+conflict. The faithful on-policy run is a safe miss; the top-state ablation
+learns frozen-add argmax 64% but solver returns wrong singletons, so no promote.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as

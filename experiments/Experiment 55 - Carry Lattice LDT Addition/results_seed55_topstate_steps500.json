@@ -1,0 +1,132 @@
+{
+  "config": {
+    "batch_size": 128,
+    "branch": false,
+    "candidate_counts": [
+      10,
+      2,
+      10,
+      2,
+      2
+    ],
+    "cells": [
+      "ones",
+      "carry0",
+      "tens",
+      "carry1",
+      "hundreds"
+    ],
+    "cls_threshold": 0.6,
+    "heads": 4,
+    "internal_iters": 16,
+    "layers": 2,
+    "max_solve_steps": 4,
+    "on_policy_steps": 0,
+    "seed": 55,
+    "smoke": false,
+    "steps": 500,
+    "threshold": 0.1,
+    "width": 64
+  },
+  "report": {
+    "frozen_add": {
+      "argmax": {
+        "acc": 0.64,
+        "invalid": 0.0,
+        "n": 50
+      },
+      "solver": {
+        "abstained": 48,
+        "conflicts": 10,
+        "coverage": 0.04,
+        "invalid": 0.0,
+        "n": 50,
+        "returned_correct": 1,
+        "returned_wrong": 1,
+        "sound_when_returned": 0.5,
+        "verified_acc": 0.02,
+        "wrong_examples": [
+          {
+            "cells": [
+              4,
+              1,
+              1,
+              1,
+              1
+            ],
+            "error": "answer_mismatch",
+            "expected": "103",
+            "id": "arith_0057",
+            "prompt": "Compute 84 + 19.",
+            "returned": "114"
+          }
+        ]
+      }
+    },
+    "held_out_add": {
+      "argmax": {
+        "acc": 0.42857142857142855,
+        "invalid": 0.0,
+        "n": 7
+      },
+      "solver": {
+        "abstained": 7,
+        "conflicts": 1,
+        "coverage": 0.0,
+        "invalid": 0.0,
+        "n": 7,
+        "returned_correct": 0,
+        "returned_wrong": 0,
+        "sound_when_returned": 0.0,
+        "verified_acc": 0.0,
+        "wrong_examples": []
+      }
+    },
+    "train_visible_add": {
+      "argmax": {
+        "acc": 0.6744186046511628,
+        "invalid": 0.0,
+        "n": 43
+      },
+      "solver": {
+        "abstained": 41,
+        "conflicts": 9,
+        "coverage": 0.046511627906976744,
+        "invalid": 0.0,
+        "n": 43,
+        "returned_correct": 1,
+        "returned_wrong": 1,
+        "sound_when_returned": 0.5,
+        "verified_acc": 0.023255813953488372,
+        "wrong_examples": [
+          {
+            "cells": [
+              4,
+              1,
+              1,
+              1,
+              1
+            ],
+            "error": "answer_mismatch",
+            "expected": "103",
+            "id": "arith_0057",
+            "prompt": "Compute 84 + 19.",
+            "returned": "114"
+          }
+        ]
+      }
+    },
+    "valid_add": {
+      "acc": 0.5752808988764045,
+      "invalid": 0.0,
+      "n": 445
+    }
+  },
+  "train": {
+    "best_valid_argmax_acc": 0.5752808988764045,
+    "device": "cuda",
+    "last_loss": 0.335487425327301,
+    "n": 3722,
+    "wall_s": 70.57
+  }
+}
