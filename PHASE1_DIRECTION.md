@@ -247,6 +247,11 @@ slice before the controller runs (`frozen_add` 50/50 correct, 0 wrong,
 `policy_calls=0`), so this proves the compute substrate is sound but does not
 prove learned arithmetic.
 
+Exp61 turns DeepSeek rows into verified search-state data for two-unknown
+addition (`x + y = target`). The run proves the data path and keeps `wrong=0`,
+but learned policy only matches first-cell on the small DeepSeek set; this is a
+harness win, not a learned-controller win.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as

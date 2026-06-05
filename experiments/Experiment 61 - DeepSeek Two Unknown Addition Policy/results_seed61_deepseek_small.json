@@ -1,0 +1,100 @@
+{
+  "config": {
+    "closure_only_eliminator": true,
+    "controller_policy": "branch_only",
+    "dataset_source": "deepseek",
+    "device": "cpu",
+    "epochs": 80,
+    "eval_puzzles": 12,
+    "lr": 0.002,
+    "max_solve_steps": 6,
+    "max_states_per_puzzle": 4,
+    "model": "deepseek-v4-flash",
+    "seed": 61,
+    "train_puzzles": 32,
+    "width": 48
+  },
+  "dataset": {
+    "eval_fetch": {
+      "input_tokens": 208,
+      "output_tokens": 501,
+      "rejected": 0,
+      "requests": 1
+    },
+    "eval_puzzles": 12,
+    "train_fetch": {
+      "input_tokens": 1871,
+      "output_tokens": 2009,
+      "rejected": 15,
+      "requests": 9
+    },
+    "train_puzzles": 32
+  },
+  "report": {
+    "first": {
+      "abstained": 0,
+      "branches": 22,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 2,
+      "mean_branches": 1.8333333333333333,
+      "n": 12,
+      "policy_calls": 22,
+      "returned_correct": 12,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    },
+    "learned": {
+      "abstained": 0,
+      "branches": 22,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 2,
+      "mean_branches": 1.8333333333333333,
+      "n": 12,
+      "policy_calls": 22,
+      "returned_correct": 12,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    },
+    "oracle": {
+      "abstained": 0,
+      "branches": 21,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 2,
+      "mean_branches": 1.75,
+      "n": 12,
+      "policy_calls": 21,
+      "returned_correct": 12,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    },
+    "random": {
+      "abstained": 0,
+      "branches": 24,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 3,
+      "mean_branches": 2.0,
+      "n": 12,
+      "policy_calls": 24,
+      "returned_correct": 12,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    }
+  },
+  "train": {
+    "last_loss": 1.2750699520111084,
+    "search_states": 53
+  },
+  "wall_s": 29.57
+}
