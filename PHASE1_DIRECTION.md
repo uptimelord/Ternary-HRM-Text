@@ -140,7 +140,7 @@ These are **exactly what LM pretraining acquires** (distributional sense, syntax
 NOT the verifier's job. The verifier checks the *output* of the parse; pretraining must first
 *learn* the parse.
 
-⚠️ **Prerequisite, not assumption:** Exp35 language probes were junk ("The New York Times"
+⚠️ **Prerequisite, not assumption:** Exp35 language checks were junk ("The New York Times"
 orbiting) and the pretrain is **token-starved (~20M params on ~50M tokens, ~10× under Chinchilla)**.
 That means the current pretrain has **not** learned the membrane yet. The forced order:
 
@@ -254,10 +254,15 @@ harness win, not a learned-controller win.
 
 Exp62 generalizes that path into finite-domain integer constraints. DeepSeek now
 emits structured constraint JSON, Python validates/solves it, and optional Numba
-can accelerate the hot loop when installed. The 100/40 DeepSeek pilot stayed
+can speed up the hot loop when installed. The 100/40 DeepSeek first run stayed
 sound (`wrong=0`) but tasks were still too easy; first/random/learned all tied
 near one branch, so 10k scale waits until the generator makes harder search
 states and/or Numba is available.
+
+Exp63 builds the harder dataset first. Direct DeepSeek was too slow for 10k in
+this local run, but saved 260 accepted rows as a sample. The full dataset is
+10,000 local verified four-variable constraint rows, balanced as 3,334 easy,
+3,333 average, and 3,333 difficult. No training was run on it yet.
 
 ## Open questions to resolve by experiment (not assumption)
 

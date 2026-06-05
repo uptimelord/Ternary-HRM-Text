@@ -1,0 +1,28 @@
+{
+  "config": {
+    "bucket_mix": "balanced",
+    "dataset_only": true,
+    "dataset_source": "local_verified",
+    "device": "cpu",
+    "seed": 63,
+    "total_tasks": 10000
+  },
+  "dataset": {
+    "bucket_counts": {
+      "average": 3333,
+      "difficult": 3333,
+      "easy": 3334
+    },
+    "fetch": {
+      "accepted": 10000,
+      "input_tokens": 0,
+      "output_tokens": 0,
+      "rejected": 200,
+      "requests": 17
+    },
+    "total_tasks": 10000
+  },
+  "report": null,
+  "train": null,
+  "wall_s": 25.64
+}
