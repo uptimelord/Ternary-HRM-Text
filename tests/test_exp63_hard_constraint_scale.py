@@ -203,3 +203,77 @@ def test_dataset_only_writes_balanced_rows(tmp_path):
     assert rows and len(rows) == 12
     assert result["train"] is None
     assert result["report"] is None
+
+
+def test_run_experiment_trains_from_saved_dataset_without_fetching(tmp_path, monkeypatch):
+    dataset_path = tmp_path / "saved_tasks.jsonl"
+    tasks = []
+    for idx in range(3):
+        tasks.append(
+            run.task_from_constraints(
+                f"e{idx}",
+                [
+                    {"type": "eq_const", "var": "x", "value": idx},
+                    {"type": "eq_const", "var": "y", "value": idx + 1},
+                    {"type": "sum_eq", "vars": ["z", "w"], "value": idx + 1},
+                ],
+                claimed_difficulty="easy",
+            )
+        )
+        tasks.append(
+            run.task_from_constraints(
+                f"a{idx}",
+                [{"type": "sum_eq", "vars": ["x", "y", "z", "w"], "value": 16 + idx}],
+                claimed_difficulty="average",
+            )
+        )
+        tasks.append(
+            run.task_from_constraints(
+                f"d{idx}",
+                [{"type": "range", "var": run.VAR_NAMES[idx], "min": 0, "max": 9}],
+                claimed_difficulty="difficult",
+            )
+        )
+    run.write_jsonl(dataset_path, run.task_rows(tasks))
+
+    def fail_fetch(*args, **kwargs):
+        raise AssertionError("saved dataset path should not fetch rows")
+
+    monkeypatch.setattr(run, "fetch_balanced_tasks", fail_fetch)
+    args = argparse.Namespace(
+        seed=63,
+        device="cpu",
+        dataset_source="deepseek",
+        dataset_in=dataset_path,
+        total_tasks=9,
+        train_fraction=2 / 3,
+        bucket_mix="balanced",
+        max_states_per_task=2,
+        width=16,
+        epochs=1,
+        lr=2e-3,
+        max_solve_steps=6,
+        deepseek_batch_size=24,
+        model="deepseek-v4-flash",
+        base_url="https://api.deepseek.com",
+        api_key_env="DEEPSEEK_API_KEY",
+        env_file=REPO_ROOT / ".env",
+        max_tokens=6000,
+        temperature=0.4,
+        timeout=30,
+        retries=0,
+        out=None,
+        dataset_out=None,
+        states_out=None,
+        dataset_only=False,
+    )
+
+    result = run.run_experiment(args)
+
+    assert result["config"]["dataset_source"] == "file"
+    assert result["config"]["dataset_in"] == str(dataset_path)
+    assert result["dataset"]["total_tasks"] == 9
+    assert result["dataset"]["train_tasks"] == 6
+    assert result["dataset"]["eval_tasks"] == 3
+    assert result["report"]["oracle"]["returned_wrong"] == 0
+    assert result["report"]["learned"]["returned_wrong"] == 0

@@ -584,10 +584,171 @@ def fetch_balanced_tasks(
     return tasks, stats
 
 
+def load_tasks_from_jsonl(path: Path) -> list[dict[str, Any]]:
+    if not path.exists():
+        raise FileNotFoundError(path)
+    tasks: list[dict[str, Any]] = []
+    with path.open("r", encoding="utf-8") as fh:
+        for line_number, line in enumerate(fh, start=1):
+            if not line.strip():
+                continue
+            try:
+                row = json.loads(line)
+            except json.JSONDecodeError as exc:
+                raise ValueError(f"{path}:{line_number}: malformed JSONL: {exc.msg}") from exc
+            if not isinstance(row, dict):
+                raise ValueError(f"{path}:{line_number}: expected object row")
+            task = validate_task_row(row, row_id=f"{path.stem}_{line_number:06d}")
+            if task is None:
+                raise ValueError(f"{path}:{line_number}: invalid task row")
+            tasks.append(task)
+    if not tasks:
+        raise ValueError(f"{path}: no tasks loaded")
+    return tasks
+
+
+def select_balanced_tasks(tasks: list[dict[str, Any]], target_total: int, *, seed: int) -> list[dict[str, Any]]:
+    counts = target_counts(target_total, "balanced")
+    by_bucket = tasks_by_bucket(tasks, seed=seed)
+    selected: list[dict[str, Any]] = []
+    for bucket in BUCKETS:
+        available = by_bucket[bucket]
+        needed = counts[bucket]
+        if len(available) < needed:
+            raise ValueError(f"not enough {bucket} rows: need {needed}, got {len(available)}")
+        selected.extend(available[:needed])
+    random.Random(seed + 17).shuffle(selected)
+    return selected
+
+
+def split_tasks_by_bucket(tasks: list[dict[str, Any]], train_fraction: float, *, seed: int) -> tuple[list[dict[str, Any]], list[dict[str, Any]]]:
+    if not (0.0 < train_fraction < 1.0):
+        raise ValueError("train_fraction must be between 0 and 1")
+    by_bucket = tasks_by_bucket(tasks, seed=seed)
+    train_counts: dict[str, int] = {}
+    remainders: list[tuple[float, str]] = []
+    for bucket in BUCKETS:
+        count = len(by_bucket[bucket])
+        raw = count * train_fraction
+        train_count = int(raw)
+        if count > 1:
+            train_count = min(max(train_count, 1), count - 1)
+        else:
+            train_count = count
+        train_counts[bucket] = train_count
+        remainders.append((raw - int(raw), bucket))
+    target_train = int(round(len(tasks) * train_fraction))
+    while sum(train_counts.values()) < target_train:
+        changed = False
+        for _, bucket in sorted(remainders, reverse=True):
+            if train_counts[bucket] < max(0, len(by_bucket[bucket]) - 1):
+                train_counts[bucket] += 1
+                changed = True
+                break
+        if not changed:
+            break
+    while sum(train_counts.values()) > target_train:
+        changed = False
+        for _, bucket in sorted(remainders):
+            if train_counts[bucket] > 1:
+                train_counts[bucket] -= 1
+                changed = True
+                break
+        if not changed:
+            break
+    train_tasks: list[dict[str, Any]] = []
+    eval_tasks: list[dict[str, Any]] = []
+    for bucket in BUCKETS:
+        split_at = train_counts[bucket]
+        train_tasks.extend(by_bucket[bucket][:split_at])
+        eval_tasks.extend(by_bucket[bucket][split_at:])
+    random.Random(seed + 23).shuffle(train_tasks)
+    random.Random(seed + 29).shuffle(eval_tasks)
+    return train_tasks, eval_tasks
+
+
+def tasks_by_bucket(tasks: list[dict[str, Any]], *, seed: int) -> dict[str, list[dict[str, Any]]]:
+    rng = random.Random(seed)
+    by_bucket = {bucket: [] for bucket in BUCKETS}
+    for task in tasks:
+        bucket = task["difficulty"]
+        if bucket not in by_bucket:
+            raise ValueError(f"unknown bucket: {bucket}")
+        by_bucket[bucket].append(task)
+    for bucket_tasks in by_bucket.values():
+        rng.shuffle(bucket_tasks)
+    return by_bucket
+
+
 def run_experiment(args: argparse.Namespace) -> dict[str, Any]:
     args = fill_defaults(args)
     start = time.perf_counter()
     device = torch.device("cuda" if (args.device in ("auto", "cuda") and torch.cuda.is_available()) else "cpu")
+    if args.dataset_in is not None:
+        loaded_tasks = load_tasks_from_jsonl(args.dataset_in)
+        selected_tasks = select_balanced_tasks(loaded_tasks, args.total_tasks, seed=args.seed)
+        if args.dataset_only:
+            if args.dataset_out is not None:
+                write_jsonl(args.dataset_out, task_rows(selected_tasks))
+            return {
+                "config": {
+                    "seed": args.seed,
+                    "device": str(device),
+                    "dataset_source": "file",
+                    "dataset_in": str(args.dataset_in),
+                    "total_tasks": len(selected_tasks),
+                    "bucket_mix": args.bucket_mix,
+                    "dataset_only": True,
+                },
+                "dataset": {
+                    "total_tasks": len(selected_tasks),
+                    "bucket_counts": count_by_bucket(selected_tasks),
+                    "loaded_tasks": len(loaded_tasks),
+                },
+                "train": None,
+                "report": None,
+                "wall_s": round(time.perf_counter() - start, 2),
+            }
+        train_tasks, eval_tasks = split_tasks_by_bucket(selected_tasks, args.train_fraction, seed=args.seed)
+        states = generate_search_states(train_tasks, device, max_states_per_task=args.max_states_per_task)
+        model, train_stats = train_policy(states, width=args.width, epochs=args.epochs, lr=args.lr, device=device, seed=args.seed)
+        report = {
+            "first": solve_tasks(eval_tasks, policy_kind="first", device=device, max_solve_steps=args.max_solve_steps),
+            "random": solve_tasks(eval_tasks, policy_kind="random", device=device, max_solve_steps=args.max_solve_steps, seed=args.seed),
+            "oracle": solve_tasks(eval_tasks, policy_kind="oracle", device=device, max_solve_steps=args.max_solve_steps),
+            "learned": solve_tasks(eval_tasks, policy_kind="learned", device=device, max_solve_steps=args.max_solve_steps, model=model),
+        }
+        if args.dataset_out is not None:
+            write_jsonl(args.dataset_out, task_rows(selected_tasks))
+        if args.states_out is not None:
+            write_jsonl(args.states_out, states)
+        return {
+            "config": {
+                "seed": args.seed,
+                "device": str(device),
+                "dataset_source": "file",
+                "dataset_in": str(args.dataset_in),
+                "total_tasks": len(selected_tasks),
+                "bucket_mix": args.bucket_mix,
+                "train_fraction": args.train_fraction,
+                "max_states_per_task": args.max_states_per_task,
+                "width": args.width,
+                "epochs": args.epochs,
+                "max_solve_steps": args.max_solve_steps,
+            },
+            "dataset": {
+                "total_tasks": len(selected_tasks),
+                "train_tasks": len(train_tasks),
+                "eval_tasks": len(eval_tasks),
+                "bucket_counts": count_by_bucket(selected_tasks),
+                "train_bucket_counts": count_by_bucket(train_tasks),
+                "eval_bucket_counts": count_by_bucket(eval_tasks),
+                "loaded_tasks": len(loaded_tasks),
+            },
+            "train": train_stats,
+            "report": report,
+            "wall_s": round(time.perf_counter() - start, 2),
+        }
     total_counts = target_counts(args.total_tasks, args.bucket_mix)
     if args.dataset_only:
         tasks, fetch_stats = fetch_balanced_tasks(
@@ -668,6 +829,7 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--seed", type=int, default=63)
     parser.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
     parser.add_argument("--dataset-source", choices=["deepseek", "mock_deepseek", "local_verified"], default="deepseek")
+    parser.add_argument("--dataset-in", type=Path, default=None)
     parser.add_argument("--total-tasks", type=int, default=10_000)
     parser.add_argument("--train-fraction", type=float, default=0.8)
     parser.add_argument("--bucket-mix", choices=["balanced"], default="balanced")

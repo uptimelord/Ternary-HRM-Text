@@ -1,0 +1,104 @@
+{
+  "config": {
+    "bucket_mix": "balanced",
+    "dataset_in": "experiments\\Experiment 63 - Hard Constraint Scale\\hard_tasks_seed63_10k_verified.jsonl",
+    "dataset_source": "file",
+    "device": "cuda",
+    "epochs": 30,
+    "max_solve_steps": 6,
+    "max_states_per_task": 4,
+    "seed": 63,
+    "total_tasks": 10000,
+    "train_fraction": 0.8,
+    "width": 128
+  },
+  "dataset": {
+    "bucket_counts": {
+      "average": 3333,
+      "difficult": 3333,
+      "easy": 3334
+    },
+    "eval_bucket_counts": {
+      "average": 667,
+      "difficult": 666,
+      "easy": 667
+    },
+    "eval_tasks": 2000,
+    "loaded_tasks": 10000,
+    "total_tasks": 10000,
+    "train_bucket_counts": {
+      "average": 2666,
+      "difficult": 2667,
+      "easy": 2667
+    },
+    "train_tasks": 8000
+  },
+  "report": {
+    "first": {
+      "abstained": 0,
+      "branches": 4608,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.304,
+      "n": 2000,
+      "policy_calls": 4608,
+      "returned_correct": 2000,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    },
+    "learned": {
+      "abstained": 0,
+      "branches": 4853,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.4265,
+      "n": 2000,
+      "policy_calls": 4853,
+      "returned_correct": 2000,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    },
+    "oracle": {
+      "abstained": 0,
+      "branches": 4493,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.2465,
+      "n": 2000,
+      "policy_calls": 4493,
+      "returned_correct": 2000,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    },
+    "random": {
+      "abstained": 0,
+      "branches": 5260,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.63,
+      "n": 2000,
+      "policy_calls": 5260,
+      "returned_correct": 2000,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    }
+  },
+  "train": {
+    "last_loss": 0.9764604568481445,
+    "search_states": 17922,
+    "state_buckets": {
+      "average": 4587,
+      "difficult": 10668,
+      "easy": 2667
+    }
+  },
+  "wall_s": 299.47
+}
