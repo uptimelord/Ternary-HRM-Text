@@ -1,0 +1,89 @@
+{
+  "config": {
+    "candidate_counts": [
+      10,
+      2,
+      10,
+      2,
+      2
+    ],
+    "cells": [
+      "ones",
+      "carry0",
+      "tens",
+      "carry1",
+      "hundreds"
+    ],
+    "closure_only_eliminator": true,
+    "controller_policy": "branch_only",
+    "device": "cpu",
+    "eval_limit": null,
+    "max_solve_steps": 4,
+    "neural_elimination": false,
+    "seed": 60,
+    "smoke": false,
+    "sound_carry_closure": true,
+    "width": 32
+  },
+  "report": {
+    "frozen_add": {
+      "solver": {
+        "abstained": 0,
+        "branches": 0,
+        "closure_steps": 1,
+        "conflicts": 0,
+        "coverage": 1.0,
+        "invalid": 0.0,
+        "mean_branches": 0.0,
+        "n": 50,
+        "policy_calls": 0,
+        "returned_correct": 50,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 1.0,
+        "wrong_examples": []
+      }
+    },
+    "held_out_add": {
+      "solver": {
+        "abstained": 0,
+        "branches": 0,
+        "closure_steps": 1,
+        "conflicts": 0,
+        "coverage": 1.0,
+        "invalid": 0.0,
+        "mean_branches": 0.0,
+        "n": 7,
+        "policy_calls": 0,
+        "returned_correct": 7,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 1.0,
+        "wrong_examples": []
+      }
+    },
+    "train_visible_add": {
+      "solver": {
+        "abstained": 0,
+        "branches": 0,
+        "closure_steps": 1,
+        "conflicts": 0,
+        "coverage": 1.0,
+        "invalid": 0.0,
+        "mean_branches": 0.0,
+        "n": 43,
+        "policy_calls": 0,
+        "returned_correct": 43,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 1.0,
+        "wrong_examples": []
+      }
+    }
+  },
+  "train": {
+    "n": 0,
+    "note": "no training; Exp60 tests controller work after sound closure",
+    "wall_s": 0.09
+  }
+}

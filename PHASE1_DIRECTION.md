@@ -240,6 +240,13 @@ branching. Impossible singleton states like `84 + 19 -> 114` now become
 conflicts, so wrong returns are blocked. The learned route still has zero
 coverage because it often eliminates the true path before closure.
 
+Exp60 locks the safer controller split: sound carry closure is the only
+candidate eliminator, and the neural side may only choose a branch/pin when
+closure leaves ambiguity. On fixed two-digit addition, closure solves the add
+slice before the controller runs (`frozen_add` 50/50 correct, 0 wrong,
+`policy_calls=0`), so this proves the compute substrate is sound but does not
+prove learned arithmetic.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as
