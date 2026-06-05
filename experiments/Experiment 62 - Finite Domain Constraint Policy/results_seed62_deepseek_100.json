@@ -1,0 +1,102 @@
+{
+  "config": {
+    "backend": "python",
+    "closure_only_eliminator": true,
+    "controller_policy": "branch_only",
+    "dataset_source": "deepseek",
+    "device": "cpu",
+    "epochs": 100,
+    "eval_tasks": 40,
+    "lr": 0.002,
+    "max_solve_steps": 8,
+    "max_states_per_task": 4,
+    "model": "deepseek-v4-flash",
+    "numba_available": false,
+    "seed": 62,
+    "train_tasks": 100,
+    "width": 96
+  },
+  "dataset": {
+    "eval_fetch": {
+      "input_tokens": 2568,
+      "output_tokens": 7552,
+      "rejected": 9,
+      "requests": 4
+    },
+    "eval_tasks": 40,
+    "train_fetch": {
+      "input_tokens": 6419,
+      "output_tokens": 18906,
+      "rejected": 22,
+      "requests": 10
+    },
+    "train_tasks": 100
+  },
+  "report": {
+    "first": {
+      "abstained": 0,
+      "branches": 41,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 2,
+      "mean_branches": 1.025,
+      "n": 40,
+      "policy_calls": 41,
+      "returned_correct": 40,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    },
+    "learned": {
+      "abstained": 0,
+      "branches": 41,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 2,
+      "mean_branches": 1.025,
+      "n": 40,
+      "policy_calls": 41,
+      "returned_correct": 40,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    },
+    "oracle": {
+      "abstained": 0,
+      "branches": 40,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 1,
+      "mean_branches": 1.0,
+      "n": 40,
+      "policy_calls": 40,
+      "returned_correct": 40,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    },
+    "random": {
+      "abstained": 0,
+      "branches": 41,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 2,
+      "mean_branches": 1.025,
+      "n": 40,
+      "policy_calls": 41,
+      "returned_correct": 40,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0,
+      "wrong_examples": []
+    }
+  },
+  "train": {
+    "last_loss": 0.07980847358703613,
+    "search_states": 100
+  },
+  "wall_s": 165.8
+}

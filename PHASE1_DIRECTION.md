@@ -252,6 +252,13 @@ addition (`x + y = target`). The run proves the data path and keeps `wrong=0`,
 but learned policy only matches first-cell on the small DeepSeek set; this is a
 harness win, not a learned-controller win.
 
+Exp62 generalizes that path into finite-domain integer constraints. DeepSeek now
+emits structured constraint JSON, Python validates/solves it, and optional Numba
+can accelerate the hot loop when installed. The 100/40 DeepSeek pilot stayed
+sound (`wrong=0`) but tasks were still too easy; first/random/learned all tied
+near one branch, so 10k scale waits until the generator makes harder search
+states and/or Numba is available.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as
