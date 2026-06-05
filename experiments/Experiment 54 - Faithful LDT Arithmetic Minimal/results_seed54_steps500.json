@@ -1,0 +1,90 @@
+{
+  "config": {
+    "answer_lattice": [
+      -9999,
+      9999
+    ],
+    "batch_size": 128,
+    "branch": false,
+    "max_solve_steps": 4,
+    "n_answer_candidates": 19999,
+    "on_policy_steps": 1,
+    "recurrent_steps": 3,
+    "seed": 54,
+    "smoke": false,
+    "steps": 500,
+    "threshold": 0.5,
+    "width": 96
+  },
+  "report": {
+    "frozen_eval200": {
+      "argmax": {
+        "acc": 0.005,
+        "invalid": 0.0,
+        "n": 200
+      },
+      "solver": {
+        "abstained": 200,
+        "conflicts": 169,
+        "coverage": 0.0,
+        "invalid": 0.0,
+        "n": 200,
+        "returned_correct": 0,
+        "returned_wrong": 0,
+        "sound_when_returned": 0.0,
+        "verified_acc": 0.0,
+        "wrong_examples": []
+      }
+    },
+    "held_out": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 40
+      },
+      "solver": {
+        "abstained": 40,
+        "conflicts": 37,
+        "coverage": 0.0,
+        "invalid": 0.0,
+        "n": 40,
+        "returned_correct": 0,
+        "returned_wrong": 0,
+        "sound_when_returned": 0.0,
+        "verified_acc": 0.0,
+        "wrong_examples": []
+      }
+    },
+    "train_visible": {
+      "argmax": {
+        "acc": 0.00625,
+        "invalid": 0.0,
+        "n": 160
+      },
+      "solver": {
+        "abstained": 160,
+        "conflicts": 132,
+        "coverage": 0.0,
+        "invalid": 0.0,
+        "n": 160,
+        "returned_correct": 0,
+        "returned_wrong": 0,
+        "sound_when_returned": 0.0,
+        "verified_acc": 0.0,
+        "wrong_examples": []
+      }
+    },
+    "valid_argmax": {
+      "acc": 0.0025,
+      "invalid": 0.0,
+      "n": 2000
+    }
+  },
+  "train": {
+    "best_valid_argmax_acc": 0.0025,
+    "device": "cuda",
+    "last_loss": 7.87935209274292,
+    "n": 16000,
+    "wall_s": 86.69
+  }
+}

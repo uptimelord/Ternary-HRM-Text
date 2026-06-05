@@ -225,6 +225,11 @@ variants across all tiny logic rule families. The locked result is 72/72
 supported parses correct, 80/80 unsafe prompts fail closed, and 0 parsed-wrong
 cases.
 
+Exp54 adds the first more-faithful LDT arithmetic wiring: a powerset answer
+lattice over `[-9999, 9999]`, recurrent keep logits, threshold projection, and
+singleton-or-abstain solve. Seed54/500 steps did not learn arithmetic
+(frozen eval200 argmax 0.5%, solver coverage 0%), so this is no promote.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as
