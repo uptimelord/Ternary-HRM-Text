@@ -235,6 +235,11 @@ ones/carry0/tens/carry1/hundreds, with monotone candidate elimination and CLS
 conflict. The faithful on-policy run is a safe miss; the top-state ablation
 learns frozen-add argmax 64% but solver returns wrong singletons, so no promote.
 
+Exp56 adds the missing sound carry-closure operator after neural elimination and
+branching. Impossible singleton states like `84 + 19 -> 114` now become
+conflicts, so wrong returns are blocked. The learned route still has zero
+coverage because it often eliminates the true path before closure.
+
 ## Open questions to resolve by experiment (not assumption)
 
 - Does symbolic-reasoning skill **transfer** toward language-medium reasoning, or stay siloed (as

@@ -1,0 +1,103 @@
+{
+  "config": {
+    "batch_size": 128,
+    "branch": false,
+    "candidate_counts": [
+      10,
+      2,
+      10,
+      2,
+      2
+    ],
+    "cells": [
+      "ones",
+      "carry0",
+      "tens",
+      "carry1",
+      "hundreds"
+    ],
+    "cls_threshold": 0.6,
+    "heads": 4,
+    "internal_iters": 16,
+    "layers": 2,
+    "max_solve_steps": 4,
+    "on_policy_steps": 1,
+    "seed": 56,
+    "smoke": false,
+    "sound_carry_closure": true,
+    "steps": 500,
+    "threshold": 0.1,
+    "width": 64
+  },
+  "report": {
+    "frozen_add": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 50
+      },
+      "solver": {
+        "abstained": 50,
+        "conflicts": 50,
+        "coverage": 0.0,
+        "invalid": 0.0,
+        "n": 50,
+        "returned_correct": 0,
+        "returned_wrong": 0,
+        "sound_when_returned": 0.0,
+        "verified_acc": 0.0,
+        "wrong_examples": []
+      }
+    },
+    "held_out_add": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 7
+      },
+      "solver": {
+        "abstained": 7,
+        "conflicts": 7,
+        "coverage": 0.0,
+        "invalid": 0.0,
+        "n": 7,
+        "returned_correct": 0,
+        "returned_wrong": 0,
+        "sound_when_returned": 0.0,
+        "verified_acc": 0.0,
+        "wrong_examples": []
+      }
+    },
+    "train_visible_add": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 43
+      },
+      "solver": {
+        "abstained": 43,
+        "conflicts": 43,
+        "coverage": 0.0,
+        "invalid": 0.0,
+        "n": 43,
+        "returned_correct": 0,
+        "returned_wrong": 0,
+        "sound_when_returned": 0.0,
+        "verified_acc": 0.0,
+        "wrong_examples": []
+      }
+    },
+    "valid_add": {
+      "acc": 0.006741573033707865,
+      "invalid": 0.0,
+      "n": 445
+    }
+  },
+  "train": {
+    "best_valid_argmax_acc": 0.006741573033707865,
+    "device": "cuda",
+    "last_loss": 0.00010197246592724696,
+    "n": 3722,
+    "wall_s": 149.87
+  }
+}

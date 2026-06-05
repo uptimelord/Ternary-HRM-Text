@@ -1,0 +1,103 @@
+{
+  "config": {
+    "batch_size": 8,
+    "branch": false,
+    "candidate_counts": [
+      10,
+      2,
+      10,
+      2,
+      2
+    ],
+    "cells": [
+      "ones",
+      "carry0",
+      "tens",
+      "carry1",
+      "hundreds"
+    ],
+    "cls_threshold": 0.6,
+    "heads": 2,
+    "internal_iters": 2,
+    "layers": 1,
+    "max_solve_steps": 4,
+    "on_policy_steps": 1,
+    "seed": 56,
+    "smoke": true,
+    "sound_carry_closure": true,
+    "steps": 5,
+    "threshold": 0.1,
+    "width": 16
+  },
+  "report": {
+    "frozen_add": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 8
+      },
+      "solver": {
+        "abstained": 2,
+        "conflicts": 2,
+        "coverage": 0.75,
+        "invalid": 0.0,
+        "n": 8,
+        "returned_correct": 6,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 0.75,
+        "wrong_examples": []
+      }
+    },
+    "held_out_add": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 7
+      },
+      "solver": {
+        "abstained": 1,
+        "conflicts": 1,
+        "coverage": 0.8571428571428571,
+        "invalid": 0.0,
+        "n": 7,
+        "returned_correct": 6,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 0.8571428571428571,
+        "wrong_examples": []
+      }
+    },
+    "train_visible_add": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 8
+      },
+      "solver": {
+        "abstained": 3,
+        "conflicts": 3,
+        "coverage": 0.625,
+        "invalid": 0.0,
+        "n": 8,
+        "returned_correct": 5,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 0.625,
+        "wrong_examples": []
+      }
+    },
+    "valid_add": {
+      "acc": 0.0,
+      "invalid": 0.0,
+      "n": 8
+    }
+  },
+  "train": {
+    "best_valid_argmax_acc": 0.0,
+    "device": "cpu",
+    "last_loss": 1.0912818908691406,
+    "n": 32,
+    "wall_s": 1.48
+  }
+}
