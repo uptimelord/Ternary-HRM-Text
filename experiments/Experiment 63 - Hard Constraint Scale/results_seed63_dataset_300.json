@@ -1,0 +1,28 @@
+{
+  "config": {
+    "bucket_mix": "balanced",
+    "dataset_only": true,
+    "dataset_source": "deepseek",
+    "device": "cpu",
+    "seed": 63,
+    "total_tasks": 300
+  },
+  "dataset": {
+    "bucket_counts": {
+      "average": 100,
+      "difficult": 100,
+      "easy": 100
+    },
+    "fetch": {
+      "accepted": 300,
+      "input_tokens": 25607,
+      "output_tokens": 1096532,
+      "rejected": 4980,
+      "requests": 66
+    },
+    "total_tasks": 300
+  },
+  "report": null,
+  "train": null,
+  "wall_s": 6045.46
+}

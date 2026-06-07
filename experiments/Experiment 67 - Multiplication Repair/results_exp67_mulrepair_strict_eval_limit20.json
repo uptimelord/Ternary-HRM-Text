@@ -1,0 +1,685 @@
+{
+  "analysis": {
+    "by_error": {
+      "answer_mismatch": {
+        "acc": 0.0,
+        "failed": 58,
+        "n": 58,
+        "passed": 0
+      }
+    },
+    "by_h": {
+      "4": {
+        "acc": 0.03333333333333333,
+        "failed": 58,
+        "n": 60,
+        "passed": 2
+      }
+    },
+    "by_kind": {
+      "add_sub": {
+        "acc": 0.05,
+        "failed": 19,
+        "n": 20,
+        "passed": 1
+      },
+      "binary": {
+        "acc": 0.025,
+        "failed": 39,
+        "n": 40,
+        "passed": 1
+      }
+    },
+    "by_op": {
+      "*": {
+        "acc": 0.0,
+        "failed": 13,
+        "n": 13,
+        "passed": 0
+      },
+      "+": {
+        "acc": 0.06060606060606061,
+        "failed": 31,
+        "n": 33,
+        "passed": 2
+      },
+      "-": {
+        "acc": 0.029411764705882353,
+        "failed": 33,
+        "n": 34,
+        "passed": 1
+      }
+    },
+    "by_split": {
+      "heldout_direct": {
+        "acc": 0.05,
+        "failed": 19,
+        "n": 20,
+        "passed": 1
+      },
+      "heldout_hard": {
+        "acc": 0.05,
+        "failed": 19,
+        "n": 20,
+        "passed": 1
+      },
+      "heldout_word": {
+        "acc": 0.0,
+        "failed": 20,
+        "n": 20,
+        "passed": 0
+      }
+    },
+    "by_style": {
+      "direct": {
+        "acc": 0.05,
+        "failed": 19,
+        "n": 20,
+        "passed": 1
+      },
+      "word": {
+        "acc": 0.025,
+        "failed": 39,
+        "n": 40,
+        "passed": 1
+      }
+    },
+    "overall": {
+      "acc": 0.03333333333333333,
+      "failed": 58,
+      "n": 60,
+      "passed": 2
+    }
+  },
+  "bp_steps": 4,
+  "checkpoint": "artifacts\\phase0_exp67_mul_repair\\h256_exp66_word_sft2000_mulrepair_sft1000_seed1\\checkpoint_fp32.pt",
+  "generations_path": "experiments\\Experiment 67 - Multiplication Repair\\generations_exp67_mulrepair_strict_eval_limit20.jsonl",
+  "h_values": [
+    4
+  ],
+  "max_new_tokens": 64,
+  "max_prefix_tokens": 96,
+  "splits": {
+    "heldout_direct": {
+      "4": {
+        "errors": {
+          "None": 1,
+          "answer_mismatch": 19
+        },
+        "examples": [
+          {
+            "error": "answer_mismatch",
+            "extracted": "8",
+            "generated": "Step 1: 9 - 9 = 8\nAnswer: 8 =",
+            "gold": "0",
+            "id": "wp_9001_0",
+            "passed": false,
+            "prompt": "Compute 9 - 9"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "5288",
+            "generated": "Step 1: 67 * 8 = 528\nAnswer: 5288 +",
+            "gold": "536",
+            "id": "wp_9001_1",
+            "passed": false,
+            "prompt": "Compute 67 * 8"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "41",
+            "generated": "Step 1: 79 - 68 = 41\nAnswer: 41 -",
+            "gold": "11",
+            "id": "wp_9001_2",
+            "passed": false,
+            "prompt": "Compute 79 - 68"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "15",
+            "generated": "Step 1: 38 - 37 = 15\nAnswer: 15 -",
+            "gold": "1",
+            "id": "wp_9001_3",
+            "passed": false,
+            "prompt": "Compute 38 - 37"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "5340",
+            "generated": "Step 1: 58 * 95 = 5340\nAnswer: 5340\n",
+            "gold": "5510",
+            "id": "wp_9001_4",
+            "passed": false,
+            "prompt": "Compute 58 * 95"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "6160",
+            "generated": "Step 1: 60 * 96 = 6160\nAnswer: 6160\n",
+            "gold": "5760",
+            "id": "wp_9001_5",
+            "passed": false,
+            "prompt": "Compute 60 * 96"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "295",
+            "generated": "Step 1: 32 + 63 = 295\nAnswer: 295 -",
+            "gold": "95",
+            "id": "wp_9001_6",
+            "passed": false,
+            "prompt": "Compute 32 + 63"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "25",
+            "generated": "Step 1: 29 - 5 = 25\nAnswer: 25\n",
+            "gold": "24",
+            "id": "wp_9001_7",
+            "passed": false,
+            "prompt": "Compute 29 - 5"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "42",
+            "generated": "Step 1: 68 - 66 = 42\nAnswer: 42 -",
+            "gold": "2",
+            "id": "wp_9001_8",
+            "passed": false,
+            "prompt": "Compute 68 - 66"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "51",
+            "generated": "Step 1: 64 - 15 = 51\nAnswer: 51 -",
+            "gold": "49",
+            "id": "wp_9001_9",
+            "passed": false,
+            "prompt": "Compute 64 - 15"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "1244",
+            "generated": "Step 1: 67 * 2 = 124\nAnswer: 1244 -",
+            "gold": "134",
+            "id": "wp_9001_10",
+            "passed": false,
+            "prompt": "Compute 67 * 2"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "89",
+            "generated": "Step 1: 81 + 1 = 89\nAnswer: 89 =",
+            "gold": "82",
+            "id": "wp_9001_11",
+            "passed": false,
+            "prompt": "Compute 81 + 1"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "63088",
+            "generated": "Step 1: 94 * 66 = 6308\nAnswer: 63088\n",
+            "gold": "6204",
+            "id": "wp_9001_12",
+            "passed": false,
+            "prompt": "Compute 94 * 66"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "48",
+            "generated": "Step 1: 71 - 44 = 48\nAnswer: 48 -",
+            "gold": "27",
+            "id": "wp_9001_13",
+            "passed": false,
+            "prompt": "Compute 71 - 44"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "23777",
+            "generated": "Step 1: 89 * 32 = 2377\nAnswer: 23777 -",
+            "gold": "2848",
+            "id": "wp_9001_14",
+            "passed": false,
+            "prompt": "Compute 89 * 32"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "31388",
+            "generated": "Step 1: 91 * 38 = 3138\nAnswer: 31388\n",
+            "gold": "3458",
+            "id": "wp_9001_15",
+            "passed": false,
+            "prompt": "Compute 91 * 38"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "1068",
+            "generated": "Step 1: 93 + 94 = 1068\nAnswer: 1068\n",
+            "gold": "187",
+            "id": "wp_9001_16",
+            "passed": false,
+            "prompt": "Compute 93 + 94"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "7",
+            "generated": "Step 1: 8 - 4 = 7\nAnswer: 7 =",
+            "gold": "4",
+            "id": "wp_9001_17",
+            "passed": false,
+            "prompt": "Compute 8 - 4"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "12266",
+            "generated": "Step 1: 58 * 16 = 1226\nAnswer: 12266 =",
+            "gold": "928",
+            "id": "wp_9001_18",
+            "passed": false,
+            "prompt": "Compute 58 * 16"
+          },
+          {
+            "error": null,
+            "extracted": "163",
+            "generated": "Step 1: 99 + 64 = 163\nAnswer: 163 -",
+            "gold": "163",
+            "id": "wp_9001_19",
+            "passed": true,
+            "prompt": "Compute 99 + 64"
+          }
+        ],
+        "invalid": 0.0,
+        "n": 20,
+        "pass_at_1": 0.05,
+        "wall_s": 46.3
+      }
+    },
+    "heldout_hard": {
+      "4": {
+        "errors": {
+          "None": 1,
+          "answer_mismatch": 19
+        },
+        "examples": [
+          {
+            "error": "answer_mismatch",
+            "extracted": "21",
+            "generated": "Step 1: 13 + 17 = 21\nAnswer: 21 -",
+            "gold": "13",
+            "id": "wp_9003_0",
+            "passed": false,
+            "prompt": "Anna has 13 apples, then finds 17 more, and then gives away 17 apples."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "423",
+            "generated": "Step 1: 41 + 82 = 423\nAnswer: 423 -",
+            "gold": "44",
+            "id": "wp_9003_1",
+            "passed": false,
+            "prompt": "Tom has 41 marbles, finds 82 more, and then loses 79 marbles."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "91",
+            "generated": "Step 1: 80 + 37 = 91\nAnswer: 91 -",
+            "gold": "78",
+            "id": "wp_9003_2",
+            "passed": false,
+            "prompt": "Lily has 80 stickers, gets 37 more, and then gives away 39 stickers."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "51",
+            "generated": "Step 1: 52 + 69 = 111\nStep 2: 111 - 79 = 51\nAnswer: 51 -",
+            "gold": "42",
+            "id": "wp_9003_3",
+            "passed": false,
+            "prompt": "Jack has 52 toy cars, buys 69 more, and then sells 79 toy cars."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "524",
+            "generated": "Step 1: 61 + 74 = 524\nAnswer: 524 -",
+            "gold": "93",
+            "id": "wp_9003_4",
+            "passed": false,
+            "prompt": "Emma has 61 candies, receives 74 more, and then eats 42 candies."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "81",
+            "generated": "Step 1: 88 + 12 = 90\nStep 2: 90 - 18 = 81\nAnswer: 81 -",
+            "gold": "82",
+            "id": "wp_9003_5",
+            "passed": false,
+            "prompt": "Noah has 88 dollars, earns 12 more, and then spends 18 dollars."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "611",
+            "generated": "Step 1: 67 + 65 = 733\nStep 2: 733 - 112 = 611\nAnswer: 611 -",
+            "gold": "20",
+            "id": "wp_9003_6",
+            "passed": false,
+            "prompt": "Olivia has 67 books, borrows 65 more, and then returns 112 books."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "58",
+            "generated": "Step 1: 40 + 18 = 58\nAnswer: 58 =",
+            "gold": "43",
+            "id": "wp_9003_7",
+            "passed": false,
+            "prompt": "Liam has 40 pencils, finds 18 more, and then gives away 15 pencils."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "121",
+            "generated": "Step 1: 49 + 82 = 121\nAnswer: 121 -",
+            "gold": "29",
+            "id": "wp_9003_8",
+            "passed": false,
+            "prompt": "Sophia has 49 beads, collects 82 more, and then loses 102 beads."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "1344",
+            "generated": "Step 1: 91 + 53 = 1344\nAnswer: 1344 -",
+            "gold": "96",
+            "id": "wp_9003_9",
+            "passed": false,
+            "prompt": "Mason has 91 coins, finds 53 more, and then spends 48 coins."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "298",
+            "generated": "Step 1: 45 + 77 = 312\nStep 2: 312 - 24 = 298\nAnswer: 298 -",
+            "gold": "98",
+            "id": "wp_9003_10",
+            "passed": false,
+            "prompt": "Ava has 45 crayons, gets 77 more, and then gives away 24 crayons."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "31",
+            "generated": "Step 1: 35 + 30 = 45\nStep 2: 45 - 45 = 31\nAnswer: 31 -",
+            "gold": "20",
+            "id": "wp_9003_11",
+            "passed": false,
+            "prompt": "Ethan has 35 baseball cards, trades for 30 more, and then gives away 45 cards."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "538",
+            "generated": "Step 1: 77 + 78 = 654\nStep 2: 654 - 16 = 538\nAnswer: 538 -",
+            "gold": "139",
+            "id": "wp_9003_12",
+            "passed": false,
+            "prompt": "Isabella has 77 flowers, picks 78 more, and then gives away 16 flowers."
+          },
+          {
+            "error": null,
+            "extracted": "41",
+            "generated": "Step 1: 10 + 54 = 54\nStep 2: 54 - 23 = 41\nAnswer: 41 -",
+            "gold": "41",
+            "id": "wp_9003_13",
+            "passed": true,
+            "prompt": "James has 10 stickers, receives 54 more, and then loses 23 stickers."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "13",
+            "generated": "Step 1: 21 + 28 = 39\nStep 2: 39 - 45 = 13\nAnswer: 13 -",
+            "gold": "4",
+            "id": "wp_9003_14",
+            "passed": false,
+            "prompt": "Mia has 21 erasers, finds 28 more, and then gives away 45 erasers."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "137",
+            "generated": "Step 1: 71 + 65 = 137\nAnswer: 137 -",
+            "gold": "113",
+            "id": "wp_9003_15",
+            "passed": false,
+            "prompt": "Benjamin has 71 marbles, wins 65 more, and then loses 23 marbles."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "317",
+            "generated": "Step 1: 27 + 41 = 317\nAnswer: 317 -",
+            "gold": "63",
+            "id": "wp_9003_16",
+            "passed": false,
+            "prompt": "Charlotte has 27 balloons, gets 41 more, and then pops 5 balloons."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "399",
+            "generated": "Step 1: 40 + 81 = 421\nStep 2: 421 - 23 = 399\nAnswer: 399 -",
+            "gold": "98",
+            "id": "wp_9003_17",
+            "passed": false,
+            "prompt": "Lucas has 40 rocks, collects 81 more, and then gives away 23 rocks."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "70",
+            "generated": "Step 1: 52 + 27 = 70\nAnswer: 70 -",
+            "gold": "35",
+            "id": "wp_9003_18",
+            "passed": false,
+            "prompt": "Amelia has 52 puzzle pieces, finds 27 more, and then loses 44 pieces."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "23",
+            "generated": "Step 1: 17 + 16 = 23\nAnswer: 23 -",
+            "gold": "27",
+            "id": "wp_9003_19",
+            "passed": false,
+            "prompt": "Henry has 17 toy cars, gets 16 more, and then gives away 6 cars."
+          }
+        ],
+        "invalid": 0.0,
+        "n": 20,
+        "pass_at_1": 0.05,
+        "wall_s": 61.4
+      }
+    },
+    "heldout_word": {
+      "4": {
+        "errors": {
+          "answer_mismatch": 20
+        },
+        "examples": [
+          {
+            "error": "answer_mismatch",
+            "extracted": "1328",
+            "generated": "Step 1: 81 * 18 = 1328\nAnswer: 1328 +",
+            "gold": "63",
+            "id": "wp_9002_0",
+            "passed": false,
+            "prompt": "If you have 81 apples and you give away 18, how many apples do you have left?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "51180",
+            "generated": "Step 1: 76 * 74 = 51180\nAnswer: 51180\n",
+            "gold": "5624",
+            "id": "wp_9002_1",
+            "passed": false,
+            "prompt": "There are 76 rows of chairs with 74 chairs in each row. How many chairs are there in total?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "81",
+            "generated": "Step 1: 9 + 62 = 81\nAnswer: 81 -",
+            "gold": "71",
+            "id": "wp_9002_2",
+            "passed": false,
+            "prompt": "Sam has 9 marbles and his friend gives him 62 more. How many marbles does Sam have now?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "12",
+            "generated": "Step 1: 7 - 94 = 12\nAnswer: 12 =",
+            "gold": "101",
+            "id": "wp_9002_3",
+            "passed": false,
+            "prompt": "A baker bakes 7 loaves of bread in the morning and 94 loaves in the afternoon. How many loaves did he bake in total?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "50",
+            "generated": "Step 1: 12 + 67 = 50\nAnswer: 50 =",
+            "gold": "79",
+            "id": "wp_9002_4",
+            "passed": false,
+            "prompt": "There are 12 children playing in the park and 67 more join them. How many children are in the park now?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "81",
+            "generated": "Step 1: 71 + 45 = 81\nAnswer: 81 -",
+            "gold": "116",
+            "id": "wp_9002_5",
+            "passed": false,
+            "prompt": "A farmer has 71 sheep and buys 45 more. How many sheep does he have now?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "1121",
+            "generated": "Step 1: 53 * 26 = 1121\nAnswer: 1121 -",
+            "gold": "1378",
+            "id": "wp_9002_6",
+            "passed": false,
+            "prompt": "A box contains 53 chocolates and there are 26 such boxes. How many chocolates are there in total?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "55",
+            "generated": "Step 1: 58 + 8 = 55\nAnswer: 55 -",
+            "gold": "66",
+            "id": "wp_9002_7",
+            "passed": false,
+            "prompt": "You have 58 stickers and you receive 8 more. How many stickers do you have now?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "377",
+            "generated": "Step 1: 26 + 111 = 377\nAnswer: 377 -",
+            "gold": "15",
+            "id": "wp_9002_8",
+            "passed": false,
+            "prompt": "There are 26 birds on a tree and 11 fly away. How many birds are left on the tree?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "62",
+            "generated": "Step 1: 78 - 65 = 62\nAnswer: 62 -",
+            "gold": "13",
+            "id": "wp_9002_9",
+            "passed": false,
+            "prompt": "A store had 78 shirts and sold 65 of them. How many shirts are left?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "1200",
+            "generated": "Step 1: 3 * 40 = 1200\nAnswer: 1200 +",
+            "gold": "120",
+            "id": "wp_9002_10",
+            "passed": false,
+            "prompt": "There are 3 bags with 40 candies in each bag. How many candies are there in total?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "13",
+            "generated": "Step 1: 26 - 21 = 13\nAnswer: 13 -",
+            "gold": "5",
+            "id": "wp_9002_11",
+            "passed": false,
+            "prompt": "A train has 26 passengers and 21 get off. How many passengers are still on the train?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "566",
+            "generated": "Step 1: 3 * 24 = 56\nAnswer: 566 -",
+            "gold": "72",
+            "id": "wp_9002_12",
+            "passed": false,
+            "prompt": "A garden has 3 rows of flowers with 24 flowers in each row. How many flowers are there in total?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "31",
+            "generated": "Step 1: 28 + 33 = 31\nAnswer: 31 =",
+            "gold": "61",
+            "id": "wp_9002_13",
+            "passed": false,
+            "prompt": "You have 28 dollars and earn 33 more. How many dollars do you have now?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "97",
+            "generated": "Step 1: 95 + 11 = 97\nAnswer: 97 -",
+            "gold": "106",
+            "id": "wp_9002_14",
+            "passed": false,
+            "prompt": "A library has 95 books and receives 11 new books. How many books does the library have now?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "1208",
+            "generated": "Step 1: 44 * 28 = 1208\nAnswer: 1208 +",
+            "gold": "16",
+            "id": "wp_9002_15",
+            "passed": false,
+            "prompt": "You have 44 candies and you eat 28 of them. How many candies are left?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "644",
+            "generated": "Step 1: 69 + 76 = 644\nAnswer: 644 -",
+            "gold": "145",
+            "id": "wp_9002_16",
+            "passed": false,
+            "prompt": "There are 69 red balloons and 76 blue balloons. How many balloons are there in total?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "532",
+            "generated": "Step 1: 58 * 9 = 532\nAnswer: 532 +",
+            "gold": "522",
+            "id": "wp_9002_17",
+            "passed": false,
+            "prompt": "A factory produces 58 toys per hour and runs for 9 hours. How many toys are produced?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "522",
+            "generated": "Step 1: 23 * 3 = 52\nAnswer: 522 -",
+            "gold": "20",
+            "id": "wp_9002_18",
+            "passed": false,
+            "prompt": "A bucket contains 23 liters of water and you remove 3 liters. How many liters are left?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "6733",
+            "generated": "Step 1: 1 * 67 = 673\nAnswer: 6733 -",
+            "gold": "68",
+            "id": "wp_9002_19",
+            "passed": false,
+            "prompt": "You have 1 dollar and find 67 dollars. How many dollars do you have now?"
+          }
+        ],
+        "invalid": 0.0,
+        "n": 20,
+        "pass_at_1": 0.0,
+        "wall_s": 52.4
+      }
+    }
+  }
+}

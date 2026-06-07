@@ -1,0 +1,202 @@
+{
+  "bp_steps": 4,
+  "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_exp66_word_reasoning\\h256_exp34_1_word100k_sft2000_seed1\\checkpoint_fp32.pt",
+  "h": 4,
+  "max_new_tokens": 64,
+  "max_prefix_tokens": 96,
+  "overall": {
+    "buckets": {
+      "raw_correct": 250,
+      "tool_fixed_compute_error": 253,
+      "wrong_plan": 97
+    },
+    "by_kind": {
+      "add_sub": {
+        "n": 200,
+        "plan_validity": 1.0,
+        "raw_pass_at_1": 0.535,
+        "tool_checked_pass_at_1": 1.0
+      },
+      "binary": {
+        "n": 400,
+        "plan_validity": 0.755,
+        "raw_pass_at_1": 0.3575,
+        "tool_checked_pass_at_1": 0.755
+      }
+    },
+    "by_op": {
+      "*": {
+        "n": 129,
+        "plan_validity": 0.6589147286821705,
+        "raw_pass_at_1": 0.007751937984496124,
+        "tool_checked_pass_at_1": 0.6589147286821705
+      },
+      "+": {
+        "n": 329,
+        "plan_validity": 0.9604863221884499,
+        "raw_pass_at_1": 0.5987841945288754,
+        "tool_checked_pass_at_1": 0.9604863221884499
+      },
+      "-": {
+        "n": 342,
+        "plan_validity": 0.8801169590643275,
+        "raw_pass_at_1": 0.4649122807017544,
+        "tool_checked_pass_at_1": 0.8801169590643275
+      }
+    },
+    "by_style": {
+      "direct": {
+        "n": 200,
+        "plan_validity": 1.0,
+        "raw_pass_at_1": 0.395,
+        "tool_checked_pass_at_1": 1.0
+      },
+      "word": {
+        "n": 400,
+        "plan_validity": 0.755,
+        "raw_pass_at_1": 0.4275,
+        "tool_checked_pass_at_1": 0.755
+      }
+    },
+    "n": 600,
+    "plan_validity": 0.8366666666666667,
+    "raw_pass_at_1": 0.4166666666666667,
+    "tool_checked_pass_at_1": 0.8366666666666667
+  },
+  "splits": {
+    "heldout_direct": {
+      "buckets": {
+        "raw_correct": 79,
+        "tool_fixed_compute_error": 121
+      },
+      "by_kind": {
+        "binary": {
+          "n": 200,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.395,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "by_op": {
+        "*": {
+          "n": 72,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.0,
+          "tool_checked_pass_at_1": 1.0
+        },
+        "+": {
+          "n": 59,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.7966101694915254,
+          "tool_checked_pass_at_1": 1.0
+        },
+        "-": {
+          "n": 69,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.463768115942029,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "by_style": {
+        "direct": {
+          "n": 200,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.395,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "n": 200,
+      "plan_validity": 1.0,
+      "raw_pass_at_1": 0.395,
+      "tool_checked_pass_at_1": 1.0
+    },
+    "heldout_hard": {
+      "buckets": {
+        "raw_correct": 107,
+        "tool_fixed_compute_error": 93
+      },
+      "by_kind": {
+        "add_sub": {
+          "n": 200,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.535,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "by_op": {
+        "+": {
+          "n": 200,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.535,
+          "tool_checked_pass_at_1": 1.0
+        },
+        "-": {
+          "n": 200,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.535,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "by_style": {
+        "word": {
+          "n": 200,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.535,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "n": 200,
+      "plan_validity": 1.0,
+      "raw_pass_at_1": 0.535,
+      "tool_checked_pass_at_1": 1.0
+    },
+    "heldout_word": {
+      "buckets": {
+        "raw_correct": 64,
+        "tool_fixed_compute_error": 39,
+        "wrong_plan": 97
+      },
+      "by_kind": {
+        "binary": {
+          "n": 200,
+          "plan_validity": 0.51,
+          "raw_pass_at_1": 0.32,
+          "tool_checked_pass_at_1": 0.51
+        }
+      },
+      "by_op": {
+        "*": {
+          "n": 57,
+          "plan_validity": 0.22807017543859648,
+          "raw_pass_at_1": 0.017543859649122806,
+          "tool_checked_pass_at_1": 0.22807017543859648
+        },
+        "+": {
+          "n": 70,
+          "plan_validity": 0.8142857142857143,
+          "raw_pass_at_1": 0.6142857142857143,
+          "tool_checked_pass_at_1": 0.8142857142857143
+        },
+        "-": {
+          "n": 73,
+          "plan_validity": 0.4383561643835616,
+          "raw_pass_at_1": 0.273972602739726,
+          "tool_checked_pass_at_1": 0.4383561643835616
+        }
+      },
+      "by_style": {
+        "word": {
+          "n": 200,
+          "plan_validity": 0.51,
+          "raw_pass_at_1": 0.32,
+          "tool_checked_pass_at_1": 0.51
+        }
+      },
+      "n": 200,
+      "plan_validity": 0.51,
+      "raw_pass_at_1": 0.32,
+      "tool_checked_pass_at_1": 0.51
+    }
+  },
+  "wall_s": 1776.4
+}

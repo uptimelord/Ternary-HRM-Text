@@ -224,12 +224,21 @@ def train_sft(
     seed: int,
     bp_steps: int,
     log_interval: int,
+    amp: bool = False,
+    compile_model: bool = False,
 ) -> dict[str, float]:
     rng = random.Random(seed)
     opt = torch.optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.95), weight_decay=0.0)
     last_loss = 0.0
     last_token_acc = 0.0
     last_exact_acc = 0.0
+
+    # Speed levers (opt-in). AMP: bf16 autocast on the forward -> ~2x faster
+    # matmuls AND faster ternary fake-quant, no GradScaler needed for bf16.
+    # compile: fuses the per-step eager quant ops into kernels.
+    use_amp = amp and device.type == "cuda"
+    if compile_model and device.type == "cuda":
+        model = torch.compile(model)
 
     if device.type == "cuda":
         torch.cuda.synchronize()
@@ -240,7 +249,11 @@ def train_sft(
     for step in range(steps):
         batch_sequences = sample_sequences(train_sequences, rng=rng, batch_size=batch_size)
         batch = make_fixed_sft_batch(batch_sequences, device=device, vocab_size=vocab_size, total_len=total_len)
-        _carry, loss, metrics = model(carry=None, batch=batch, bp_steps=bp_steps)
+        if use_amp:
+            with torch.autocast(device_type="cuda", dtype=torch.bfloat16):
+                _carry, loss, metrics = model(carry=None, batch=batch, bp_steps=bp_steps)
+        else:
+            _carry, loss, metrics = model(carry=None, batch=batch, bp_steps=bp_steps)
         opt.zero_grad(set_to_none=True)
         loss.backward()
         opt.step()
@@ -514,6 +527,8 @@ def main() -> int:
     parser.add_argument("--generation-max-new-tokens", type=int, default=64)
     parser.add_argument("--stop-after-answer", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--train-hard-export-mode", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--amp", action="store_true", help="bf16 autocast on forward (CUDA) — faster matmuls + ternary quant")
+    parser.add_argument("--compile", dest="compile_model", action="store_true", help="torch.compile the model — fuses per-step quant ops")
     args = parser.parse_args()
 
     if args.device == "auto":
@@ -582,6 +597,8 @@ def main() -> int:
             seed=args.seed,
             bp_steps=args.bp_steps,
             log_interval=args.log_interval,
+            amp=args.amp,
+            compile_model=args.compile_model,
         )
 
     valid_after = evaluate_sft_loss(

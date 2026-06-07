@@ -1,0 +1,405 @@
+{
+  "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_eqr_full\\h256_exp34_1_eqrpretrain_plain2000_then_eqr_d015_zl010_h246_bp4_steps10000_eval200_h246\\checkpoint_fp32.pt",
+  "h": 2,
+  "wall_s": 129.2,
+  "report": {
+    "held_out": {
+      "n": 10,
+      "raw_pass_at_1": 0.2,
+      "tool_checked_pass_at_1": 0.9,
+      "plan_validity": 0.9,
+      "tool_wrong_final": 1,
+      "no_parsable_steps": 0.0,
+      "examples": [
+        {
+          "prompt": "Compute 90 + 12.",
+          "gold": 102,
+          "gen": "Step 1: 0 + 2 = 2\nStep 2: 90 + 10 = 100\nStep 3: 100 + 2 = 102\nAnswer: 102 =",
+          "raw_pass": true,
+          "tool_final": 102,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 0 + 2 =",
+              "model_result": 2,
+              "solver": "0 + 2 = 2",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 90 + 10 =",
+              "model_result": 100,
+              "solver": "90 + 10 = 100",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 3: 100 + 2 =",
+              "model_result": 102,
+              "solver": "100 + 2 = 102",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (74 + 35) - 7.",
+          "gold": 102,
+          "gen": "Step 1: 74 + 35 = 107\nStep 2: 107 - 7 = 10\nAnswer: 10 +",
+          "raw_pass": false,
+          "tool_final": 102,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 74 + 35 =",
+              "model_result": 107,
+              "solver": "74 + 35 = 109",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 107 - 7 =",
+              "model_result": 10,
+              "solver": "109 - 7 = 102",
+              "substituted": true
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (78 + 46) - 19.",
+          "gold": 105,
+          "gen": "Step 1: 78 + 46 = 125\nStep 1: 125 - 19 = 10\nAnswer: 10 +",
+          "raw_pass": false,
+          "tool_final": 105,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 78 + 46 =",
+              "model_result": 125,
+              "solver": "78 + 46 = 124",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 1: 125 - 19 =",
+              "model_result": 10,
+              "solver": "124 - 19 = 105",
+              "substituted": true
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (86 + 21) - 5.",
+          "gold": 102,
+          "gen": "Step 1: 96 + 21 = 117\nStep 2: 117 - 5 = 10\nAnswer: 10 +",
+          "raw_pass": false,
+          "tool_final": 112,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 96 + 21 =",
+              "model_result": 117,
+              "solver": "96 + 21 = 117",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 117 - 5 =",
+              "model_result": 10,
+              "solver": "117 - 5 = 112",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (89 + 41) - 14.",
+          "gold": 116,
+          "gen": "Step 1: 89 + 41 = 139\nStep 2: 139 - 14 = 116\nAnswer: 116 -",
+          "raw_pass": true,
+          "tool_final": 116,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 89 + 41 =",
+              "model_result": 139,
+              "solver": "89 + 41 = 130",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 139 - 14 =",
+              "model_result": 116,
+              "solver": "130 - 14 = 116",
+              "substituted": true
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (83 + 48) - 15.",
+          "gold": 116,
+          "gen": "Step 1: 83 + 48 = 131\nStep 2: 131 - 15 = 111\nAnswer: 111 =",
+          "raw_pass": false,
+          "tool_final": 116,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 83 + 48 =",
+              "model_result": 131,
+              "solver": "83 + 48 = 131",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 131 - 15 =",
+              "model_result": 111,
+              "solver": "131 - 15 = 116",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (24 + 34) - 4.",
+          "gold": 54,
+          "gen": "Step 1: 24 + 34 = 58\nStep 2: 58 - 4 = 53\nAnswer: 53 =",
+          "raw_pass": false,
+          "tool_final": 54,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 24 + 34 =",
+              "model_result": 58,
+              "solver": "24 + 34 = 58",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 58 - 4 =",
+              "model_result": 53,
+              "solver": "58 - 4 = 54",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (76 + 17) - 13.",
+          "gold": 80,
+          "gen": "Step 1: 76 + 17 = 93\nStep 2: 93 - 13 = 71\nAnswer: 71 =",
+          "raw_pass": false,
+          "tool_final": 80,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 76 + 17 =",
+              "model_result": 93,
+              "solver": "76 + 17 = 93",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 93 - 13 =",
+              "model_result": 71,
+              "solver": "93 - 13 = 80",
+              "substituted": false
+            }
+          ]
+        }
+      ]
+    },
+    "frozen": {
+      "n": 10,
+      "raw_pass_at_1": 0.3,
+      "tool_checked_pass_at_1": 0.5,
+      "plan_validity": 0.5,
+      "tool_wrong_final": 5,
+      "no_parsable_steps": 0.0,
+      "examples": [
+        {
+          "prompt": "Compute 24 + 14.",
+          "gold": 38,
+          "gen": "Step 1: 4 + 4 = 8\nStep 1: 20 + 10 = 30\nStep 2: 30 + 8 = 38\nAnswer: 38\n",
+          "raw_pass": true,
+          "tool_final": 38,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 4 + 4 =",
+              "model_result": 8,
+              "solver": "4 + 4 = 8",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 1: 20 + 10 =",
+              "model_result": 30,
+              "solver": "20 + 10 = 30",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 30 + 8 =",
+              "model_result": 38,
+              "solver": "30 + 8 = 38",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute 31 - 25.",
+          "gold": 6,
+          "gen": "Step 1: 1 - 5 = -4\nStep 1: 30 - 20 = 10\nStep 2: 10 + 4 = 14\nAnswer: 14\n",
+          "raw_pass": false,
+          "tool_final": 14,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 1 - 5 =",
+              "model_result": -4,
+              "solver": "1 - 5 = -4",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 1: 30 - 20 =",
+              "model_result": 10,
+              "solver": "30 - 20 = 10",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 10 + 4 =",
+              "model_result": 14,
+              "solver": "10 + 4 = 14",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute 36 * 17.",
+          "gold": 612,
+          "gen": "Step 1: 36 * 7 = 228\nStep 2: 36 * 10 = 360\nStep 3: 360 + 228 = 598\nAnswer: 598 +",
+          "raw_pass": false,
+          "tool_final": 588,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 36 * 7 =",
+              "model_result": 228,
+              "solver": "36 * 7 = 252",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 36 * 10 =",
+              "model_result": 360,
+              "solver": "36 * 10 = 360",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 3: 360 + 228 =",
+              "model_result": 598,
+              "solver": "360 + 228 = 588",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (45 + 47) - 3.",
+          "gold": 89,
+          "gen": "Step 1: 45 + 47 = 92\nStep 2: 92 - 3 = 91\nAnswer: 91\n",
+          "raw_pass": false,
+          "tool_final": 89,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 45 + 47 =",
+              "model_result": 92,
+              "solver": "45 + 47 = 92",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 92 - 3 =",
+              "model_result": 91,
+              "solver": "92 - 3 = 89",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute 52 + 11.",
+          "gold": 63,
+          "gen": "Step 1: 2 + 1 = 3\nStep 1: 50 + 10 = 60\nStep 2: 60 + 3 = 63\nAnswer: 63 +",
+          "raw_pass": true,
+          "tool_final": 63,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 2 + 1 =",
+              "model_result": 3,
+              "solver": "2 + 1 = 3",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 1: 50 + 10 =",
+              "model_result": 60,
+              "solver": "50 + 10 = 60",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 60 + 3 =",
+              "model_result": 63,
+              "solver": "60 + 3 = 63",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute 59 - 22.",
+          "gold": 37,
+          "gen": "Step 1: 9 - 2 = 7\nStep 1: 50 - 20 = 30\nStep 2: 30 + 7 = 37\nAnswer: 37 =",
+          "raw_pass": true,
+          "tool_final": 37,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 9 - 2 =",
+              "model_result": 7,
+              "solver": "9 - 2 = 7",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 1: 50 - 20 =",
+              "model_result": 30,
+              "solver": "50 - 20 = 30",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 30 + 7 =",
+              "model_result": 37,
+              "solver": "30 + 7 = 37",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute 33 * 18.",
+          "gold": 594,
+          "gen": "Step 1: 33 * 8 = 228\nStep 2: 33 * 10 = 330\nStep 3: 330 + 228 = 552\nAnswer: 552 +",
+          "raw_pass": false,
+          "tool_final": 558,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 33 * 8 =",
+              "model_result": 228,
+              "solver": "33 * 8 = 264",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 33 * 10 =",
+              "model_result": 330,
+              "solver": "33 * 10 = 330",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 3: 330 + 228 =",
+              "model_result": 552,
+              "solver": "330 + 228 = 558",
+              "substituted": false
+            }
+          ]
+        },
+        {
+          "prompt": "Compute (73 + 44) - 4.",
+          "gold": 113,
+          "gen": "Step 1: 73 + 44 = 117\nStep 2: 117 - 4 = 10\nAnswer: 10 +",
+          "raw_pass": false,
+          "tool_final": 113,
+          "tool_steps": [
+            {
+              "model_step": "Step 1: 73 + 44 =",
+              "model_result": 117,
+              "solver": "73 + 44 = 117",
+              "substituted": false
+            },
+            {
+              "model_step": "Step 2: 117 - 4 =",
+              "model_result": 10,
+              "solver": "117 - 4 = 113",
+              "substituted": false
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

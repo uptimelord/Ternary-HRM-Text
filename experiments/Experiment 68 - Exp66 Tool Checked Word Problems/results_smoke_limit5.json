@@ -1,0 +1,128 @@
+{
+  "bp_steps": 4,
+  "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_exp66_word_reasoning\\h256_exp34_1_word100k_sft2000_seed1\\checkpoint_fp32.pt",
+  "h": 4,
+  "max_new_tokens": 64,
+  "max_prefix_tokens": 96,
+  "overall": {
+    "buckets": {
+      "raw_correct": 4,
+      "tool_fixed_compute_error": 8,
+      "wrong_plan": 3
+    },
+    "by_kind": {
+      "add_sub": {
+        "n": 5,
+        "plan_validity": 1.0,
+        "raw_pass_at_1": 0.4,
+        "tool_checked_pass_at_1": 1.0
+      },
+      "binary": {
+        "n": 10,
+        "plan_validity": 0.7,
+        "raw_pass_at_1": 0.2,
+        "tool_checked_pass_at_1": 0.7
+      }
+    },
+    "by_style": {
+      "direct": {
+        "n": 5,
+        "plan_validity": 1.0,
+        "raw_pass_at_1": 0.2,
+        "tool_checked_pass_at_1": 1.0
+      },
+      "word": {
+        "n": 10,
+        "plan_validity": 0.7,
+        "raw_pass_at_1": 0.3,
+        "tool_checked_pass_at_1": 0.7
+      }
+    },
+    "n": 15,
+    "plan_validity": 0.8,
+    "raw_pass_at_1": 0.26666666666666666,
+    "tool_checked_pass_at_1": 0.8
+  },
+  "splits": {
+    "heldout_direct": {
+      "buckets": {
+        "raw_correct": 1,
+        "tool_fixed_compute_error": 4
+      },
+      "by_kind": {
+        "binary": {
+          "n": 5,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.2,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "by_style": {
+        "direct": {
+          "n": 5,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.2,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "n": 5,
+      "plan_validity": 1.0,
+      "raw_pass_at_1": 0.2,
+      "tool_checked_pass_at_1": 1.0
+    },
+    "heldout_hard": {
+      "buckets": {
+        "raw_correct": 2,
+        "tool_fixed_compute_error": 3
+      },
+      "by_kind": {
+        "add_sub": {
+          "n": 5,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.4,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "by_style": {
+        "word": {
+          "n": 5,
+          "plan_validity": 1.0,
+          "raw_pass_at_1": 0.4,
+          "tool_checked_pass_at_1": 1.0
+        }
+      },
+      "n": 5,
+      "plan_validity": 1.0,
+      "raw_pass_at_1": 0.4,
+      "tool_checked_pass_at_1": 1.0
+    },
+    "heldout_word": {
+      "buckets": {
+        "raw_correct": 1,
+        "tool_fixed_compute_error": 1,
+        "wrong_plan": 3
+      },
+      "by_kind": {
+        "binary": {
+          "n": 5,
+          "plan_validity": 0.4,
+          "raw_pass_at_1": 0.2,
+          "tool_checked_pass_at_1": 0.4
+        }
+      },
+      "by_style": {
+        "word": {
+          "n": 5,
+          "plan_validity": 0.4,
+          "raw_pass_at_1": 0.2,
+          "tool_checked_pass_at_1": 0.4
+        }
+      },
+      "n": 5,
+      "plan_validity": 0.4,
+      "raw_pass_at_1": 0.2,
+      "tool_checked_pass_at_1": 0.4
+    }
+  },
+  "wall_s": 44.0
+}

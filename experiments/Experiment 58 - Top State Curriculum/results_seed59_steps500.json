@@ -1,0 +1,104 @@
+{
+  "config": {
+    "batch_size": 128,
+    "branch": false,
+    "candidate_counts": [
+      10,
+      2,
+      10,
+      2,
+      2
+    ],
+    "cells": [
+      "ones",
+      "carry0",
+      "tens",
+      "carry1",
+      "hundreds"
+    ],
+    "cls_threshold": 0.6,
+    "curriculum_steps": 300,
+    "heads": 4,
+    "internal_iters": 16,
+    "layers": 2,
+    "max_solve_steps": 4,
+    "on_policy_steps": 1,
+    "seed": 59,
+    "smoke": false,
+    "sound_carry_closure": true,
+    "steps": 500,
+    "threshold": 0.1,
+    "width": 64
+  },
+  "report": {
+    "frozen_add": {
+      "argmax": {
+        "acc": 0.16,
+        "invalid": 0.0,
+        "n": 50
+      },
+      "solver": {
+        "abstained": 2,
+        "conflicts": 2,
+        "coverage": 0.96,
+        "invalid": 0.0,
+        "n": 50,
+        "returned_correct": 48,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 0.96,
+        "wrong_examples": []
+      }
+    },
+    "held_out_add": {
+      "argmax": {
+        "acc": 0.0,
+        "invalid": 0.0,
+        "n": 7
+      },
+      "solver": {
+        "abstained": 0,
+        "conflicts": 0,
+        "coverage": 1.0,
+        "invalid": 0.0,
+        "n": 7,
+        "returned_correct": 7,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 1.0,
+        "wrong_examples": []
+      }
+    },
+    "train_visible_add": {
+      "argmax": {
+        "acc": 0.18604651162790697,
+        "invalid": 0.0,
+        "n": 43
+      },
+      "solver": {
+        "abstained": 2,
+        "conflicts": 2,
+        "coverage": 0.9534883720930233,
+        "invalid": 0.0,
+        "n": 43,
+        "returned_correct": 41,
+        "returned_wrong": 0,
+        "sound_when_returned": 1.0,
+        "verified_acc": 0.9534883720930233,
+        "wrong_examples": []
+      }
+    },
+    "valid_add": {
+      "acc": 0.19775280898876405,
+      "invalid": 0.0,
+      "n": 445
+    }
+  },
+  "train": {
+    "best_valid_argmax_acc": 0.19775280898876405,
+    "device": "cuda",
+    "last_loss": 0.002160445088520646,
+    "n": 3722,
+    "wall_s": 102.46
+  }
+}

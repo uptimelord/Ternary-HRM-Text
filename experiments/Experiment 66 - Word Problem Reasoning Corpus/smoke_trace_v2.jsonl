@@ -1,0 +1,20 @@
+{"id": "wp_66_0", "style": "trace", "kind": "add_sub", "prompt": "Start with 65. Add 41. Then subtract 101.", "answer": "5", "steps": ["65 + 41 = 106", "106 - 101 = 5"], "spec_signature": "add_sub|65,41,101|+-"}
+{"id": "wp_66_1", "style": "trace", "kind": "binary", "prompt": "Start with 24. Subtract 14.", "answer": "10", "steps": ["24 - 14 = 10"], "spec_signature": "binary|24,14|-"}
+{"id": "wp_66_2", "style": "trace", "kind": "binary", "prompt": "Start with 10. Multiply by 93.", "answer": "930", "steps": ["10 * 93 = 930"], "spec_signature": "binary|10,93|*"}
+{"id": "wp_66_3", "style": "trace", "kind": "binary", "prompt": "Start with 53. Add 94.", "answer": "147", "steps": ["53 + 94 = 147"], "spec_signature": "binary|53,94|+"}
+{"id": "wp_66_4", "style": "trace", "kind": "binary", "prompt": "Start with 66. Multiply by 5.", "answer": "330", "steps": ["66 * 5 = 330"], "spec_signature": "binary|66,5|*"}
+{"id": "wp_66_5", "style": "trace", "kind": "binary", "prompt": "Start with 18. Subtract 11.", "answer": "7", "steps": ["18 - 11 = 7"], "spec_signature": "binary|18,11|-"}
+{"id": "wp_66_6", "style": "trace", "kind": "add_sub", "prompt": "Start with 11. Add 36. Then subtract 45.", "answer": "2", "steps": ["11 + 36 = 47", "47 - 45 = 2"], "spec_signature": "add_sub|11,36,45|+-"}
+{"id": "wp_66_7", "style": "trace", "kind": "binary", "prompt": "Start with 28. Multiply by 87.", "answer": "2436", "steps": ["28 * 87 = 2436"], "spec_signature": "binary|28,87|*"}
+{"id": "wp_66_8", "style": "trace", "kind": "binary", "prompt": "Start with 40. Subtract 12.", "answer": "28", "steps": ["40 - 12 = 28"], "spec_signature": "binary|40,12|-"}
+{"id": "wp_66_9", "style": "trace", "kind": "add_sub", "prompt": "Start with 35. Add 51. Then subtract 86.", "answer": "0", "steps": ["35 + 51 = 86", "86 - 86 = 0"], "spec_signature": "add_sub|35,51,86|+-"}
+{"id": "wp_66_10", "style": "trace", "kind": "add_sub", "prompt": "Start with 44. Add 12. Then subtract 40.", "answer": "16", "steps": ["44 + 12 = 56", "56 - 40 = 16"], "spec_signature": "add_sub|44,12,40|+-"}
+{"id": "wp_66_11", "style": "trace", "kind": "add_sub", "prompt": "Start with 70. Add 87. Then subtract 107.", "answer": "50", "steps": ["70 + 87 = 157", "157 - 107 = 50"], "spec_signature": "add_sub|70,87,107|+-"}
+{"id": "wp_66_12", "style": "trace", "kind": "add_sub", "prompt": "Start with 60. Add 81. Then subtract 26.", "answer": "115", "steps": ["60 + 81 = 141", "141 - 26 = 115"], "spec_signature": "add_sub|60,81,26|+-"}
+{"id": "wp_66_13", "style": "trace", "kind": "binary", "prompt": "Start with 56. Multiply by 42.", "answer": "2352", "steps": ["56 * 42 = 2352"], "spec_signature": "binary|56,42|*"}
+{"id": "wp_66_14", "style": "trace", "kind": "binary", "prompt": "Start with 47. Subtract 46.", "answer": "1", "steps": ["47 - 46 = 1"], "spec_signature": "binary|47,46|-"}
+{"id": "wp_66_15", "style": "trace", "kind": "binary", "prompt": "Start with 1. Add 41.", "answer": "42", "steps": ["1 + 41 = 42"], "spec_signature": "binary|1,41|+"}
+{"id": "wp_66_16", "style": "trace", "kind": "binary", "prompt": "Start with 37. Add 61.", "answer": "98", "steps": ["37 + 61 = 98"], "spec_signature": "binary|37,61|+"}
+{"id": "wp_66_17", "style": "trace", "kind": "binary", "prompt": "Start with 97. Multiply by 60.", "answer": "5820", "steps": ["97 * 60 = 5820"], "spec_signature": "binary|97,60|*"}
+{"id": "wp_66_18", "style": "trace", "kind": "binary", "prompt": "Start with 68. Multiply by 82.", "answer": "5576", "steps": ["68 * 82 = 5576"], "spec_signature": "binary|68,82|*"}
+{"id": "wp_66_19", "style": "trace", "kind": "add_sub", "prompt": "Start with 46. Add 52. Then subtract 14.", "answer": "84", "steps": ["46 + 52 = 98", "98 - 14 = 84"], "spec_signature": "add_sub|46,52,14|+-"}

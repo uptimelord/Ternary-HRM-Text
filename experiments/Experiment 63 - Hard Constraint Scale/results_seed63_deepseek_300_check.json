@@ -1,0 +1,106 @@
+{
+  "config": {
+    "bucket_mix": "balanced",
+    "dataset_source": "deepseek",
+    "device": "cpu",
+    "epochs": 8,
+    "max_solve_steps": 6,
+    "max_states_per_task": 4,
+    "seed": 63,
+    "total_tasks": 300,
+    "train_fraction": 0.8,
+    "width": 64
+  },
+  "dataset": {
+    "bucket_counts": {
+      "average": 100,
+      "difficult": 100,
+      "easy": 100
+    },
+    "eval_fetch": {
+      "accepted": 60,
+      "input_tokens": 1552,
+      "output_tokens": 46205,
+      "rejected": 180,
+      "requests": 4
+    },
+    "eval_tasks": 60,
+    "total_tasks": 300,
+    "train_fetch": {
+      "accepted": 240,
+      "input_tokens": 36471,
+      "output_tokens": 1207434,
+      "rejected": 5400,
+      "requests": 94
+    },
+    "train_tasks": 240
+  },
+  "report": {
+    "first": {
+      "abstained": 0,
+      "branches": 160,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.6666666666666665,
+      "n": 60,
+      "policy_calls": 160,
+      "returned_correct": 60,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    },
+    "learned": {
+      "abstained": 0,
+      "branches": 163,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.716666666666667,
+      "n": 60,
+      "policy_calls": 163,
+      "returned_correct": 60,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    },
+    "oracle": {
+      "abstained": 0,
+      "branches": 148,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.466666666666667,
+      "n": 60,
+      "policy_calls": 148,
+      "returned_correct": 60,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    },
+    "random": {
+      "abstained": 0,
+      "branches": 166,
+      "conflicts": 0,
+      "coverage": 1.0,
+      "max_branches": 4,
+      "mean_branches": 2.7666666666666666,
+      "n": 60,
+      "policy_calls": 166,
+      "returned_correct": 60,
+      "returned_wrong": 0,
+      "sound_when_returned": 1.0,
+      "verified_acc": 1.0
+    }
+  },
+  "train": {
+    "last_loss": 3.5300369262695312,
+    "search_states": 576,
+    "state_buckets": {
+      "average": 174,
+      "difficult": 288,
+      "easy": 114
+    }
+  },
+  "wall_s": 7147.09
+}

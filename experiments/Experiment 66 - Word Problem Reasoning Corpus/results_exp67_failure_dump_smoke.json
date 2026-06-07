@@ -1,0 +1,199 @@
+{
+  "analysis": {
+    "by_error": {
+      "answer_mismatch": {
+        "acc": 0.0,
+        "failed": 4,
+        "n": 4,
+        "passed": 0
+      }
+    },
+    "by_h": {
+      "4": {
+        "acc": 0.3333333333333333,
+        "failed": 4,
+        "n": 6,
+        "passed": 2
+      }
+    },
+    "by_kind": {
+      "add_sub": {
+        "acc": 0.5,
+        "failed": 1,
+        "n": 2,
+        "passed": 1
+      },
+      "binary": {
+        "acc": 0.25,
+        "failed": 3,
+        "n": 4,
+        "passed": 1
+      }
+    },
+    "by_op": {
+      "*": {
+        "acc": 0.0,
+        "failed": 2,
+        "n": 2,
+        "passed": 0
+      },
+      "+": {
+        "acc": 0.5,
+        "failed": 1,
+        "n": 2,
+        "passed": 1
+      },
+      "-": {
+        "acc": 0.5,
+        "failed": 2,
+        "n": 4,
+        "passed": 2
+      }
+    },
+    "by_split": {
+      "heldout_direct": {
+        "acc": 0.0,
+        "failed": 2,
+        "n": 2,
+        "passed": 0
+      },
+      "heldout_hard": {
+        "acc": 0.5,
+        "failed": 1,
+        "n": 2,
+        "passed": 1
+      },
+      "heldout_word": {
+        "acc": 0.5,
+        "failed": 1,
+        "n": 2,
+        "passed": 1
+      }
+    },
+    "by_style": {
+      "direct": {
+        "acc": 0.0,
+        "failed": 2,
+        "n": 2,
+        "passed": 0
+      },
+      "word": {
+        "acc": 0.5,
+        "failed": 2,
+        "n": 4,
+        "passed": 2
+      }
+    },
+    "overall": {
+      "acc": 0.3333333333333333,
+      "failed": 4,
+      "n": 6,
+      "passed": 2
+    }
+  },
+  "bp_steps": 4,
+  "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_exp66_word_reasoning\\h256_exp34_1_word100k_sft2000_seed1\\checkpoint_fp32.pt",
+  "generations_path": "experiments\\Experiment 66 - Word Problem Reasoning Corpus\\generations_exp67_failure_dump_smoke.jsonl",
+  "h_values": [
+    4
+  ],
+  "max_new_tokens": 64,
+  "max_prefix_tokens": 96,
+  "splits": {
+    "heldout_direct": {
+      "4": {
+        "errors": {
+          "answer_mismatch": 2
+        },
+        "examples": [
+          {
+            "error": "answer_mismatch",
+            "extracted": "7",
+            "generated": "Step 1: 9 - 9 = 7\nAnswer: 7 -",
+            "gold": "0",
+            "id": "wp_9001_0",
+            "passed": false,
+            "prompt": "Compute 9 - 9"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "50966",
+            "generated": "Step 1: 67 * 8 = 5096\nAnswer: 50966 =",
+            "gold": "536",
+            "id": "wp_9001_1",
+            "passed": false,
+            "prompt": "Compute 67 * 8"
+          }
+        ],
+        "invalid": 0.0,
+        "n": 2,
+        "pass_at_1": 0.0,
+        "wall_s": 6.3
+      }
+    },
+    "heldout_hard": {
+      "4": {
+        "errors": {
+          "None": 1,
+          "answer_mismatch": 1
+        },
+        "examples": [
+          {
+            "error": null,
+            "extracted": "13",
+            "generated": "Step 1: 13 + 17 = 30\nStep 2: 30 - 17 = 13\nAnswer: 13 -",
+            "gold": "13",
+            "id": "wp_9003_0",
+            "passed": true,
+            "prompt": "Anna has 13 apples, then finds 17 more, and then gives away 17 apples."
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "45",
+            "generated": "Step 1: 41 + 82 = 123\nStep 2: 123 - 79 = 45\nAnswer: 45 -",
+            "gold": "44",
+            "id": "wp_9003_1",
+            "passed": false,
+            "prompt": "Tom has 41 marbles, finds 82 more, and then loses 79 marbles."
+          }
+        ],
+        "invalid": 0.0,
+        "n": 2,
+        "pass_at_1": 0.5,
+        "wall_s": 9.9
+      }
+    },
+    "heldout_word": {
+      "4": {
+        "errors": {
+          "None": 1,
+          "answer_mismatch": 1
+        },
+        "examples": [
+          {
+            "error": null,
+            "extracted": "63",
+            "generated": "Step 1: 81 - 18 = 63\nAnswer: 63 -",
+            "gold": "63",
+            "id": "wp_9002_0",
+            "passed": true,
+            "prompt": "If you have 81 apples and you give away 18, how many apples do you have left?"
+          },
+          {
+            "error": "answer_mismatch",
+            "extracted": "140",
+            "generated": "Step 1: 76 + 74 = 140\nAnswer: 140 -",
+            "gold": "5624",
+            "id": "wp_9002_1",
+            "passed": false,
+            "prompt": "There are 76 rows of chairs with 74 chairs in each row. How many chairs are there in total?"
+          }
+        ],
+        "invalid": 0.0,
+        "n": 2,
+        "pass_at_1": 0.5,
+        "wall_s": 5.0
+      }
+    }
+  }
+}
