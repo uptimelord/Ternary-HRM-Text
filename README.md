@@ -143,8 +143,12 @@ From the repo's directory:
 ```bash
 docker run --gpus all --ipc=host --network=host -it \
   -v "$PWD":/workspace \
-  sapientai/hrm-text:latest
+  <DOCKER_REGISTRY>/<DOCKER_NAMESPACE>/ternary-hrm-text:latest
 ```
+
+This repo's GitHub Actions workflow (`docker_build_push.yml`) publishes
+`ternary-hrm-text:latest` from the fork. Upstream reference image:
+`sapientai/hrm-text:latest`.
 
 For multi-node runs, mount the same shared workspace on every node. Keeping the code, tokenized data, and checkpoint directory at identical paths avoids version drift between ranks and makes FSDP2 checkpointing straightforward. A common layout is:
 
@@ -163,6 +167,14 @@ Then install the Python dependencies:
 
 ```bash
 pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
+Reproducible CI/dev env (pinned subset, CPU torch installed separately):
+
+```bash
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install -r requirements.lock -r requirements-dev.txt
 ```
 
 #### Check Distributed Communication

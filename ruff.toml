@@ -1,0 +1,13 @@
+line-length = 120
+target-version = "py312"
+
+[lint]
+select = ["E", "F"]
+
+[lint.per-file-ignores]
+"tests/**" = ["E402", "E731", "E501", "F401"]
+"evaluation/**" = ["E501", "E722"]
+"experiments/discipline.py" = ["E501"]
+"training/tool_solver.py" = ["E501"]
+"training/sft_lib.py" = ["E501"]
+"training/verifier_loop.py" = ["F401"]
