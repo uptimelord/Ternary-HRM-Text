@@ -54,7 +54,15 @@ time limit. At that speed, 10k rows would take many hours.
 So the full 10k dataset was made with the exact local task maker. It still uses
 the same checker, same rule shape, and same bucket rules.
 
-## Result
+## Decision Rule
+
+Promote if learned policy beats first/random on difficult-bucket eval with
+`returned_wrong == 0` and mean branches at least **2** fewer than first/random.
+
+Kill if first and random also solve **100%** of eval at equal branch counts —
+dataset lacks search pressure for learned control.
+
+## Results
 
 ```text
 total: 10,000

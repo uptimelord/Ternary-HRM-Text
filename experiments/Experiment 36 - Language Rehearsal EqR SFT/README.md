@@ -41,20 +41,17 @@ rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
   "experiments/Experiment 36 - Language Rehearsal EqR SFT/run_exp36_h256_rehearsal_sft.ps1"
 ```
 
-## Promote If
+## Decision Rule
 
-- Arithmetic stays near the Exp35 band.
-- Invalid rate stays at 0%.
-- Language probes are less number/step-dominated than Exp35 final SFT.
-- H=4 remains at least roughly as good as H=2.
+Promote if arithmetic stays near the Exp35 band, invalid rate stays at 0%,
+language probes are less number/step-dominated than Exp35 final SFT, and H=4
+remains at least roughly as good as H=2.
 
-## Do Not Promote If
+Kill if arithmetic falls back near the weak pre-SFT baseline, language probes are
+still pure arithmetic fragments, or rehearsal makes recurrence unstable across
+H=2/4/6.
 
-- Arithmetic falls back near the weak pre-SFT baseline.
-- Language probes are still pure arithmetic fragments.
-- Rehearsal makes recurrence unstable across H=2/4/6.
-
-## Result
+## Results
 
 Exp36 is a useful arithmetic/recurrence result, but not a language solve.
 

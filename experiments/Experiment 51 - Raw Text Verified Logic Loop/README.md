@@ -73,6 +73,15 @@ Rule-family-OOD synonym run:
 rtk python "experiments/Experiment 51 - Raw Text Verified Logic Loop/raw_text_verified_logic_loop.py" --split-mode rule-family-ood --n-predicates 8 --noise-style synonym --steps 300 --batch-size 64 --width 48 --seeds 43 44 45 --device auto --phase0-feature-mode checkpoint --feature-batch-size 16 --out "experiments/Experiment 51 - Raw Text Verified Logic Loop/results_rule_family_ood_synonym_phase0_seeds434445.json"
 ```
 
+## Decision Rule
+
+Promote if `robust_parser_*` lanes reach **100%** mean acc on both template-OOD
+and rule-family OOD synonym noise with **0%** invalid, while
+`strict_parser_semantic_ranker` stays fail-closed (invalid **100%** on OOD).
+
+Kill if any lane shows `parsed_wrong > 0` on adversarial eval, or robust parser
+accuracy on rule-family OOD falls below **90%**.
+
 ## Results
 
 Run date: 2026-06-04. Device cuda, locked Phase 0 h256 checkpoint,

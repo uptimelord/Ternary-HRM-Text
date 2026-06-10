@@ -49,9 +49,12 @@ So `wrong_returns` stays `0` by construction in both modes.
 
 ## Decision Rule
 
-- **Promote** if `coverage > 0` across all 3 seeds AND `wrong_returns = 0` for all 3
-  seeds (in the evaluated mode).
-- **Kill** otherwise.
+Promote if `--neural-elim off` (pure closure) reaches `coverage > 0` across all
+3 seeds with `returned_wrong == 0`, or `--neural-elim on` with threshold **0.02**
+matches that coverage band.
+
+Kill if neural-elim **on** stays at **0%** coverage on all seeds while off mode
+recovers coverage — threshold elimination is still killing the true path.
 
 ## Commands
 
@@ -84,9 +87,23 @@ rtk python "experiments/Experiment 59 - Soft Elimination Threshold/soft_eliminat
 
 ## Results
 
-Pending (3 seeds x {on, off}, mean/std).
+Seeds 56/57/58, 500 steps, threshold **0.02**. JSON: `results_seed56_on.json`,
+`results_seed56_off.json`, etc.
 
-| mode | coverage (mean+/-std) | wrong_returns | conflicts |
+| mode | seed | frozen coverage | frozen wrong |
 |---|---:|---:|---:|
-| neural-elim on  | pending | pending | pending |
-| neural-elim off | pending | pending | pending |
+| neural-elim **on** | 56 | 0% | 0 |
+| neural-elim **on** | 57 | 0% | 0 |
+| neural-elim **on** | 58 | 0% | 0 |
+| neural-elim **off** | 56 | **100%** | 0 |
+| neural-elim **off** | 57 | **100%** | 0 |
+| neural-elim **off** | 58 | **100%** | 0 |
+
+Soft threshold alone does not fix on-mode coverage (still **0%**). Turning neural
+elimination off lets sound closure + branch-pin solve every frozen row with
+`returned_wrong == 0`.
+
+### Verdict: PROMOTE pure-deduction mode (`--neural-elim off`)
+
+Use neural elimination off (or closure-led Exp57 ordering) as the default solve
+loop. On-mode at 0.02 threshold remains a kill for primary eliminator duty.

@@ -65,6 +65,15 @@ Template-OOD noisy sanity run:
 rtk python "experiments/Experiment 48 - Reusable Semantic Rule Ranker/reusable_semantic_rule_ranker_probe.py" --split-mode template-ood --n-predicates 8 --steps 300 --batch-size 64 --width 48 --seeds 43 44 45 --device auto --noisy-eval --out "experiments/Experiment 48 - Reusable Semantic Rule Ranker/results_template_ood_noisy_seeds434445.json"
 ```
 
+## Decision Rule
+
+Promote if the shared `evaluation/semantic_rule_ranker.py` API reproduces Exp47
+rule-family OOD gains (**≥95%** semantic ranker, **0%** invalid) with noisy-eval
+wording perturbation and no answer/rule_used feature leakage.
+
+Kill if extracted API regresses versus inline Exp47 script on the same seeds, or
+noisy eval drops accuracy below **90%** while strict eval stays high.
+
 ## Results
 
 Run date: 2026-06-04. Seeds 43/44/45, device cuda, width 48, 300 steps/head,

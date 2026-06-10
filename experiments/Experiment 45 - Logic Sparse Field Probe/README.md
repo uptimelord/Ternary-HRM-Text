@@ -55,6 +55,16 @@ Easier template-OOD sanity run:
 rtk python "experiments/Experiment 45 - Logic Sparse Field Probe/logic_sparse_probe.py" --split-mode template-ood --n-predicates 8 --steps 300 --batch-size 64 --width 48 --seeds 43 44 45 --device auto --out "experiments/Experiment 45 - Logic Sparse Field Probe/results_template_ood_seeds434445.json"
 ```
 
+## Decision Rule
+
+Promote if `sparse_rule` lane reaches **100%** exact truth with **0%** invalid on
+rule-family OOD while dense `direct_answer` and `field_rule` lanes stay below
+**80%** on held-out families — explicit sparse parsing generalizes where learned
+field heads cannot.
+
+Kill if sparse path wins only on template-OOD (seen families) but fails
+rule-family OOD, or invalid rate rises above **0%** on any lane.
+
 ## Results
 
 Run date: 2026-06-04. Seeds 43/44/45, device cuda, width 48, 300 steps/head.

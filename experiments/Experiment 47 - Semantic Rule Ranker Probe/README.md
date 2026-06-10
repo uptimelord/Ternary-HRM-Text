@@ -68,6 +68,15 @@ Template-OOD sanity run:
 rtk python "experiments/Experiment 47 - Semantic Rule Ranker Probe/semantic_rule_ranker_probe.py" --split-mode template-ood --n-predicates 8 --steps 300 --batch-size 64 --width 48 --seeds 43 44 45 --device auto --out "experiments/Experiment 47 - Semantic Rule Ranker Probe/results_template_ood_seeds434445.json"
 ```
 
+## Decision Rule
+
+Promote if `semantic_candidate_ranker` beats `bow_candidate_ranker` on
+rule-family OOD by **≥20 pp** with **0%** invalid, while template-OOD stays
+**≥95%** and `semantic_oracle_ranker` reports the upper bound.
+
+Kill if semantic ranker wins only on template-OOD (seen families) but not on
+rule-family OOD — text shortcuts did not transfer to unseen rule structure.
+
 ## Results
 
 Run date: 2026-06-04. Seeds 43/44/45, device cuda, width 48, 300 steps/head.

@@ -61,6 +61,16 @@ rtk python "experiments/Experiment 55 - Carry Lattice LDT Addition/carry_lattice
 rtk python "experiments/Experiment 55 - Carry Lattice LDT Addition/carry_lattice_ldt_addition.py" --steps 500 --batch-size 128 --width 64 --layers 2 --heads 4 --internal-iters 16 --on-policy-steps 0 --seed 55 --device auto --out "experiments/Experiment 55 - Carry Lattice LDT Addition/results_seed55_topstate_steps500.json"
 ```
 
+## Decision Rule
+
+Promote if on-policy solver reaches `coverage > 0` with `returned_wrong == 0` on
+frozen add, or top-state ablation proves sound singleton returns (`wrong == 0`)
+at `coverage ≥ 5%`.
+
+Kill if top-state training returns wrong singletons (`returned_wrong > 0`) or
+on-policy coverage stays **0%** after 500 steps — carry lattice is not yet
+learnable.
+
 ## Results
 
 ### Faithful on-policy run

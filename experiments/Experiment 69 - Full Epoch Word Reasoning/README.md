@@ -20,6 +20,14 @@ No architecture change. fp32.
 - checkpoint: `artifacts/phase0_exp69_fullepoch/h256_word100k_b16_s18000_seed1/`
 - ~80 min on the 3050 Ti, peak VRAM ~2.7 GB.
 
+## Decision Rule
+
+Promote if full-epoch SFT lifts heldout_word raw accuracy by **≥20 pp** versus
+Exp66 (32%) **and** tool-checked word slice reaches **≥80%** with invalid **0%**.
+
+Kill if word raw stays below **50%** after full epoch, or tool-checked overall
+does not beat the Exp68 **83.7%** baseline.
+
 ## Results
 
 ### Training (vs Exp66 8%-epoch)

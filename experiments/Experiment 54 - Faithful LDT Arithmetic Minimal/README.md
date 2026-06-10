@@ -45,6 +45,14 @@ rtk python "experiments/Experiment 54 - Faithful LDT Arithmetic Minimal/faithful
 rtk python "experiments/Experiment 54 - Faithful LDT Arithmetic Minimal/faithful_ldt_arithmetic_minimal.py" --steps 500 --batch-size 128 --width 96 --recurrent-steps 3 --seed 54 --device auto --out "experiments/Experiment 54 - Faithful LDT Arithmetic Minimal/results_seed54_steps500.json"
 ```
 
+## Decision Rule
+
+Promote if solver `coverage > 0` on frozen eval200 with `returned_wrong == 0`
+and solver correct beats direct argmax by **≥10 pp** at matched steps.
+
+Kill if solver coverage stays **0%** across seeds while argmax also stays near
+chance — faithful lattice wiring alone does not learn arithmetic.
+
 ## Results
 
 Run: seed 54, cuda, 500 steps, batch 128, width 96, recurrent steps 3.

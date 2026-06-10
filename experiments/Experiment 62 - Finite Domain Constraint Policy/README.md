@@ -47,7 +47,15 @@ In this local run, Numba was not installed, so `auto` fell back to Python.
 rtk python "experiments/Experiment 62 - Finite Domain Constraint Policy/finite_domain_constraint_policy_probe.py" --device cpu --dataset-source deepseek --backend auto --train-tasks 100 --eval-tasks 40 --deepseek-batch-size 20 --epochs 100 --width 96 --max-solve-steps 8 --out "experiments/Experiment 62 - Finite Domain Constraint Policy/results_seed62_deepseek_100.json" --dataset-out "experiments/Experiment 62 - Finite Domain Constraint Policy/deepseek_tasks_seed62.jsonl" --states-out "experiments/Experiment 62 - Finite Domain Constraint Policy/search_states_seed62.jsonl"
 ```
 
-## Result
+## Decision Rule
+
+Promote if learned policy beats first/random on mean branches with `wrong == 0`
+on eval tasks where oracle needs **≥3** branches and first/random need **≥5**.
+
+Kill if all policies tie at **100%** coverage with `wrong == 0` on easy tasks, or
+Python backend cannot scale to **1k+** tasks without Numba.
+
+## Results
 
 - train tasks: 100
 - eval tasks: 40
@@ -79,7 +87,7 @@ Hard truth:
 - Oracle barely improves because most tasks need only one branch.
 - Python fallback is too slow for 10k scale.
 
-## Decision
+## Read
 
 Keep Exp62 as the reusable math harness.
 

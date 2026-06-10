@@ -35,6 +35,15 @@ rtk python "experiments/Experiment 53 - Generated Parser Stress Suite/generated_
 rtk python "experiments/Experiment 53 - Generated Parser Stress Suite/generated_parser_stress_suite.py" --n-predicates 8 --per-rule 4 --unsafe-only --out "experiments/Experiment 53 - Generated Parser Stress Suite/results_unsafe_only_perrule4.json"
 ```
 
+## Decision Rule
+
+Promote if generated supported wording reaches **100%** `parsed_correct` with
+`parsed_wrong == 0` on the mixed suite, and all unsafe wording is `fail_closed`
+with `parsed_wrong == 0`.
+
+Kill if any generated case lands in `parsed_wrong` — unsupported grammar must
+reject, not mis-parse.
+
 ## Results
 
 | Run | n | parsed_correct | fail_closed | parsed_wrong | unexpected |

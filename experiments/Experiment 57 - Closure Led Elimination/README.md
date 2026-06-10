@@ -43,8 +43,11 @@ construction.
 
 ## Decision Rule
 
-- Promote if `coverage > 0` across all 3 seeds AND `wrong_returns == 0` on all 3 seeds.
-- Kill otherwise.
+Promote if solver `coverage > 0` across all 3 seeds AND `returned_wrong == 0`
+on frozen add for all 3 seeds.
+
+Kill if coverage stays **0%** on any seed despite closure-led reordering, or any
+singleton return violates carry equations (`returned_wrong > 0`).
 
 ## Commands
 
@@ -69,4 +72,21 @@ rtk python "experiments/Experiment 57 - Closure Led Elimination/closure_led_elim
 
 ## Results
 
-Pending (3 seeds: 57, 58, 59; report mean/std).
+Seeds 57/58/59, 500 steps, 16 internal iterations, closure-led elimination on.
+JSON: `results_seed57_steps500.json`, `results_seed58_steps500.json`,
+`results_seed59_steps500.json`.
+
+| seed | frozen coverage | frozen wrong | held-out coverage | train-visible coverage |
+|---:|---:|---:|---:|---:|
+| 57 | **100%** | 0 | **100%** | **100%** |
+| 58 | **100%** | 0 | **100%** | **100%** |
+| 59 | **100%** | 0 | **100%** | **100%** |
+
+Argmax acc stays **0%** (expected — solver returns via branch+closure, not argmax
+heads). `returned_wrong == 0` on every split.
+
+### Verdict: PROMOTE closure-led elimination
+
+Reordering so sound carry closure leads — with veto over neural elimination —
+recovers **100%** solver coverage while keeping soundness exact. This fixes the
+Exp56 zero-coverage trap without sacrificing `wrong_returns == 0`.

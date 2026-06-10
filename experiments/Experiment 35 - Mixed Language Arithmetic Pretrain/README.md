@@ -54,21 +54,17 @@ rtk powershell -NoProfile -ExecutionPolicy Bypass -File `
   "experiments/Experiment 35 - Mixed Language Arithmetic Pretrain/run_exp35_h256_mixed_full.ps1"
 ```
 
-## Default Gates
+## Decision Rule
 
-Promote if:
+Promote if the final EqR SFT checkpoint keeps frozen arithmetic balanced at
+H=2/4/6, invalid rate stays at 0%, and language probes no longer collapse into
+the old repeated `1:` pattern.
 
-- The final EqR SFT checkpoint keeps frozen arithmetic balanced at H=2/4/6.
-- Invalid rate stays at 0%.
-- The language probes no longer collapse into the old repeated `1:` pattern.
+Kill if mixed pretraining damages the Exp34.1 recurrence shape, arithmetic falls
+far below the Exp34.1/Exp34.2 55% band, or language probes still show obvious
+repeated-token collapse.
 
-Do not promote if:
-
-- Mixed pretraining damages the Exp34.1 recurrence shape.
-- Arithmetic falls far below the Exp34.1/Exp34.2 55% band.
-- Language probes still show obvious repeated-token collapse.
-
-## Result
+## Results
 
 Exp35 is a strong arithmetic result, but not a Phase 0 language solve.
 

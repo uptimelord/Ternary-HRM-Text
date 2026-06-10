@@ -81,7 +81,18 @@ Explicit sparse-rule parse:
 rtk python "experiments/Experiment 44 - Arithmetic Latent Structure Probe/latent_arithmetic_probe.py" --ood-stress --prediction-mode sparse-rule --steps 500 --batch-size 256 --width 64 --seeds 43 44 45 --tasks mul --device auto --out "experiments/Experiment 44 - Arithmetic Latent Structure Probe/results_ood_sparse_rule_mul_seeds434445.json"
 ```
 
-## Result
+## Decision Rule
+
+Promote if 3-seed mean latent-composed frozen accuracy beats direct-answer
+accuracy on every task, hard tasks (especially multiplication) are far above the
+Exp43 final-slot result, target-key OOD improves only with real rule-selection
+bias (not just more features), and invalid stays **0%**.
+
+Kill if latent heads win only on train/valid but fail frozen, multiplication
+partials stay unstable across seeds, or any train path bypasses the held-out
+guard.
+
+## Results
 
 Run 2026-06-03, seeds 43/44/45, device cuda, full train/valid/frozen/held-out
 splits, 500 steps/head, width 64. Full JSON: `results_seeds434445.json`.
@@ -209,21 +220,3 @@ compose/check the answer
 That is closer to the LDT/lattice bet than a plain MLP classifier. The next
 clean branch should make this sparse rule-selection step less oracle-like and
 fold it into the verifier-facing latent path.
-
-## Promote If
-
-- 3-seed mean latent-composed frozen accuracy beats direct-answer accuracy on
-  every task.
-- Hard tasks, especially multiplication, are far above the Exp43 final-slot
-  result.
-- Target-key OOD improves only when the mechanism has a real rule-selection
-  bias, not just more features or a smoother loss.
-- Invalid stays 0%.
-- Held-out is used only for reporting, never checkpointing or tuning.
-
-## Kill Or Revise If
-
-- Latent heads only win on train/valid but fail frozen.
-- Multiplication partials remain unstable across seeds.
-- The result depends on one seed.
-- Any train path bypasses the held-out guard.

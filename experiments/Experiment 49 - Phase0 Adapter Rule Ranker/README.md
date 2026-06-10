@@ -49,6 +49,15 @@ Template-OOD noisy run:
 rtk python "experiments/Experiment 49 - Phase0 Adapter Rule Ranker/phase0_adapter_rule_ranker_probe.py" --split-mode template-ood --n-predicates 8 --steps 300 --batch-size 64 --width 48 --seeds 43 44 45 --device auto --noisy-eval --phase0-feature-mode checkpoint --feature-batch-size 16 --out "experiments/Experiment 49 - Phase0 Adapter Rule Ranker/results_template_ood_noisy_phase0_seeds434445.json"
 ```
 
+## Decision Rule
+
+Promote if `phase0_frozen_adapter_ranker` matches Exp48 semantic ranker on
+rule-family OOD noisy eval (**≥95%**, **0%** invalid) with all Phase 0 weights
+frozen and only the adapter head trained.
+
+Kill if checkpoint prompt features regress below hash-encoder control on OOD, or
+invalid rate rises above **0%** on any split.
+
 ## Results
 
 Run date: 2026-06-04. Device cuda, locked Phase 0 h256 checkpoint,

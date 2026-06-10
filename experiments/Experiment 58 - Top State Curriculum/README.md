@@ -54,9 +54,11 @@ return an impossible state.
 
 ## Decision Rule
 
-- **Promote** if solver `coverage > 0` across all 3 seeds AND
-  `returned_wrong == 0` (wrong_returns) for all 3 seeds.
-- **Kill** otherwise.
+Promote if solver `coverage > 0` across all 3 seeds AND `returned_wrong == 0`
+on frozen add for all 3 seeds.
+
+Kill if top-state warmup fails to lift coverage above **0%** on any seed, or any
+seed returns a wrong singleton (`returned_wrong > 0`).
 
 ## Commands
 
@@ -73,13 +75,23 @@ rtk python "experiments/Experiment 58 - Top State Curriculum/top_state_curriculu
 rtk python "experiments/Experiment 58 - Top State Curriculum/top_state_curriculum_probe.py" --steps 500 --batch-size 128 --width 64 --layers 2 --heads 4 --internal-iters 16 --seed 60 --device auto --out "experiments/Experiment 58 - Top State Curriculum/results_seed60_steps500.json"
 ```
 
-## Results (pending)
+## Results
 
-3 seeds (58, 59, 60), 500 steps, curriculum 300/500, on-policy steps 1.
-Report mean/std of solver coverage, verified_acc, and returned_wrong per split.
+Seeds 58/59/60, 500 steps (curriculum 300/500), on-policy steps 1.
+JSON: `results_seed58_steps500.json`, `results_seed59_steps500.json`,
+`results_seed60_steps500.json`.
 
-| split | argmax acc | solver coverage | solver correct | solver wrong | conflicts |
-|---|---:|---:|---:|---:|---:|
-| train-visible add | pending | pending | pending | pending | pending |
-| held-out add | pending | pending | pending | pending | pending |
-| frozen add | pending | pending | pending | pending | pending |
+| seed | frozen coverage | frozen wrong | held-out coverage | train-visible coverage |
+|---:|---:|---:|---:|---:|
+| 58 | 90.7% | 0 | **100%** | 92.0% |
+| 59 | 95.3% | 0 | **100%** | 96.0% |
+| 60 | **100%** | 0 | **100%** | **100%** |
+
+All seeds: `returned_wrong == 0`. Mean frozen coverage **~95%** — top-state
+warmup recovers nonzero coverage with sound closure intact.
+
+### Verdict: PROMOTE top-state curriculum
+
+Top-state Phase A teaches confident keep-logits before on-policy Phase B.
+Coverage is high and soundness holds across seeds, though seed 58 frozen is
+slightly below 100%.

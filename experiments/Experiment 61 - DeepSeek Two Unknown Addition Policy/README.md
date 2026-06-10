@@ -31,7 +31,16 @@ prompt -> final answer
 rtk python "experiments/Experiment 61 - DeepSeek Two Unknown Addition Policy/two_unknown_addition_policy_probe.py" --device cpu --dataset-source deepseek --train-puzzles 32 --eval-puzzles 12 --deepseek-batch-size 12 --epochs 80 --width 48 --out "experiments/Experiment 61 - DeepSeek Two Unknown Addition Policy/results_seed61_deepseek_small.json" --dataset-out "experiments/Experiment 61 - DeepSeek Two Unknown Addition Policy/deepseek_puzzles_seed61.jsonl" --states-out "experiments/Experiment 61 - DeepSeek Two Unknown Addition Policy/search_states_seed61.jsonl"
 ```
 
-## Result
+## Decision Rule
+
+Promote if the learned policy beats first-cell on mean branches with
+`wrong == 0` and coverage **≥95%** on held-out puzzles with **≥3** branch steps
+required under first/random.
+
+Kill if all policies tie at **100%** coverage with `wrong == 0` and learned does
+not beat first — domain too easy for policy learning signal.
+
+## Results
 
 DeepSeek rows:
 
@@ -63,7 +72,7 @@ Hard truth:
 - Learned policy matched first-cell but did not beat it.
 - Oracle only has a small advantage, so there is not much room to learn.
 
-## Decision
+## Read
 
 Keep the harness. Do not claim a learned-controller win yet.
 

@@ -14,7 +14,16 @@ policy?
   ambiguous state.
 - No training in this probe.
 
-## Result
+## Decision Rule
+
+Promote if the closure-only solver reaches **100%** verified coverage with
+`wrong == 0` on frozen add **and** the learned policy reduces mean branches vs
+first-cell baseline on a domain where closure leaves real ambiguity.
+
+Kill if `wrong > 0` on any split, or policy calls stay **0** because closure
+already solves everything — no learned control signal on this domain.
+
+## Results
 
 Command:
 
@@ -36,11 +45,7 @@ closure re-checks the math.
 
 Hard truth: this is not learned arithmetic. For fixed two-digit addition, the
 closure operator is already the whole calculator. The controller has no work:
-`policy_calls=0`, `branches=0`.
-
-## Decision
-
-Do not promote this as a learned LDT win.
+`policy_calls=0`, `branches=0`. Do not promote this as a learned LDT win.
 
 Promote only this narrower claim:
 

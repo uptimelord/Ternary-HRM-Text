@@ -67,3 +67,18 @@ The generator rejects:
 - duplicate prompts inside the generated file
 
 Arithmetic rows are generated locally and avoid the frozen eval expressions.
+
+## Decision Rule
+
+Promote if the full v1 dataset ships with **100k train / 4k valid** rows, all
+safety checks pass (no leakage, no duplicate prompts, valid JSON), and arithmetic
+rows verify locally at **100%** before any DeepSeek language rows are mixed in.
+
+Kill if generation stalls below target size, DeepSeek rows fail validation at
+> **1%**, or arithmetic rows overlap frozen eval expressions.
+
+## Results
+
+Not run yet — `DEEPSEEK_API_KEY` required in repo-local `.env`. Generator scripts
+and safety checks are in place; no `data/deepseek_custom_rehearsal/v1/` artifacts
+on disk.

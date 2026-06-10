@@ -54,6 +54,15 @@ Rule-family-OOD run:
 rtk python "experiments/Experiment 46 - Logic Rule Ranker Probe/logic_rule_ranker_probe.py" --split-mode rule-family-ood --n-predicates 8 --steps 300 --batch-size 64 --width 48 --seeds 43 44 45 --device auto --out "experiments/Experiment 46 - Logic Rule Ranker Probe/results_rule_family_ood_seeds434445.json"
 ```
 
+## Decision Rule
+
+Promote if `candidate_ranker` reaches **≥95%** on template-OOD with **0%**
+invalid and beats `direct_answer` on rule-family OOD by at least **20 pp** while
+`oracle_ranker` stays at **100%**.
+
+Kill if learned ranker stays near chance on rule-family OOD while oracle remains
+**100%** — failure is learned grounding, not candidate coverage.
+
 ## Results
 
 Run date: 2026-06-04. Seeds 43/44/45, device cuda, width 48, 300 steps/head.

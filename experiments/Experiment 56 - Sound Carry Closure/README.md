@@ -51,7 +51,16 @@ rtk python "experiments/Experiment 56 - Sound Carry Closure/sound_carry_closure_
 - bad oracle proposing `114` returns no wrong answer
 - broad oracle keeping all candidates lets closure return `103`
 
-## Result
+## Decision Rule
+
+Promote if sound closure yields `returned_wrong == 0` on all splits **and**
+solver `coverage > 0` at matched training steps.
+
+Kill if coverage stays **0%** while conflicts consume every row (neural threshold
+kills true path before closure) — sound but useless; revise training order before
+promote.
+
+## Results
 
 Seed 56, 500 steps, 16 internal iterations, on-policy steps 1.
 

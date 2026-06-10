@@ -18,7 +18,16 @@ The model writes steps. The tool ignores the model's computed numbers, recompute
 rtk powershell -NoProfile -ExecutionPolicy Bypass -File "experiments/Experiment 68 - Exp66 Tool Checked Word Problems/run_exp68_tool_checked_limit200.ps1"
 ```
 
-## Result
+## Decision Rule
+
+Promote if tool-checked overall accuracy beats raw by **≥30 pp** with invalid
+**0%**, and direct-arithmetic tool-checked reaches **100%** — compute errors are
+solver-fixable while plan/read errors are isolated.
+
+Kill if tool-checked gains come only from direct arithmetic while word-binary
+stays below **40%** tool-checked — reading/planning remains the bottleneck.
+
+## Results
 
 Strict eval, 200 rows per split.
 
@@ -69,7 +78,7 @@ The hard remaining problem is word-binary reading:
 
 So Exp68 says: do not train the model to be a calculator. Use the exact solver for numbers. Train or parse the model for reading/planning.
 
-## Decision
+## Read
 
 Promote the student-plus-calculator direction.
 

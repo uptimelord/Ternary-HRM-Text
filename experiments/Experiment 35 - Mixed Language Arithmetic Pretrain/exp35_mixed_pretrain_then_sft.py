@@ -639,6 +639,8 @@ def main() -> int:
     parser.add_argument("--ri-z-l-std", type=float, default=0.10)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--append-md", type=Path, default=DEFAULT_RESULTS)
+    parser.add_argument("--pretrain-checkpoint-interval", type=int, default=0,
+                        help="save crash-insurance pretrain checkpoint every N steps (0=off)")
     args = parser.parse_args()
 
     if not args.tokens_path.exists():
@@ -726,6 +728,9 @@ def main() -> int:
         log_interval=args.log_interval,
         seed=args.seed,
         settings=settings,
+        checkpoint_path=(args.output_dir / "pretrain" / "checkpoint_inprogress.pt"
+                         if args.pretrain_checkpoint_interval > 0 else None),
+        checkpoint_interval=args.pretrain_checkpoint_interval,
     )
 
     print(f"export_calibration_steps={args.export_calibration_steps}", flush=True)

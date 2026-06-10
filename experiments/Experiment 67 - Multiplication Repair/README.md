@@ -60,6 +60,15 @@ Data check:
 - duplicate valid signatures: 0
 - train/valid signature overlap: 0
 
+## Decision Rule
+
+Promote if mul-repair SFT lifts held-out `*` strict accuracy above **20%** while
+frozen generation stays within **2 pp** of Exp66 and valid exact does not regress.
+
+Kill if token loss improves but strict `*` accuracy stays near **0%** or frozen
+generation falls below Exp66 baseline — repair is overfitting token shape, not
+multiplication.
+
 ## Repair Train
 
 Command:
@@ -99,9 +108,9 @@ Files:
 - `experiments/Experiment 67 - Multiplication Repair/results_exp67_mulrepair_strict_eval_limit20.json`
 - `experiments/Experiment 67 - Multiplication Repair/generations_exp67_mulrepair_strict_eval_limit20.jsonl`
 
-## Decision
+## Results (repair train + strict smoke)
 
-No promote.
+See training table and strict smoke above. Verdict: **kill** — no promote.
 
 Keep using the Exp66 checkpoint as the last usable word-reasoning checkpoint. The Exp67 repair checkpoint makes exact arithmetic worse, even though token loss improves.
 

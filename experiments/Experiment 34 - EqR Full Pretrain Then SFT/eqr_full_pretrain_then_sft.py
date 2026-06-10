@@ -182,6 +182,8 @@ def train_pretrain_eqr_lite(
     log_interval: int,
     seed: int,
     settings: Any,
+    checkpoint_path: Path | None = None,
+    checkpoint_interval: int = 0,
 ) -> dict[str, Any]:
     total_len = prefix_len + causal_len
     rng = random.Random(seed)
@@ -269,6 +271,20 @@ def train_pretrain_eqr_lite(
                 f"tok/s={tok_s:.0f} elapsed_min={elapsed / 60:.1f} eta_min={remaining / 60:.1f} {counts}",
                 flush=True,
             )
+
+        if checkpoint_path is not None and checkpoint_interval > 0 and (step + 1) % checkpoint_interval == 0:
+            checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+            tmp_ckpt = Path(str(checkpoint_path) + ".tmp")
+            torch.save(
+                {
+                    "step": step + 1,
+                    "state_dict": {k: v.detach().cpu() for k, v in model.state_dict().items()},
+                    "last_train_loss": last_loss,
+                },
+                tmp_ckpt,
+            )
+            tmp_ckpt.replace(checkpoint_path)
+            print(f"pretrain checkpoint saved step={step + 1} -> {checkpoint_path}", flush=True)
 
     if device.type == "cuda":
         torch.cuda.synchronize()

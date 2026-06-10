@@ -58,6 +58,15 @@ Adversarial-only safety suite:
 rtk python "experiments/Experiment 52 - Adversarial Parser Boundary/adversarial_parser_boundary_probe.py" --n-predicates 8 --adversarial-only --out "experiments/Experiment 52 - Adversarial Parser Boundary/results_adversarial_only.json"
 ```
 
+## Decision Rule
+
+Promote if `parsed_wrong == 0` on the full mixed, supported-only, and
+adversarial-only suites, with supported synonym cases at **100%**
+`parsed_correct` and adversarial cases **100%** `fail_closed`.
+
+Kill if any adversarial prompt lands in `parsed_wrong` — unsupported grammar
+must reject, not mis-parse into wrong fields.
+
 ## Results
 
 Run date: 2026-06-04.

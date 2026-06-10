@@ -67,6 +67,15 @@ Rule-family-OOD synonym noise:
 rtk python "experiments/Experiment 50 - Logic Text Parser Robustness/logic_text_parser_robustness_probe.py" --split-mode rule-family-ood --n-predicates 8 --noise-style synonym --out "experiments/Experiment 50 - Logic Text Parser Robustness/results_rule_family_ood_synonym.json"
 ```
 
+## Decision Rule
+
+Promote if `robust_parser` recovers **100%** field match on noisy eval while
+`strict_parser` fails closed, with exact rule accuracy **≥95%** and invalid
+**0%** on supported synonym/surface noise.
+
+Kill if robust parser accepts unsupported wording (`parsed_wrong > 0`) or field
+match falls below **95%** on supported noise styles.
+
 ## Results
 
 Run date: 2026-06-04.
