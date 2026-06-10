@@ -84,6 +84,20 @@ def test_negative_answers_work():
     assert result["evidence"]["extracted"] == "-12"
 
 
+def test_spaced_negative_after_answer_marker_passes():
+    result = ArithmeticExactVerifier().verify(_task("-11"), "Answer: - 11")
+
+    assert result["passed"] is True
+    assert result["evidence"]["extracted"] == "-11"
+
+
+def test_leading_zeros_canonicalize_to_integer():
+    result = ArithmeticExactVerifier().verify(_task("7"), "Answer: 007")
+
+    assert result["passed"] is True
+    assert result["evidence"]["extracted"] == "7"
+
+
 def test_integer_valued_decimal_passes():
     result = ArithmeticExactVerifier().verify(_task("45"), "Answer: 45.0")
 

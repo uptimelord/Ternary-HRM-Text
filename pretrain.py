@@ -4,7 +4,10 @@ from pathlib import Path
 from glob import glob
 import math
 import os
+import random
 import yaml
+
+import numpy as np
 import shutil
 
 import torch
@@ -333,7 +336,12 @@ def launch(hydra_config: DictConfig):
     config = load_synced_config(hydra_config, rank=RANK)
 
     # Seed RNGs to ensure consistency
-    torch.random.manual_seed(config.seed + RANK)
+    seed = config.seed + RANK
+    torch.random.manual_seed(seed)
+    random.seed(seed)
+    np.random.seed(seed % (2**32 - 1))
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
     # --- Training
     train_state, train_loader, train_metadata = init_train(config, rank=RANK, world_size=WORLD_SIZE)
@@ -371,7 +379,7 @@ def launch(hydra_config: DictConfig):
 
             del metrics
 
-        ############ EVAL STACK: TBD TODO
+        # Eval is external-only: frozen gates run via experiments/ + evaluation/, not in-loop here.
 
         ############ Checkpointing
         if (epoch % config.checkpoint_interval == 0) or (epoch == config.epochs):

@@ -73,3 +73,19 @@ def test_exp30_jsonl_loader_runs_guard_before_loading_training_rows():
 
     with pytest.raises(RuntimeError, match="held-out file path"):
         exp30.read_jsonl(HELD_OUT)
+
+
+def test_non_jsonl_training_path_fails(tmp_path):
+    bad = tmp_path / "train.csv"
+    bad.write_text("id,answer\n1,2\n", encoding="utf-8")
+
+    with pytest.raises(ValueError, match="only scans .jsonl"):
+        check_no_held_out_leak([bad])
+
+
+def test_renamed_held_out_copy_still_detected(tmp_path):
+    copy_path = tmp_path / "my_eval_copy.jsonl"
+    copy_path.write_text(HELD_OUT.read_text(encoding="utf-8"), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="HELD-OUT LEAK DETECTED"):
+        check_no_held_out_leak([copy_path])

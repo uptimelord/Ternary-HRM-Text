@@ -20,6 +20,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from evaluation.arithmetic_verifier import ArithmeticExactVerifier
+from training.sft_lib import DEFAULT_TOKENIZER
 
 
 EXP30_PATH = (
@@ -43,7 +44,6 @@ DEFAULT_CKPT = (
     / "h256_exp34_1_word100k_sft2000_seed1"
     / "checkpoint_fp32.pt"
 )
-DEFAULT_TOKENIZER = Path(r"C:/Users/Dos/Documents/GRAM/data_io/trained_tokenizers/bpe/tokenizer.json")
 
 
 def _load_module(name: str, path: Path):

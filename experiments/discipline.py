@@ -348,6 +348,11 @@ def main() -> int:
     noise = sub.add_parser("noise-floor")
     noise.add_argument("--repo-root", type=Path, default=Path.cwd())
 
+    frozen_gate = sub.add_parser("frozen-gate")
+    frozen_gate.add_argument("--frozen-gap", type=float, required=True)
+    frozen_gate.add_argument("--repo-root", type=Path, default=Path.cwd())
+    frozen_gate.add_argument("--noise-floor", type=float, default=None)
+
     args = parser.parse_args()
 
     if args.cmd == "preflight-readme":
@@ -359,6 +364,26 @@ def main() -> int:
     if args.cmd == "noise-floor":
         print(f"{dense_tied_5000_noise_floor(args.repo_root):.4f}")
         return 0
+
+    if args.cmd == "frozen-gate":
+        noise = (
+            args.noise_floor
+            if args.noise_floor is not None
+            else dense_tied_5000_noise_floor(args.repo_root)
+        )
+        decision = frozen_gate_decision(frozen_gap=args.frozen_gap, noise_floor=noise)
+        print(
+            json.dumps(
+                {
+                    "passed": decision.passed,
+                    "reason": decision.reason,
+                    "frozen_gap": args.frozen_gap,
+                    "noise_floor": noise,
+                },
+                indent=2,
+            )
+        )
+        return 0 if decision.passed else 1
 
     raise AssertionError(f"unhandled command {args.cmd}")
 

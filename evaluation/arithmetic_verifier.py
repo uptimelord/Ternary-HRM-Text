@@ -13,7 +13,7 @@ from evaluation.verifiers import VerifierResult
 
 ANSWER_MARKER_RE = re.compile(r"####|final answer:|answer:|final:", re.IGNORECASE)
 NUMERIC_TOKEN_RE = re.compile(
-    r"(?<![\w.])-?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?!\.\d)(?!\w)"
+    r"(?<![\w.])(?:-\s*)?(?:\d{1,3}(?:,\d{3})+|\d+)(?:\.\d+)?(?!\.\d)(?!\w)"
 )
 
 
@@ -38,7 +38,7 @@ def _numeric_tokens(text: str) -> list[str]:
 
 
 def _canonicalize_numeric_token(token: str) -> tuple[str | None, str | None]:
-    cleaned = token.replace(",", "")
+    cleaned = token.replace(",", "").replace(" ", "")
     try:
         value = Decimal(cleaned)
     except InvalidOperation:

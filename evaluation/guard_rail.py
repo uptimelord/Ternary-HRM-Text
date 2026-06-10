@@ -80,9 +80,10 @@ def check_no_held_out_leak(
                 continue
             raise FileNotFoundError(f"missing data path: {path}")
 
-        # Only check jsonl files
         if path.suffix != ".jsonl":
-            continue
+            raise ValueError(
+                f"held-out guard only scans .jsonl training files; got {path} ({path.suffix or 'no suffix'})"
+            )
 
         with open(path, encoding="utf-8") as f:
             for line_num, line in enumerate(f, 1):
@@ -110,7 +111,13 @@ def check_no_held_out_leak(
 
 def is_held_out_file(path: str) -> bool:
     """Check if a file path is the held-out set itself."""
-    path_obj = Path(path)
+    path_obj = Path(path).resolve()
+    if MANIFEST_PATH.exists():
+        try:
+            if path_obj == _load_held_out_file_path():
+                return True
+        except (json.JSONDecodeError, KeyError, TypeError):
+            pass
     return "held_out" in path_obj.name.lower()
 
 

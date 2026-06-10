@@ -118,8 +118,9 @@ class V1Dataset(IterableDataset):
         # pad to fixed len
         pad_len = self.config.batch_max_length - batch["inputs"].shape[0]
         if pad_len > 0:
+            pad_token_id = int(self.metadata.tokenizer_info.get("pad_token_id", 0))
             pad_values = {
-                "inputs": 0,  # FIXME: Pad with an arbitary token.
+                "inputs": pad_token_id,
                 "labels": IGNORE_LABEL_ID,
                 "position_ids": 0,
             }
