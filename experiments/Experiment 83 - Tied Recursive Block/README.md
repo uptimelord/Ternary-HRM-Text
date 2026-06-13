@@ -59,3 +59,12 @@ HRM ~2.3), not the packed-MB denominator (64 vs 66 MB). Exp71's lesson stands �
 pretrain loss is a proxy; the downstream strict-logic guard is what held here.
 Follow-up before relying on TRM downstream: verify the loss gap is not an
 objective/recipe artifact of the tied block.
+
+**Denominator caveat (now addressed by Exp83.1):** the 64 MB packed size is
+almost entirely an **uncompressed fp32 vocab head** — `--ternary-body` compressed
+only the backbone (TRM body packs to 0.08 MB; HRM 2.28 MB). The deploy recipe
+`mixed_top512_tequila` was never applied to the head. `q/body_mb` already shows
+the real backbone win (TRM 33.8 vs HRM 0.17, ~200×). **Exp83.1**
+(`--head-recipe mixed_top512`) applies the deploy vocab recipe train-time and is
+expected to drop total packed to ~3.5 MB and lift q/mb ~18× — run it before
+quoting Exp83's q/mb as a headline number.

@@ -224,6 +224,39 @@ def run_domain(
     return {"domain": name, "diversity": diversity, "seed": seed, "elapsed_s": elapsed, "curves": curves}
 
 
+def config_report_path(output_dir: Path, *, domain: str, diversity: str, seed: int) -> Path:
+    """Per-config checkpoint file. One file per (domain, diversity, seed) so a
+    kill/crash costs at most the in-flight config, and completed configs resume."""
+    return output_dir / f"config_{domain}_{diversity}_seed{seed}.json"
+
+
+def write_config_report(
+    path: Path,
+    *,
+    run: dict[str, Any],
+    mode: str,
+    k_max: int,
+    k_values: tuple[int, ...],
+    word_source: str,
+    logic_source: str,
+) -> None:
+    """Write a single-config report in merge-compatible shape."""
+    payload = {
+        "mode": mode,
+        "k_max": k_max,
+        "k_values": list(k_values),
+        "seeds": [int(run["seed"])],
+        "domains": [str(run["domain"])],
+        "word_source": word_source,
+        "logic_source": logic_source,
+        "runs": [run],
+    }
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(".json.tmp")
+    tmp.write_text(json.dumps(payload, indent=2, sort_keys=True), encoding="utf-8")
+    tmp.replace(path)  # atomic rename so a partial write is never read as complete
+
+
 def write_results_md(path: Path, report: dict[str, Any]) -> None:
     lines = [
         "# Exp81 Verified Breadth Sweep",
@@ -348,6 +381,11 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--bp-steps", type=int, default=2)
     parser.add_argument("--row-batch-size", type=int, default=4)
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="skip configs whose per-config JSON already exists in --output-dir",
+    )
     parser.add_argument("--results-md", type=Path, default=DEFAULT_RESULTS)
     parser.add_argument("--merge-jsons", type=str, default="", help="Comma-separated JSON files or globs to merge")
     parser.add_argument("--merge-output-json", type=Path, default=None)
@@ -408,13 +446,13 @@ def main() -> int:
         logic_all, logic_source = load_logic_eval_rows(args.logic_heldout_hard, limit=0)
         logic_rows = slice_rows(logic_all, offset=args.row_offset, limit=args.limit)
 
-    runs: list[dict[str, Any]] = []
     checkpoints = []
     if "word" in domains:
         checkpoints.append(("word", resolve_checkpoint(args.word_checkpoint, DEFAULT_WORD_CKPT)))
     if "logic" in domains:
         checkpoints.append(("logic", resolve_checkpoint(args.logic_checkpoint, DEFAULT_LOGIC_CKPT)))
 
+    args.output_dir.mkdir(parents=True, exist_ok=True)
     for ckpt_name, ckpt_path in checkpoints:
         if ckpt_path is None:
             print(f"skip {ckpt_name}: checkpoint missing", flush=True)
@@ -423,45 +461,72 @@ def main() -> int:
         if not rows:
             print(f"skip {ckpt_name}: no eval rows", flush=True)
             continue
-        model, config, _top = load_model_from_checkpoint(exp29, ckpt_path, device)
-        vocab_size = int(config["vocab_size"])
-        domain_tag = ckpt_name
+        model = None
         for seed in seeds:
             for diversity in diversities:
-                print(f"run {ckpt_name} diversity={diversity} seed={seed} n={len(rows)}", flush=True)
-                runs.append(
-                    run_domain(
-                        name=ckpt_name,
-                        model=model,
-                        exp29=exp29,
-                        tokenizer=tokenizer,
-                        rows=rows,
-                        device=device,
-                        vocab_size=vocab_size,
-                        cfg=cfg,
-                        k_max=args.k_max,
-                        diversity=diversity,
-                        seed=seed,
-                        domain="logic" if ckpt_name == "logic" else "word",
-                    )
+                cfg_path = config_report_path(
+                    args.output_dir, domain=ckpt_name, diversity=diversity, seed=seed
                 )
-        del model
-        if device.type == "cuda":
-            torch.cuda.empty_cache()
+                if args.resume and cfg_path.exists():
+                    print(f"resume: skip {ckpt_name}/{diversity}/seed{seed} (exists)", flush=True)
+                    continue
+                if model is None:  # lazy-load so a fully-resumed checkpoint costs no load
+                    model, config, _top = load_model_from_checkpoint(exp29, ckpt_path, device)
+                    vocab_size = int(config["vocab_size"])
+                print(f"run {ckpt_name} diversity={diversity} seed={seed} n={len(rows)}", flush=True)
+                run = run_domain(
+                    name=ckpt_name,
+                    model=model,
+                    exp29=exp29,
+                    tokenizer=tokenizer,
+                    rows=rows,
+                    device=device,
+                    vocab_size=vocab_size,
+                    cfg=cfg,
+                    k_max=args.k_max,
+                    diversity=diversity,
+                    seed=seed,
+                    domain="logic" if ckpt_name == "logic" else "word",
+                )
+                write_config_report(
+                    cfg_path,
+                    run=run,
+                    mode=args.mode,
+                    k_max=args.k_max,
+                    k_values=k_values,
+                    word_source=str(args.word_heldout),
+                    logic_source=logic_source,
+                )
+                print(f"wrote {cfg_path}", flush=True)
+        if model is not None:
+            del model
+            if device.type == "cuda":
+                torch.cuda.empty_cache()
 
-    report = {
-        "mode": args.mode,
-        "k_max": args.k_max,
-        "k_values": list(k_values),
-        "seeds": seeds,
-        "domains": sorted(domains),
-        "row_offset": args.row_offset,
-        "limit": args.limit,
-        "word_source": str(args.word_heldout),
-        "logic_source": logic_source,
-        "runs": runs,
-    }
-    args.output_dir.mkdir(parents=True, exist_ok=True)
+    # Assemble the final report from every per-config file (incl. ones from
+    # earlier resumed runs), so the merged output is complete regardless of
+    # how many launches it took.
+    cfg_files = sorted(args.output_dir.glob("config_*_seed*.json"))
+    if cfg_files:
+        reports = []
+        for path in cfg_files:
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["report_path"] = str(path)
+            reports.append(data)
+        report = merge_breadth_reports(reports)
+    else:
+        report = {
+            "mode": args.mode,
+            "k_max": args.k_max,
+            "k_values": list(k_values),
+            "seeds": seeds,
+            "domains": sorted(domains),
+            "row_offset": args.row_offset,
+            "limit": args.limit,
+            "word_source": str(args.word_heldout),
+            "logic_source": logic_source,
+            "runs": [],
+        }
     out_json = args.output_dir / f"breadth_{args.mode}_seed{seeds[0]}.json"
     out_json.write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
     write_results_md(args.results_md, report)

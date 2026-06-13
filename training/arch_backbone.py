@@ -129,6 +129,59 @@ def build_hrm_lmhead_from_exp21(
     )
 
 
+def _load_exp9():
+    """Exp9 mixed-precision tied vocab head (deploy preset's vocab path)."""
+    return _load_module(
+        "exp9_mixed_vocab_arch",
+        REPO_ROOT / "experiments" / "Experiment 9 - Mixed Precision Vocab Rows" / "mixed_vocab_rows.py",
+    )
+
+
+def top_512_token_ids(tokens: torch.Tensor, *, vocab_size: int, k: int = 512) -> torch.Tensor:
+    """Top-k most frequent token ids from a real corpus stream (Exp9 helper)."""
+    return _load_exp9().top_token_ids(tokens, vocab_size=vocab_size, k=k)
+
+
+# Deploy-preset vocab quant settings (Exp9/Exp13 mixed_top512 best).
+_MIXED_VOCAB_GROUP_SIZE = 32
+_MIXED_VOCAB_THRESHOLD = 0.25
+_MIXED_VOCAB_SCALE_MODE = "mean_abs"
+
+
+def apply_mixed_top512_head(
+    model: nn.Module,
+    *,
+    vocab_size: int,
+    top_512_ids: torch.Tensor,
+    group_size: int = _MIXED_VOCAB_GROUP_SIZE,
+    threshold: float = _MIXED_VOCAB_THRESHOLD,
+    scale_mode: str = _MIXED_VOCAB_SCALE_MODE,
+    ste_mode: str = "tequila",
+) -> nn.Module:
+    """Re-wrap a head-wrapped body in the deploy `mixed_top512_tequila` vocab head.
+
+    The inner body (`model.model`) is preserved; the fp32 vocab head is replaced
+    by a tied ternary base (1.58-bit, tequila STE) plus dense top-512 override
+    rows. Because the swap happens before training, the head learns ternary-robust
+    weights (train-time tequila, not post-hoc compression) and the Exp13 packer
+    then packs the vocab from ~64 MB to ~3.5 MB. Apply to both arms for a fair
+    quality-per-MB comparison.
+    """
+    body = getattr(model, "model", None)
+    if not isinstance(body, nn.Module):
+        raise ValueError("apply_mixed_top512_head: model has no inner `.model` body to re-wrap")
+    exp9 = _load_exp9()
+    return exp9.MixedPrecisionTiedVocabHead(
+        body,
+        {"vocab_size": int(vocab_size)},
+        ternary_group_size=group_size,
+        ternary_threshold=threshold,
+        ternary_scale_mode=scale_mode,
+        ternary_ste_mode=ste_mode,
+        dense_token_ids=top_512_ids,
+    )
+
+
 def param_count(model: nn.Module) -> int:
     return sum(p.numel() for p in model.parameters())
 

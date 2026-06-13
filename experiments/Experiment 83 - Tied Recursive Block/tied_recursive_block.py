@@ -18,7 +18,12 @@ from tokenizers import Tokenizer
 REPO_ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(REPO_ROOT))
 
-from training.arch_backbone import build_trm_lmhead, model_size_metrics  # noqa: E402
+from training.arch_backbone import (  # noqa: E402
+    build_trm_lmhead,
+    model_size_metrics,
+    apply_mixed_top512_head,
+    top_512_token_ids,
+)
 from training.comparative_logic import (
     convert_comparative_logic_row,
     generate_comparative_logic_rows,
@@ -253,6 +258,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--results-md", type=Path, default=DEFAULT_RESULTS)
     parser.add_argument("--ternary-body", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument(
+        "--head-recipe",
+        choices=["dense", "mixed_top512"],
+        default="dense",
+        help="dense = fp32 vocab head (Exp83 default); mixed_top512 = train-time "
+        "mixed_top512_tequila deploy recipe on the vocab head (Exp83.1)",
+    )
+    parser.add_argument("--head-dense-k", type=int, default=512, help="dense override rows for mixed_top512")
     return parser
 
 
@@ -300,6 +313,10 @@ def main() -> int:
         seed=8300,
     )
 
+    top_512_ids = None
+    if args.head_recipe == "mixed_top512":
+        top_512_ids = top_512_token_ids(tokens, vocab_size=args.vocab_size, k=args.head_dense_k)
+
     runs = []
     for seed in [int(s.strip()) for s in args.seeds.split(",") if s.strip()]:
         torch.manual_seed(seed)
@@ -329,6 +346,10 @@ def main() -> int:
                     body_group_size=128,
                     body_threshold=0.5,
                     body_scale_mode="mean_abs",
+                )
+            if args.head_recipe == "mixed_top512":
+                model = apply_mixed_top512_head(
+                    model, vocab_size=args.vocab_size, top_512_ids=top_512_ids
                 )
             model.to(device)
             stats = short_pretrain(
@@ -386,6 +407,7 @@ def main() -> int:
         "train_n": len(train_rows),
         "eval_n": len(eval_rows),
         "ternary_body": args.ternary_body,
+        "head_recipe": args.head_recipe,
         "peak_vram_mb": peak_vram_mb,
         "packed_exact": packed_exact,
         "final_heldout_metric": final_heldout_metric,
@@ -404,6 +426,7 @@ def main() -> int:
     lines.append(f"- train n: `{len(train_rows)}`")
     lines.append(f"- eval n: `{len(eval_rows)}`")
     lines.append(f"- ternary body: `{args.ternary_body}`")
+    lines.append(f"- head recipe: `{args.head_recipe}`")
     lines.append(f"- peak_vram_mb: `{peak_vram_mb:.1f}`")
     lines.append(f"- packed_exact: `{packed_exact}`")
     lines.append(f"- verdict: `{decision['verdict']}` ({decision['reason']})")

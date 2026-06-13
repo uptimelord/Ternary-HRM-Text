@@ -102,6 +102,10 @@ TRACK V — Verifier surface expansion (CPU; each is a sound plug-in, ms–s on 
   Template compiler     Exp99    GATED — rule-of-three, only after 95+96+97 stable. Optional, latest.
 
 TRACK G — Grounded TRM backbone (the "fukano" recurrent solver; extends the Exp83 promote)
+  Exp83.1 TRM mixed vocab head  — train-time mixed_top512_tequila on the vocab head; finalizes the
+                                  TRM denominator (64 MB -> ~3.5 MB, q/mb ~18x) while holding logic.
+                                  CPU wiring done; GPU retrain (~1 hr, 4 arms) waits for a gap. Run
+                                  this before quoting Exp83 q/mb as a backbone-selection headline.
   TRM tied vocab        Exp90    backbone variant on verified worlds
   Grounded claim/head   Exp91    grounded claim/action head
   Game/grid/process data Exp92   needs Verifier grid DSL (Exp97) for its verified worlds
