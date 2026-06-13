@@ -1,0 +1,12 @@
+# Exp84 Attractor Logic Recurrence
+
+- train source: `C:\Users\Dos\Documents\GRAM\BitNet-HRM\experiments\Experiment 70 - Comparative Logic Corpus\train_30k_sft.jsonl`
+- eval source: `C:\Users\Dos\Documents\GRAM\BitNet-HRM\experiments\Experiment 70 - Comparative Logic Corpus\heldout_hard_1k.jsonl`
+- train n: `4`
+- eval n: `1`
+
+## seed 1
+- cmm=False depth=shallow H=2 L=2 pass@1=0.000
+- cmm=False depth=deep H=4 L=3 pass@1=0.000
+- cmm=True depth=shallow H=2 L=2 pass@1=0.000
+- cmm=True depth=deep H=4 L=3 pass@1=0.000

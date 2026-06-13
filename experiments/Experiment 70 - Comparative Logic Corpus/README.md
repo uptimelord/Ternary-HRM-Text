@@ -56,6 +56,14 @@ experiments/Experiment 70 - Comparative Logic Corpus/valid_easy_sft.jsonl
 experiments/Experiment 70 - Comparative Logic Corpus/_train.sigs
 ```
 
+Local note: the JSONL split files in this working tree were restored with
+`restore_template_splits.py` because the original generated JSONL files were
+missing while the logs and checkpoint remained. They preserve the Exp70 task
+contract, split names, answer format, and no-overlap signature rule, but they
+use deterministic template wording rather than the original generated wording.
+The 91.0% / 83.0% locked baseline below is from the original `_eval_30k_term.log`
+and checkpoint, not from rerunning on these restored template rows.
+
 ## Artifacts
 
 Term checkpoint (promote this):

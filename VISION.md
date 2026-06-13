@@ -20,6 +20,17 @@ small model
 = high reasoning density under constraint
 ```
 
+### Storage-density thesis
+
+Early computers stored a few kilobytes in a building; today terabytes fit in your palm. That was not “the same tape, smaller” — it was a **new medium** (flash), **new addressing** (random access), and **new controllers** (wear leveling, ECC). Showing a palm-sized SSD to a 1960s engineer would sound impossible because they were extrapolating within the old paradigm.
+
+This project applies the same lens to **reasoning**, not disk capacity:
+
+- Frontier models hoard capability in **gigabytes–terabytes of weights** and datacenter training.
+- We hoard **procedure** in **megabytes of packed control program** (ternary ROM), with knowledge on tape (retrieval), compute in coprocessors (tools), and truth in halt oracles (verifiers).
+
+The moonshot is not a smaller GPT. It is the **SSD moment for reasoning**: palm-sized persistent store, building-sized *effective* capability — if the encoding (post-Turing loop + governed self-edit) is right. Progress is measured in **verified solves per persistent byte** and, at the horizon, **frontier parity on strict verifier benchmarks** at roughly **1000× less stored weight** than datacenter frontier models — not parity with another 7B model that happens to fit on the same GPU.
+
 ## What This Project Is Optimizing For
 
 This project is about **reasoning density**, not raw parameter scale.

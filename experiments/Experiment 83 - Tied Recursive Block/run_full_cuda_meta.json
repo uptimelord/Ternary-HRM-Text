@@ -1,0 +1,16 @@
+﻿{
+    "stamp":  "20260612_205555",
+    "pid":  18684,
+    "monitor_pid":  14008,
+    "log":  "experiments\\Experiment 83 - Tied Recursive Block\\run_full_cuda_20260612_205555.log",
+    "err":  "experiments\\Experiment 83 - Tied Recursive Block\\run_full_cuda_20260612_205555.err",
+    "vram":  "experiments\\Experiment 83 - Tied Recursive Block\\vram_full_cuda_20260612_205555.csv",
+    "exitcode":  "experiments\\Experiment 83 - Tied Recursive Block\\run_full_cuda_20260612_205555.exitcode",
+    "worker":  "experiments\\Experiment 83 - Tied Recursive Block\\run_full_cuda_20260612_205555_worker.ps1",
+    "worker_out":  "experiments\\Experiment 83 - Tied Recursive Block\\run_full_cuda_20260612_205555_worker.out",
+    "worker_err":  "experiments\\Experiment 83 - Tied Recursive Block\\run_full_cuda_20260612_205555_worker.err",
+    "results_md":  "experiments\\Experiment 83 - Tied Recursive Block\\results_full_cuda_20260612_205555.md",
+    "report_full":  "experiments\\Experiment 83 - Tied Recursive Block\\report_full.json",
+    "report_json":  "experiments\\Experiment 83 - Tied Recursive Block\\report.json",
+    "command":  "python \"experiments/Experiment 83 - Tied Recursive Block/tied_recursive_block.py\" --mode full --device cuda --output-dir \"experiments/Experiment 83 - Tied Recursive Block\" --results-md \"experiments\\Experiment 83 - Tied Recursive Block\\results_full_cuda_20260612_205555.md\""
+}

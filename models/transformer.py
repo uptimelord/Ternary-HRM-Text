@@ -59,6 +59,7 @@ class TransformerConfig(BaseModel):
     rope_theta: Optional[float] = None
 
     ternary: TernaryConfig = Field(default_factory=TernaryConfig)
+    identical_layers: bool = False
 
     # [Computed properties]
     @property
@@ -151,7 +152,11 @@ class Transformer(nn.Module):
             self.rotary_emb = RotaryEmbedding(config.hidden_size // config.num_heads, config.max_seq_len, base=config.rope_theta)
 
         # Layers
-        self.layers = nn.ModuleList([TransformerBlock(config) for _layer_idx in range(config.n_layers)])
+        if config.identical_layers:
+            shared = TransformerBlock(config)
+            self.layers = nn.ModuleList([shared for _layer_idx in range(config.n_layers)])
+        else:
+            self.layers = nn.ModuleList([TransformerBlock(config) for _layer_idx in range(config.n_layers)])
 
         # Use final norm only for prenorm
         self.norm_f = lambda x: x

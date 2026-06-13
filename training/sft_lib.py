@@ -15,7 +15,7 @@ import sys
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
+from typing import Any, Callable
 
 import torch
 from torch import nn
@@ -295,6 +295,7 @@ def greedy_generate_until_answer(
     max_new_tokens: int,
     bp_steps: int,
     stop_after_answer: bool,
+    stop_check: Callable[[str], bool] | None = None,
 ) -> str:
     model.eval()
     prompt_ids = tokenizer.encode(prompt, add_special_tokens=False).ids[-max_prefix_tokens:]
@@ -307,7 +308,8 @@ def greedy_generate_until_answer(
         next_id = int(torch.argmax(logits[-1].detach(), dim=-1).cpu())
         generated.append(next_id)
         decoded = tokenizer.decode(generated)
-        if stop_after_answer and has_complete_answer(decoded):
+        done = stop_check(decoded) if stop_check is not None else has_complete_answer(decoded)
+        if stop_after_answer and done:
             break
     model.train()
     return decoded
@@ -327,6 +329,7 @@ def frozen_chain_generation_eval(
     max_new_tokens: int,
     bp_steps: int,
     stop_after_answer: bool,
+    return_per_row: bool = False,
 ) -> dict[str, Any] | None:
     if limit == 0:
         return None
@@ -337,8 +340,10 @@ def frozen_chain_generation_eval(
     correct = 0
     invalid = 0
     examples = []
+    per_row = []
     for row in rows:
-        prompt = f"{row['prompt'].strip()}\n"
+        raw_prompt = str(row["prompt"]).strip()
+        prompt = f"{raw_prompt}\n"
         text = greedy_generate_until_answer(
             exp29,
             model,
@@ -358,10 +363,13 @@ def frozen_chain_generation_eval(
             invalid += 1
         if passed:
             correct += 1
+        if return_per_row:
+            per_row.append({"id": row["id"], "prompt": raw_prompt, "passed": passed})
         if len(examples) < 20:
             examples.append(
                 {
                     "id": row["id"],
+                    "prompt": raw_prompt,
                     "truth": truth,
                     "generation": text,
                     "extracted": answer,
@@ -370,12 +378,15 @@ def frozen_chain_generation_eval(
             )
 
     total = len(rows)
-    return {
+    out = {
         "n": total,
         "acc": correct / max(1, total),
         "invalid": invalid / max(1, total),
         "examples": examples,
     }
+    if return_per_row:
+        out["per_row"] = per_row
+    return out
 
 
 def load_model_from_checkpoint(exp29, checkpoint_path: Path, device: torch.device) -> tuple[nn.Module, dict[str, Any], torch.Tensor]:

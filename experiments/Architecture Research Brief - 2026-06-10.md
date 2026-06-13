@@ -2,6 +2,7 @@
 
 **Date:** 2026-06-10
 **Scope:** Architecture proposals to raise `verified pass@k × difficulty coverage ÷ packed MB` on RTX 3050 Ti class hardware. Research track only — no code changed. Companion to the Exp79 lane currently in flight.
+**⚠ Run order ≠ ID order.** Experiment numbers are identifiers (authoring order), not a schedule. Canonical run order across all briefs: [`EXECUTION_ORDER.md`](EXECUTION_ORDER.md). *Status: Exp80 kill · Exp82 kill · Exp83 promote · Exp81/84 pending (2026-06-13).*
 **Inputs:** VISION.md, Experimental Log Summary.md, DISCIPLINE.md, papers/ corpus, Exp77/78/79 READMEs, `models/fast_weight_overlay.py`, `models/smt_memory_training.py`, web literature sweep (2024–2026).
 
 ---

@@ -1,0 +1,547 @@
+{
+  "mode": "full",
+  "seeds": "1,2",
+  "vocab_size": 65536,
+  "train_source": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\experiments\\Experiment 70 - Comparative Logic Corpus\\train_30k_sft.jsonl",
+  "eval_source": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\experiments\\Experiment 70 - Comparative Logic Corpus\\heldout_hard_1k.jsonl",
+  "train_n": 30000,
+  "eval_n": 200,
+  "ternary_body": true,
+  "peak_vram_mb": 461.99267578125,
+  "packed_exact": true,
+  "final_heldout_metric": {
+    "split": "heldout_hard",
+    "metric": "strict_pass@1",
+    "hrm": 0.1925,
+    "trm": 0.20500000000000002,
+    "delta_pp": 1.250000000000001
+  },
+  "decision": {
+    "verdict": "promote",
+    "reason": "q/mb beats HRM and strict logic stays within 2 pp",
+    "hrm_quality_per_mb": 0.006549708228391401,
+    "trm_quality_per_mb": 0.04217661484361129,
+    "quality_per_mb_delta": 0.03562690661521989,
+    "hrm_strict_pass@1": 0.1925,
+    "trm_strict_pass@1": 0.20500000000000002,
+    "strict_delta_pp": 1.250000000000001,
+    "pretrain_unstable": false
+  },
+  "verdict": "promote",
+  "runs": [
+    {
+      "seed": 1,
+      "arms": {
+        "hrm": {
+          "pretrain_loss": 2.5819756984710693,
+          "elapsed_s": 203.4348110000028,
+          "logic_sft_loss": 0.131816565990448,
+          "logic_sft_elapsed_s": 655.359131899997,
+          "logic_pass@1": 0.205,
+          "strict_pass@1": 0.205,
+          "strict_verifier_pass@1": 0.205,
+          "logic_eval_n": 200,
+          "examples": [
+            {
+              "id": "cl_heldout_hard_000000",
+              "generation": "Step 1: Ben > Dan\nStep 2: Dan > Eve\nStep 3: Eve > Bob\nAnswer: Ben > Dan > Eve > Ben.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000001",
+              "generation": "Step 1: Mia > Tom\nStep 2: Tom > Sue\nStep 3: Sue > Zoe\nStep 4: Zoe > Eve\nStep 5: Eve > Leo\nAnswer: Eve > Sue > Tom > Zoe > Mia > Leo.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000002",
+              "generation": "Step 1: Max > Ann\nStep 2: Ann > Lily\nStep 3: Lily > Dan\nAnswer: Max.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000003",
+              "generation": "Step 1: Max > Ben\nStep 2: Ben > Bob\nStep 3: Bob > Sam\nStep 4: Sam > Kai\nStep 5: Kai > Dan\nAnswer: Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000004",
+              "generation": "Step 1: Ann > Lily\nStep 2: Lily > Tom\nStep 3: Tom > Kai\nAnswer: Ann > Lily > Tom > Kai.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000005",
+              "generation": "Step 1: Sue > Joy\nStep 2: Joy > Mia\nStep 3: Mia > Zoe\nAnswer: Sue > Joy > Mia > Zoe.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000006",
+              "generation": "Step 1: Sue > Max\nStep 2: Max > Lily\nStep 3: Lily > Ann\nStep 4: Ann > Sam\nStep 5: Sam > Eve\nAnswer: Eve.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000007",
+              "generation": "Step 1: Sue > Eve\nStep 2: Eve > Sam\nStep 3: Sam > Dan\nStep 4: Dan > Lily\nStep 5: Lily > Joy\nAnswer: Sue.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000008",
+              "generation": "Step 1: Mia > Ben\nStep 2: Ben > Zoe\nStep 3: Zoe > Tom\nStep 4: Tom > Ben\nAnswer: Mia > Ben > Zoe > Tom > Ben.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000009",
+              "generation": "Step 1: Sue > Zoe\nStep 2: Zoe > Dan\nStep 3: Dan > Sue\nStep 4: Sue > Tom\nAnswer: Sue.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000010",
+              "generation": "Step 1: Zoe > Max\nStep 2: Max > Kai\nStep 3: Kai > Bob\nStep 4: Bob > Mia\nStep 5: Mia > Zoe\nAnswer: Ann.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000011",
+              "generation": "Step 1: Bob > Mia\nStep 2: Mia > Dan\nStep 3: Dan > Bob\nAnswer: Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000012",
+              "generation": "Step 1: Leo > Sue\nStep 2: Sue > Dan\nStep 3: Dan > Zoe\nStep 4: Zoe > Leo\nStep 5: Leo > Max\nAnswer: Sue > Dan > Zoe > Leo > Max > Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000013",
+              "generation": "Step 1: Max > Dan\nStep 2: Dan > Joy\nStep 3: Joy > Bob\nStep 4: Bob > Max\nStep 5: Max > Sue\nAnswer: Tom > Dan > Joy > Bob > Max > Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000014",
+              "generation": "Step 1: Max > Tom\nStep 2: Tom > Mia\nStep 3: Mia > Ria\nStep 4: Ria > Dan\nStep 5: Dan > Max\nAnswer: Max > Tom > Mia > Ria > Tom > Leo.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000015",
+              "generation": "Step 1: Max > Tom\nStep 2: Tom > Kai\nStep 3: Kai > Sue\nAnswer: Max > Tom > Kai > Sue.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000016",
+              "generation": "Step 1: Ann > Kai\nStep 2: Kai > Zoe\nStep 3: Zoe > Ann\nAnswer: Ann.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000017",
+              "generation": "Step 1: Ben > Lily\nStep 2: Lily > Sam\nStep 3: Sam > Ben\nStep 4: Ben > Sam\nStep 5: Sam > Zoe\nAnswer: Eve.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000018",
+              "generation": "Step 1: Ben > Mia\nStep 2: Mia > Bob\nStep 3: Bob > Ria\nStep 4: Ria > Dan\nAnswer: Ben > Mia > Bob > Ria > Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000019",
+              "generation": "Step 1: Max > Lily\nStep 2: Lily > Sue\nStep 3: Sue > Sam\nStep 4: Sam > Sue\nStep 5: Sue > Max\nAnswer: Max.",
+              "passed": false
+            }
+          ],
+          "params": 17498112,
+          "body_params": 720896,
+          "head_params": 16777216,
+          "fp32_mb": 66.75632667541504,
+          "body_fp32_mb": 2.7557220458984375,
+          "packed_mb": 66.28409194946289,
+          "body_packed_mb": 2.283487319946289,
+          "head_packed_mb": 64.0006046295166,
+          "packed_exact": true,
+          "packed_mb_est": 66.75,
+          "body_packed_mb_est": 2.75,
+          "head_packed_mb_est": 64.0,
+          "quality_per_mb": 0.00584303568307512,
+          "quality_per_body_mb": 0.16960913734789373
+        },
+        "trm": {
+          "pretrain_loss": 0.36915820837020874,
+          "elapsed_s": 396.05422309999994,
+          "logic_sft_loss": 0.18746906518936157,
+          "logic_sft_elapsed_s": 1073.5427314000008,
+          "logic_pass@1": 0.19,
+          "strict_pass@1": 0.19,
+          "strict_verifier_pass@1": 0.19,
+          "logic_eval_n": 200,
+          "examples": [
+            {
+              "id": "cl_heldout_hard_000000",
+              "generation": "Step 1: Ben > Bob\nStep 2: Bob > Eve\nStep 3: Eve > Ben\nAnswer: Ben > Eve > Eve > Eve.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000001",
+              "generation": "Step 1: Sue > Leo\nStep 2: Leo > Zoe\nStep 3: Zoe > Sue\nStep 4: Sue > Eve\nStep 5: Eve > Zoe\nAnswer: Sue > Mia > Zoe > Eve > Eve > Sue.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000002",
+              "generation": "Step 1: Max > Ann\nStep 2: Ann > Dan\nStep 3: Dan > Ann\nAnswer: Max.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000003",
+              "generation": "Step 1: Max > Ben\nStep 2: Ben > Dan\nStep 3: Dan > Kai\nStep 4: Kai > Max\nStep 5: Max > Ben\nAnswer: Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000004",
+              "generation": "Step 1: Ann > Lily\nStep 2: Lily > Tom\nStep 3: Tom > Kai\nAnswer: Ann > Lily > Tom > Kai.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000005",
+              "generation": "Step 1: Sue > Joy\nStep 2: Joy > Mia\nStep 3: Mia > Zoe\nAnswer: Sue > Joy > Mia > Zoe.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000006",
+              "generation": "Step 1: Eve > Sam\nStep 2: Sam > Ann\nStep 3: Ann > Kai\nStep 4: Kai > Sam\nStep 5: Sam > Eve\nAnswer: Eve.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000007",
+              "generation": "Step 1: Sam > Eve\nStep 2: Eve > Dan\nStep 3: Dan > Sam\nStep 4: Sam > Eve\nStep 5: Eve > Dan\nAnswer: Sam.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000008",
+              "generation": "Step 1: Mia > Ben\nStep 2: Ben > Zoe\nStep 3: Zoe > Tom\nStep 4: Tom > Ben\nAnswer: Mia > Zoe > Ben > Tom > Tom.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000009",
+              "generation": "Step 1: Sue > Eve\nStep 2: Eve > Tom\nStep 3: Tom > Zoe\nStep 4: Zoe > Dan\nAnswer: Sue.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000010",
+              "generation": "Step 1: Max > Zoe\nStep 2: Zoe > Mia\nStep 3: Mia > Bob\nStep 4: Bob > Max\nStep 5: Max > Kai\nAnswer: Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000011",
+              "generation": "Step 1: Dan > Mia\nStep 2: Mia > Max\nStep 3: Max > Dan\nAnswer: Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000012",
+              "generation": "Step 1: Bob > Sue\nStep 2: Sue > Leo\nStep 3: Leo > Zoe\nStep 4: Zoe > Max\nStep 5: Max > Sue\nAnswer: Bob > Sue > Leo > Zoe > Max > Leo.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000013",
+              "generation": "Step 1: Ria > Dan\nStep 2: Dan > Joy\nStep 3: Joy > Ria\nStep 4: Ria > Leo\nStep 5: Leo > Joy\nAnswer: Ria > Dan > Joy > Ria > Leo > Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000014",
+              "generation": "Step 1: Max > Dan\nStep 2: Dan > Mia\nStep 3: Mia > Tom\nStep 4: Tom > Dan\nStep 5: Dan > Mia\nAnswer: Max > Tom > Leo > Tom > Dan > Mia.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000015",
+              "generation": "Step 1: Tom > Ben\nStep 2: Ben > Kai\nStep 3: Kai > Sue\nAnswer: Tom > Ben > Sue > Kai.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000016",
+              "generation": "Step 1: Ann > Kai\nStep 2: Kai > Ann\nStep 3: Ann > Zoe\nAnswer: Ann.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000017",
+              "generation": "Step 1: Bob > Lily\nStep 2: Lily > Sam\nStep 3: Sam > Ria\nStep 4: Ria > Zoe\nStep 5: Zoe > Ben\nAnswer: Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000018",
+              "generation": "Step 1: Bob > Ria\nStep 2: Ria > Mia\nStep 3: Mia > Joy\nStep 4: Joy > Dan\nAnswer: Bob > Mia > Ria > Dan > Sam.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000019",
+              "generation": "Step 1: Sue > Sam\nStep 2: Sam > Lily\nStep 3: Lily > Max\nStep 4: Max > Lily\nStep 5: Lily > Leo\nAnswer: Sue.",
+              "passed": false
+            }
+          ],
+          "params": 17137664,
+          "body_params": 360448,
+          "head_params": 16777216,
+          "fp32_mb": 65.37903022766113,
+          "body_fp32_mb": 1.3785486221313477,
+          "packed_mb": 64.08072853088379,
+          "body_packed_mb": 0.0801239013671875,
+          "head_packed_mb": 64.0006046295166,
+          "packed_exact": true,
+          "packed_mb_est": 65.375,
+          "body_packed_mb_est": 1.375,
+          "head_packed_mb_est": 64.0,
+          "quality_per_mb": 0.042272704118751954,
+          "quality_per_body_mb": 33.808459531770346
+        }
+      }
+    },
+    {
+      "seed": 2,
+      "arms": {
+        "hrm": {
+          "pretrain_loss": 2.0790772438049316,
+          "elapsed_s": 197.6849637999985,
+          "logic_sft_loss": 0.021334979683160782,
+          "logic_sft_elapsed_s": 573.9287592999972,
+          "logic_pass@1": 0.18,
+          "strict_pass@1": 0.18,
+          "strict_verifier_pass@1": 0.18,
+          "logic_eval_n": 200,
+          "examples": [
+            {
+              "id": "cl_heldout_hard_000000",
+              "generation": "Step 1: Ben > Bob\nStep 2: Bob > Eve\nStep 3: Eve > Ben\nAnswer: Ben > Bob > Eve > Ben.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000001",
+              "generation": "Step 1: Leo > Mia\nStep 2: Mia > Zoe\nStep 3: Zoe > Eve\nStep 4: Eve > Sue\nStep 5: Sue > Zoe\nAnswer: Leo > Mia > Zoe > Eve > Sue > Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000002",
+              "generation": "Step 1: Max > Dan\nStep 2: Dan > Lily\nStep 3: Lily > Ann\nAnswer: Max.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000003",
+              "generation": "Step 1: Bob > Bob\nStep 2: Bob > Kai\nStep 3: Kai > Bob\nStep 4: Bob > Dan\nStep 5: Dan > Bob\nAnswer: Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000004",
+              "generation": "Step 1: Ann > Lily\nStep 2: Lily > Tom\nStep 3: Tom > Kai\nAnswer: Ann > Lily > Tom > Kai.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000005",
+              "generation": "Step 1: Sue > Joy\nStep 2: Joy > Mia\nStep 3: Mia > Zoe\nAnswer: Sue > Joy > Zoe > Zoe.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000006",
+              "generation": "Step 1: Eve > Sam\nStep 2: Sam > Lily\nStep 3: Lily > Eve\nStep 4: Eve > Sam\nStep 5: Sam > Bob\nAnswer: Eve.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000007",
+              "generation": "Step 1: Ben > Eve\nStep 2: Eve > Eve\nStep 3: Eve > Sam\nStep 4: Sam > Eve\nStep 5: Eve > Sam\nAnswer: Ben.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000008",
+              "generation": "Step 1: Tom > Zoe\nStep 2: Zoe > Ben\nStep 3: Ben > Tom\nStep 4: Tom > Zoe\nAnswer: Tom > Zoe > Ben > Tom > Ben.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000009",
+              "generation": "Step 1: Zoe > Sue\nStep 2: Sue > Tom\nStep 3: Tom > Zoe\nStep 4: Zoe > Eve\nAnswer: Zoe.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000010",
+              "generation": "Step 1: Kai > Zoe\nStep 2: Zoe > Max\nStep 3: Max > Mia\nStep 4: Mia > Bob\nStep 5: Bob > Zoe\nAnswer: Kai.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000011",
+              "generation": "Step 1: Dan > Mia\nStep 2: Mia > Bob\nStep 3: Bob > Dan\nAnswer: Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000012",
+              "generation": "Step 1: Sue > Sue\nStep 2: Sue > Leo\nStep 3: Leo > Dan\nStep 4: Dan > Zoe\nStep 5: Zoe > Max\nAnswer: Sue > Sue > Leo > Dan > Zoe > Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000013",
+              "generation": "Step 1: Leo > Ria\nStep 2: Ria > Max\nStep 3: Max > Joy\nStep 4: Joy > Max\nStep 5: Max > Leo\nAnswer: Leo > Ria > Max > Joy > Max > Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000014",
+              "generation": "Step 1: Mia > Ria\nStep 2: Ria > Leo\nStep 3: Leo > Dan\nStep 4: Dan > Ria\nStep 5: Ria > Max\nAnswer: Mia > Ria > Leo > Dan > Ria > Tom.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000015",
+              "generation": "Step 1: Tom > Kai\nStep 2: Kai > Tom\nStep 3: Tom > Sue\nAnswer: Tom > Kai > Tom > Sue.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000016",
+              "generation": "Step 1: Ann > Kai\nStep 2: Kai > Ann\nStep 3: Ann > Zoe\nAnswer: Ann.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000017",
+              "generation": "Step 1: Bob > Lily\nStep 2: Lily > Ria\nStep 3: Ria > Bob\nStep 4: Bob > Zoe\nStep 5: Zoe > Bob\nAnswer: Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000018",
+              "generation": "Step 1: Bob > Ria\nStep 2: Ria > Mia\nStep 3: Mia > Dan\nStep 4: Dan > Bob\nAnswer: Bob > Ria > Bob > Dan > Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000019",
+              "generation": "Step 1: Joy > Sam\nStep 2: Sam > Max\nStep 3: Max > Lily\nStep 4: Lily > Sam\nStep 5: Sam > Max\nAnswer: Joy.",
+              "passed": false
+            }
+          ],
+          "params": 17498112,
+          "body_params": 720896,
+          "head_params": 16777216,
+          "fp32_mb": 66.75632667541504,
+          "body_fp32_mb": 2.7557220458984375,
+          "packed_mb": 66.28409194946289,
+          "body_packed_mb": 2.283487319946289,
+          "head_packed_mb": 64.0006046295166,
+          "packed_exact": true,
+          "packed_mb_est": 66.75,
+          "body_packed_mb_est": 2.75,
+          "head_packed_mb_est": 64.0,
+          "quality_per_mb": 0.007256380773707681,
+          "quality_per_body_mb": 0.2106351133301095
+        },
+        "trm": {
+          "pretrain_loss": 0.37084412574768066,
+          "elapsed_s": 374.42500350000046,
+          "logic_sft_loss": 0.026615194976329803,
+          "logic_sft_elapsed_s": 1176.7387959000007,
+          "logic_pass@1": 0.22,
+          "strict_pass@1": 0.22,
+          "strict_verifier_pass@1": 0.22,
+          "logic_eval_n": 200,
+          "examples": [
+            {
+              "id": "cl_heldout_hard_000000",
+              "generation": "Step 1: Ben > Eve\nStep 2: Eve > Bob\nStep 3: Bob > Ben\nAnswer: Ben > Eve > Eve > Ben.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000001",
+              "generation": "Step 1: Tom > Leo\nStep 2: Leo > Eve\nStep 3: Eve > Zoe\nStep 4: Zoe > Eve\nStep 5: Eve > Tom\nAnswer: Tom > Eve > Zoe > Sue > Eve > Eve.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000002",
+              "generation": "Step 1: Max > Dan\nStep 2: Dan > Ann\nStep 3: Ann > Ann\nAnswer: Max.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000003",
+              "generation": "Step 1: Bob > Ben\nStep 2: Ben > Sam\nStep 3: Sam > Dan\nStep 4: Dan > Kai\nStep 5: Kai > Max\nAnswer: Max.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000004",
+              "generation": "Step 1: Ann > Lily\nStep 2: Lily > Kai\nStep 3: Kai > Tom\nAnswer: Ann > Lily > Lily > Kai.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000005",
+              "generation": "Step 1: Sue > Joy\nStep 2: Joy > Mia\nStep 3: Mia > Zoe\nAnswer: Sue > Joy > Mia > Zoe.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000006",
+              "generation": "Step 1: Eve > Sam\nStep 2: Sam > Eve\nStep 3: Eve > Kai\nStep 4: Kai > Ann\nStep 5: Ann > Eve\nAnswer: Eve.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000007",
+              "generation": "Step 1: Bob > Eve\nStep 2: Eve > Dan\nStep 3: Dan > Ben\nStep 4: Ben > Eve\nStep 5: Eve > Sam\nAnswer: Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000008",
+              "generation": "Step 1: Mia > Ben\nStep 2: Ben > Zoe\nStep 3: Zoe > Tom\nStep 4: Tom > Ben\nAnswer: Mia > Zoe > Joy > Tom > Tom.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000009",
+              "generation": "Step 1: Dan > Sue\nStep 2: Sue > Tom\nStep 3: Tom > Zoe\nStep 4: Zoe > Eve\nAnswer: Dan.",
+              "passed": true
+            },
+            {
+              "id": "cl_heldout_hard_000010",
+              "generation": "Step 1: Kai > Mia\nStep 2: Mia > Max\nStep 3: Max > Kai\nStep 4: Kai > Zoe\nStep 5: Zoe > Max\nAnswer: Kai.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000011",
+              "generation": "Step 1: Dan > Mia\nStep 2: Mia > Dan\nStep 3: Dan > Dan\nAnswer: Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000012",
+              "generation": "Step 1: Sue > Sue\nStep 2: Sue > Leo\nStep 3: Leo > Dan\nStep 4: Dan > Zoe\nStep 5: Zoe > Dan\nAnswer: Sue > Leo > Dan > Zoe > Max > Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000013",
+              "generation": "Step 1: Joy > Ria\nStep 2: Ria > Dan\nStep 3: Dan > Joy\nStep 4: Joy > Leo\nStep 5: Leo > Dan\nAnswer: Joy > Ria > Dan > Joy > Leo > Joy.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000014",
+              "generation": "Step 1: Mia > Dan\nStep 2: Dan > Ria\nStep 3: Ria > Tom\nStep 4: Tom > Dan\nStep 5: Dan > Mia\nAnswer: Mia > Tom > Dan > Tom > Ria > Dan.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000015",
+              "generation": "Step 1: Tom > Kai\nStep 2: Kai > Sue\nStep 3: Sue > Sue\nAnswer: Tom > Kai > Tom > Sue.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000016",
+              "generation": "Step 1: Ann > Kai\nStep 2: Kai > Ann\nStep 3: Ann > Ann\nAnswer: Ann.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000017",
+              "generation": "Step 1: Bob > Lily\nStep 2: Lily > Bob\nStep 3: Bob > Ria\nStep 4: Ria > Bob\nStep 5: Bob > Bob\nAnswer: Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000018",
+              "generation": "Step 1: Bob > Ria\nStep 2: Ria > Mia\nStep 3: Mia > Dan\nStep 4: Dan > Bob\nAnswer: Bob > Mia > Ria > Bob > Bob.",
+              "passed": false
+            },
+            {
+              "id": "cl_heldout_hard_000019",
+              "generation": "Step 1: Sam > Sam\nStep 2: Sam > Max\nStep 3: Max > Lily\nStep 4: Lily > Lily\nStep 5: Lily > Lily\nAnswer: Sam.",
+              "passed": false
+            }
+          ],
+          "params": 17137664,
+          "body_params": 360448,
+          "head_params": 16777216,
+          "fp32_mb": 65.37903022766113,
+          "body_fp32_mb": 1.3785486221313477,
+          "packed_mb": 64.08072853088379,
+          "body_packed_mb": 0.0801239013671875,
+          "head_packed_mb": 64.0006046295166,
+          "packed_exact": true,
+          "packed_mb_est": 65.375,
+          "body_packed_mb_est": 1.375,
+          "head_packed_mb_est": 64.0,
+          "quality_per_mb": 0.04208052556847064,
+          "quality_per_body_mb": 33.654760806422466
+        }
+      }
+    }
+  ]
+}

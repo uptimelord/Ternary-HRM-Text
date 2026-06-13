@@ -8,6 +8,9 @@ README.
 **How to update:** add a row (or new README + row), refresh **Current Baselines**
 if a lane is promoted/killed, bump the footer count.
 
+**Run order ≠ ID order.** Experiment numbers are identifiers, not a schedule. For *what runs when* across
+all research briefs, see [EXECUTION_ORDER.md](EXECUTION_ORDER.md) (Tier 0→5; machine milestones Exp112–116 last).
+
 Governance: [DISCIPLINE.md](DISCIPLINE.md) · Locked vocab:
 [VOCAB_RECIPE.md](VOCAB_RECIPE.md) · LDT harness detail (44–53):
 [SURVEY_44_53_LDT_STATUS.md](SURVEY_44_53_LDT_STATUS.md) · North star:
@@ -36,8 +39,8 @@ Phase 1 — LDT / closure lattice (Exp 43–44, 54–63)
 Phase 1.5 — Word & logic SFT (Exp 66–75, 73)
   READ problems in weights; COMPUTE with tools; VERIFY with strict scorers.
 
-Architecture probes (Exp 77–78)
-  Fast-weight overlay and temporal memory — only if they beat simpler baselines.
+Architecture probes (Exp 77–84)
+  Fast-weight overlay, memory, breadth, and architecture controls — only if they beat simpler baselines.
 ```
 
 **Dependency chains worth remembering:**
@@ -89,9 +92,9 @@ Architecture probes (Exp 77–78)
 | Item | Status |
 |---|---|
 | **Missing folder** | **76** only |
-| **Indexed READMEs** | **83** folders, each with README |
+| **Indexed READMEs** | **89** folders, each with README |
 | **Decision Rule** | **55** post-DISCIPLINE READMEs; **28** legacy (Exp 1–28, 5b, 5c) intentionally not retrofitted |
-| **Pending runs** | **Exp32** (recurrence sweep), **Exp37** (dataset gen needs API key), **Exp74** (planned) |
+| **Pending runs** | **Exp32** (recurrence sweep), **Exp37** (dataset gen needs API key), **Exp74** (planned), **Exp81** (infra-ready / awaiting decision-grade run), **Exp84** (unblocked: Exp83 promote + Exp79 verdict in). *Exp80 (kill), Exp82 (kill) decided 2026-06-13.* |
 
 > Do not use the deleted `_exp575859_run.log` summary. Exp57–59 READMEs + JSON are canonical.
 
@@ -163,6 +166,19 @@ Architecture probes (Exp 77–78)
 | 36 | [Language Rehearsal EqR SFT](Experiment%2036%20-%20Language%20Rehearsal%20EqR%20SFT/README.md) | Can rehearsal during EqR SFT preserve language without losing math? | 58.5/62.0/63.5%; language still weak | open |
 | 77 | [Ternary Flash Grid Micro](Experiment%2077%20-%20Ternary%20Flash%20Grid%20Micro/README.md) | Can rank-8 ternary overlay on frozen backbone improve arithmetic SFT loss? | Oracle 0/64 beat baseline; distil loss wins only — **Because** inject point/rank may be wrong | open (oracle **kill**) |
 | 78 | [SMT z_L Probe](Experiment%2078%20-%20SMT%20z_L%20Probe/README.md) | Does paper SMT+DMT beat BPTT for temporal memory on pretrain text? | Fair: BPTT CE **1.92** vs SMT+DMT **4.12** — **Because** z_L is depth scratchpad today, not seq memory | **kill** (deploy) |
+| 79 | [Verifier In Loop Training](Experiment%2079%20-%20Verifier%20In%20Loop%20Training/README.md) | Does verifier-gated SFT (tool_supervised) lift strict pass@1? | seed1: heldout +3.5 pp (bar ≥5), frozen **−3.0 pp** (bar ≥+3); tool pass dropped 0.02→0.005 — **Because** neither promote bar met and frozen regressed | open (no promote, seed1) |
+
+### Architecture brief probes (80–84)
+
+*Theme: repair validity first, then run decision-grade CUDA gates.*
+
+| Exp | Name | Why (question) | Key result | Verdict |
+|---:|---|---|---|---|
+| 80 | [Abacus Digit Embedding Probe](Experiment%2080%20-%20Abacus%20Digit%20Embedding%20Probe/README.md) | Do per-digit positions lift add/sub beyond matched control? | Decision-grade CUDA, 4 arms × frozen-200: abacus−control frozen delta **−0.5 pp (seed1) / 0.0 pp (seed2)**, add/sub delta 0.0 pp both seeds, invalid 0%, `abacus_ready=true` (not floor) — **Because** per-digit positions add nothing over matched control at this scale; both seeds at/below the +5 pp bar | **kill** |
+| 81 | [Verified Breadth Sweep](Experiment%2081%20-%20Verified%20Breadth%20Sweep/README.md) | Does K-sampling plus label-free selection lift pass@1? | Oracle metric renamed `oracle_any_pass@k`; solver/derived pickers wired; stale logs marked superseded | infra-ready / awaiting rerun |
+| 82 | [Down Proj TTT Overlay](Experiment%2082%20-%20Down%20Proj%20TTT%20Overlay/README.md) | Can one-retry TTT at `down_proj` improve logic hard? | Decision-grade CUDA (Exp70 logic SFT ckpt, hard-1k offset0 limit200): adapted−baseline **0.0 pp both seeds** (0.775→0.775) — **Because** one-retry TTT at down_proj moves nothing on logic hard; C3 one-retry-then-kill bar fails | **kill** (C3 lane closes) |
+| 83 | [Tied Recursive Block](Experiment%2083%20-%20Tied%20Recursive%20Block/README.md) | Does TRM improve quality per packed MB vs HRM? | Full CUDA 2 seeds: TRM q/mb **0.0422** vs HRM 0.0065 (packed_exact), strict logic Δ +1.25 pp (within 2 pp), peak VRAM 462 MB — **Because** q/mb gap is pretrain-loss-driven (0.37 vs 2.3); downstream strict guard held | **promote** |
+| 84 | [Attractor Logic Recurrence](Experiment%2084%20-%20Attractor%20Logic%20Recurrence/README.md) | Does CMM revive depth on logic hard? | `n_super` semantics fixed; base-recipe label, repo control, and `l6` depth axis wired | infra-ready / awaiting run |
 
 ### Phase 0 adapters & deploy locks (37–42)
 
@@ -234,4 +250,4 @@ Detail: [SURVEY_44_53_LDT_STATUS.md](SURVEY_44_53_LDT_STATUS.md)
 
 ---
 
-*Last indexed: **83** experiment READMEs. Missing folder: **76** only. Each row links to the canonical README for commands, artifacts, and decision rules.*
+*Last indexed: **89** experiment READMEs. Missing folder: **76** only. Each row links to the canonical README for commands, artifacts, and decision rules.*

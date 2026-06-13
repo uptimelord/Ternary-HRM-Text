@@ -114,9 +114,16 @@ class TernaryRankOverlay(nn.Module):
 
 
 class HyperBuilder(nn.Module):
-    """ROM builder: prompt vector -> ternary rank factors for the overlay grid."""
+    """ROM builder: prompt vector -> ternary rank factors for the overlay grid.
 
-    def __init__(self, d_model: int, rank: int, hidden: int = 128) -> None:
+    zero_init=True biases both ternary heads toward the 0 class so the overlay
+    starts as an exact identity (delta == 0) and training moves it away from
+    zero — the LoRA-style safe-adapter init. Without it a fresh builder emits
+    dense random ±1 factors whose delta swamps the residual stream (the Exp82
+    -70pp artifact). Default False to preserve Exp77 reproducibility.
+    """
+
+    def __init__(self, d_model: int, rank: int, hidden: int = 128, *, zero_init: bool = False) -> None:
         super().__init__()
         self.d_model = d_model
         self.rank = rank
@@ -128,6 +135,12 @@ class HyperBuilder(nn.Module):
         )
         self.A_head = nn.Linear(hidden, d_model * rank * 3)
         self.B_head = nn.Linear(hidden, rank * d_model * 3)
+        if zero_init:
+            for head in (self.A_head, self.B_head):
+                nn.init.zeros_(head.weight)
+                nn.init.zeros_(head.bias)
+                # Bias logit layout [..., 3] = (-1, 0, +1); favor index 1 (value 0).
+                head.bias.data.view(-1, 3)[:, 1] = 4.0
 
     def forward(self, prompt_vec: Tensor, *, hard: bool = False) -> tuple[Tensor, Tensor, Tensor, Tensor]:
         if prompt_vec.ndim != 2:
@@ -158,20 +171,61 @@ def install_l_mlp_overlay_hooks(
     overlay: TernaryRankOverlay,
     *,
     scale: float = 1.0,
+    site: str = "gate_up",
 ) -> list:
-    """Forward hooks on L-level SwiGLU blocks: add overlay delta to MLP output."""
+    """Forward hooks on L-level MLP blocks.
+
+    site='gate_up' (Exp77): add overlay delta to SwiGLU output.
+    site='down_proj' (Exp82): add overlay delta after down_proj (In-Place TTT site).
+    """
 
     handles: list = []
 
-    def _hook(_module: nn.Module, inputs: tuple[Tensor, ...], output: Tensor) -> Tensor:
-        if not overlay.active:
-            return output
-        x = inputs[0]
-        return output + scale * overlay.delta(x)
+    if site == "gate_up":
+
+        def _hook_gate(_module: nn.Module, inputs: tuple[Tensor, ...], output: Tensor) -> Tensor:
+            if not overlay.active:
+                return output
+            x = inputs[0]
+            return output + scale * overlay.delta(x)
+
+        hook_fn = _hook_gate
+        target = "mlp"
+    elif site == "down_proj":
+
+        def _hook_down(_module: nn.Module, _inputs: tuple[Tensor, ...], output: Tensor) -> Tensor:
+            if not overlay.active:
+                return output
+            # down_proj output is d_model; overlay rank factors match d_model (Exp82 site).
+            return output + scale * overlay.delta(output)
+
+        hook_fn = _hook_down
+        target = "down_proj"
+    else:
+        raise ValueError(f"unknown overlay site {site!r}")
 
     for layer in l_level.core.layers:
-        handles.append(layer.mlp.register_forward_hook(_hook))
+        if target == "mlp":
+            handles.append(layer.mlp.register_forward_hook(hook_fn))
+        else:
+            handles.append(layer.mlp.down_proj.register_forward_hook(hook_fn))
     return handles
+
+
+def masked_next_token_ce(logits: Tensor, labels: Tensor, *, ignore_id: int) -> Tensor:
+    """Next-token CE on prefix labels only (TTT objective)."""
+    import torch.nn.functional as F
+
+    masks = labels != ignore_id
+    if masks.sum() == 0:
+        return logits.new_zeros(())
+    loss = F.cross_entropy(
+        logits.to(torch.float32),
+        labels.to(torch.long),
+        ignore_index=ignore_id,
+        reduction="sum",
+    )
+    return loss / masks.sum().clamp_min(1)
 
 
 def token_embeddings(lm_head: nn.Module, input_ids: Tensor) -> Tensor:

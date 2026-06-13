@@ -1,5 +1,15 @@
-# VSCode
+# VSCode / Cursor
 .vscode/
+.cursor/
+# scratch
+/input.txt
+/experiments/convgpt2.png
+# large regenerable experiment data (keep small frozen/heldout splits only)
+/experiments/Experiment 70 - Comparative Logic Corpus/train_100k.jsonl
+/experiments/Experiment 70 - Comparative Logic Corpus/train_30k_sft.jsonl
+/experiments/Experiment 70 - Comparative Logic Corpus/_train.sigs
+# nested sandbox repo (has its own .git)
+/experiments/Sandbox - HVM and Interaction Nets/
 # WandB
 /wandb/
 # datasets
