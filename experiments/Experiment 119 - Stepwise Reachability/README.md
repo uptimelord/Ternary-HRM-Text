@@ -145,6 +145,42 @@ long-prose regime): latent prompt compression (K-Token Merging) for attention
 memory on long real-language inputs. Wrong fit for the current short symbolic
 inputs and it fights symbol-tagging; revisit when inputs get long.
 
+## Status
+
+Core built (build steps 1, 2, 3, 4, 5). `stepwise_reachability.py` implements
+the stepwise machine, gradient checkpointing, `--bp-steps`, **ALBERT-style
+embedding factorization** (`--factorized-emb-dim`, 0=dense), the hop curriculum,
+closure-consistency loss (BCE + monotone + acyclicity), goal-conditioned halt,
+trace exposure, backtrack-on-inconsistency, abstention, and the extrapolation
+eval (train ≤K, eval K / K+1 / K+2 by reasoning depth). Tests:
+`tests/test_exp119_stepwise_reachability.py` (6 CPU self-checks, all green).
+
+Measured factorization win (vocab=65536, width=128, 2 layers, packer-exact
+shape): dense embedding 33.55 MB → E=16 factorized 4.20 MB (**8.0×**) with
+no sequence-length change and no VRAM regression. Total model 8.92M → 1.58M
+params. Stacks with ternary later if step 7 runs.
+
+Not yet built: the ternary arms (step 7 — only after extrapolation promotes;
+body error compounds across rounds so it needs a known-good machine first).
+`--no-checkpoint` is available if checkpointing is ever unwanted.
+
+## Run
+
+```powershell
+# fp32 stepwise, factorized embedding (E=16), extrapolation eval
+rtk python "experiments/Experiment 119 - Stepwise Reachability/stepwise_reachability.py" `
+  --device cuda --steps 8000 --train-limit 40000 --eval-limit 2000 `
+  --train-k 4 --max-rounds 8 --bp-steps 8 --batch-size 64 --seed 1 `
+  --factorized-emb-dim 16 --output-dir "artifacts/exp119_stepwise_seed1"
+```
+
+Smoke (CPU crash check): `--device cpu --steps 8 --train-limit 200
+--eval-limit 60 --train-k 3 --max-rounds 4 --bp-steps 4 --batch-size 16`.
+
+Eval reports combined / comparative / logic strict@1 and abstention count at
+K (in-distribution), K+1, K+2 (extrapolation). The promote/kill read is the
+K+1/K+2 gap vs K — see the Decision Rule.
+
 ## Belongs to other experiments (recorded, not crammed in)
 
 Two more human-like capacities are real but already have homes in the roadmap —
