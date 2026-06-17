@@ -70,3 +70,35 @@ def test_adaptive_halting_full_run():
     
     # Should run exactly 5 iterations
     assert len(states) == 5, f"Expected full 5 iterations, but got {len(states)}."
+
+
+def test_ternary_embedding_quantizes_and_forwards():
+    """TernaryEmbedding: effective_weight is group-ternary and forward returns hidden shape."""
+    emb = exp90_3.TernaryEmbedding(vocab_size=200, hidden=32, group_size=32, threshold=0.25)
+    ids = torch.randint(0, 200, (4, 16))
+    out = emb(ids)
+    assert out.shape == (4, 16, 32)
+    # the quantized weight lives on {-s, 0, +s} per group; check it is NOT continuous
+    q = emb.ternary.quantized_weight().detach()
+    per_group = q.reshape(-1, 32)
+    scale = per_group.abs().mean(dim=1, keepdim=True).clamp_min(1e-6)
+    normed = per_group / scale
+    uniq = torch.unique(normed.round(decimals=4))
+    # ternary means values land near {-1, 0, +1}; at least the 0 level must appear
+    assert torch.any(normed == 0), "ternary embedding should zero out sub-threshold weights"
+
+
+def test_reader_ternary_flag_smaller_packed_than_fp32():
+    """A ternary-embedding reader packs smaller than the dense reader (Exp 13 packer)."""
+    from training.arch_backbone import true_packed_bytes
+    dense = exp90_3.SharedReachabilityReader(vocab_size=2000, width=64, heads=2, layers=1,
+                                              internal_iters=2, max_len=32, ternary_embedding=False)
+    tern = exp90_3.SharedReachabilityReader(vocab_size=2000, width=64, heads=2, layers=1,
+                                            internal_iters=2, max_len=32, ternary_embedding=True)
+    d_bytes, d_exact = true_packed_bytes(dense)
+    t_bytes, t_exact = true_packed_bytes(tern)
+    assert t_exact, "ternary arm should be packer-recognized (packed_exact=True)"
+    assert t_bytes < d_bytes, f"ternary packed ({t_bytes}) should beat dense ({d_bytes})"
+    # magnitude of the win scales with vocab/width ratio (embedding dominance);
+    # at this toy scale (vocab=2000) we only assert real compression, not the 18x
+    # that shows up at the real vocab=65536.

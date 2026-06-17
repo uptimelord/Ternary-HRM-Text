@@ -41,6 +41,27 @@ if str(REPO_ROOT) not in sys.path:
 from training.sft_lib import DEFAULT_TOKENIZER  # noqa: E402
 
 MAX_SYMBOLS = 12
+
+
+class TernaryEmbedding(nn.Module):
+    """Input-only ternary embedding (the 90.3 analog of Exp 4/9's tied vocab head).
+
+    90.3 has no vocab output head to tie, so we reuse the Exp 9 quantizer
+    (TernaryLinear158Init, group 32 / thr 0.25 / mean_abs / tequila) on the
+    input embedding only. Weight shape (vocab, hidden) == Linear(out=vocab, in=hidden)."""
+
+    def __init__(self, vocab_size: int, hidden: int, *, group_size: int = 32,
+                 threshold: float = 0.25, scale_mode: str = "mean_abs", ste_mode: str = "tequila"):
+        super().__init__()
+        from models.layers import TernaryLinear158Init  # lazy: avoids flash-attn import on the dense path
+        self.ternary = TernaryLinear158Init(
+            in_features=hidden, out_features=vocab_size, bias=False,
+            ternary_group_size=group_size, ternary_threshold=threshold,
+            ternary_scale_mode=scale_mode, ternary_ste_mode=ste_mode,
+        )
+
+    def forward(self, ids: torch.Tensor) -> torch.Tensor:
+        return F.embedding(ids, self.ternary.effective_weight())
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 90.3 - Shared Reachability Machine"
 DEFAULT_TRAIN = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "train.jsonl"
 DEFAULT_EVAL = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "heldout.jsonl"
@@ -201,10 +222,19 @@ def hyperspherical_repulsion_loss(states, eps=1e-6):
 
 
 class SharedReachabilityReader(nn.Module):
-    def __init__(self, *, vocab_size, width=128, heads=4, layers=2, internal_iters=3, max_len=128):
+    def __init__(self, *, vocab_size, width=128, heads=4, layers=2, internal_iters=3, max_len=128,
+                 ternary_embedding: bool = False, ternary_group_size: int = 32,
+                 ternary_threshold: float = 0.25, ternary_scale_mode: str = "mean_abs",
+                 ternary_ste_mode: str = "tequila"):
         super().__init__()
         self.internal_iters = internal_iters
-        self.tok_emb = nn.Embedding(vocab_size, width)
+        self.ternary_embedding = ternary_embedding
+        if ternary_embedding:
+            self.tok_emb = TernaryEmbedding(
+                vocab_size, width, group_size=ternary_group_size, threshold=ternary_threshold,
+                scale_mode=ternary_scale_mode, ste_mode=ternary_ste_mode)
+        else:
+            self.tok_emb = nn.Embedding(vocab_size, width)
         self.pos_emb = nn.Embedding(max_len, width)
         self.tag_emb = nn.Embedding(MAX_SYMBOLS + 1, width)  # 0 = not a symbol
         self.dom_emb = nn.Embedding(2, width)                # 0 comparative, 1 logic
@@ -343,7 +373,12 @@ def train_model(args):
 
     model = SharedReachabilityReader(vocab_size=vocab, width=args.width, heads=args.heads,
                                      layers=args.layers, internal_iters=args.internal_iters,
-                                     max_len=args.max_len).to(device)
+                                     max_len=args.max_len,
+                                     ternary_embedding=args.ternary_embedding,
+                                     ternary_group_size=args.ternary_group_size,
+                                     ternary_threshold=args.ternary_threshold,
+                                     ternary_scale_mode=args.ternary_scale_mode,
+                                     ternary_ste_mode=args.ternary_ste_mode).to(device)
     opt = torch.optim.AdamW(model.parameters(), lr=args.lr)
     rng = random.Random(args.seed)
     if device.type == "cuda":
@@ -382,7 +417,19 @@ def train_model(args):
         "edge_conf": args.edge_conf, "elapsed_s": time.perf_counter() - t0,
         "peak_vram_mb": (torch.cuda.max_memory_allocated() / 1e6) if device.type == "cuda" else 0.0,
         "train_source": str(args.train), "eval_source": str(args.eval),
+        "ternary_embedding": args.ternary_embedding,
     }
+    # Honest packed size: Exp 13 packer recognizes TernaryLinear158Init, so this
+    # reports real 1.58-bit bytes when --ternary-embedding is on, fp32 bytes otherwise.
+    try:
+        from training.arch_backbone import true_packed_bytes
+        packed_bytes, packed_exact = true_packed_bytes(model)
+        report["packed_mb"] = packed_bytes / (1024 * 1024)
+        report["packed_exact"] = packed_exact
+    except Exception as exc:  # pragma: no cover - packer unavailable
+        report["packed_mb"] = report.get("fp32_mb", 0.0)
+        report["packed_exact"] = False
+        print(f"warn: true_packed_bytes unavailable ({exc!r}); packed_mb = fp32 fallback", flush=True)
     args.output_dir.mkdir(parents=True, exist_ok=True)
     (args.output_dir / "report.json").write_text(json.dumps(report, indent=2, sort_keys=True), encoding="utf-8")
     torch.save(model.state_dict(), args.output_dir / "checkpoint.pt")
@@ -398,7 +445,8 @@ def _write_results(report):
         f"- **combined strict@1: `{report['combined_strict@1']:.3f}`**",
         f"- comparative strict@1: `{report['comparative_order_strict@1']:.3f}` (n={report['comparative_order_n']})",
         f"- logic strict@1: `{report['logic_rules_strict@1']:.3f}` (n={report['logic_rules_n']})",
-        f"- params: `{report['params']}` | fp32_mb: `{report['fp32_mb']:.2f}` | peak_vram_mb: `{report['peak_vram_mb']:.1f}`",
+        f"- params: `{report['params']}` | fp32_mb: `{report['fp32_mb']:.2f}` | packed_mb: `{report.get('packed_mb', 0.0):.2f}` (exact={report.get('packed_exact', False)}) | peak_vram_mb: `{report['peak_vram_mb']:.1f}`",
+        f"- ternary_embedding: `{report.get('ternary_embedding', False)}`",
     ]
     (EXP_DIR / f"results_seed{report['seed']}.md").write_text("\n".join(lines) + "\n", encoding="utf-8")
 
@@ -415,6 +463,12 @@ def build_arg_parser():
     p.add_argument("--heads", type=int, default=4)
     p.add_argument("--layers", type=int, default=2)
     p.add_argument("--internal-iters", type=int, default=3)
+    p.add_argument("--ternary-embedding", action="store_true",
+                   help="ternarize the input embedding (Exp 9 preset: group 32, thr 0.25, mean_abs, tequila)")
+    p.add_argument("--ternary-group-size", type=int, default=32)
+    p.add_argument("--ternary-threshold", type=float, default=0.25)
+    p.add_argument("--ternary-scale-mode", choices=["mean_abs", "selected_mean_abs", "rms"], default="mean_abs")
+    p.add_argument("--ternary-ste-mode", choices=["standard", "tequila"], default="tequila")
     p.add_argument("--max-len", type=int, default=128)
     p.add_argument("--lr", type=float, default=3e-4)
     p.add_argument("--edge-conf", type=float, default=2.0)
