@@ -1,0 +1,81 @@
+{
+  "args": {
+    "device": "cuda",
+    "hidden_size": 64,
+    "n_layers": 2,
+    "steps": 200,
+    "proposal_frac": 0.005,
+    "temperature": 0.001,
+    "cooling": 0.99,
+    "D": 0.0,
+    "flip_penalty": 0.0,
+    "train_batches": 16,
+    "eval_batches": 16,
+    "adamw_lr": 0.0001,
+    "adamw_weight_decay": 0.0,
+    "adamw_max_steps": 200,
+    "seeds": "1,2,3"
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "init_eval_ce": 11.649422645568848,
+      "metro_eval_ce": 11.2852783203125,
+      "adamw_eval_ce": 9.474645614624023,
+      "edge_vs_adamw": -1.8106327056884766,
+      "metro_delta": 0.36414432525634766,
+      "adamw_delta": 2.174777030944824,
+      "metro_elapsed_s": 12.134523400018224,
+      "adamw_elapsed_s": 12.142989899992244,
+      "adamw_steps": 87,
+      "metro_peak_vram_mb": 1066.01611328125,
+      "adamw_peak_vram_mb": 1737.67626953125,
+      "metro_accept_rate": 0.415,
+      "metro_avg_actual_flip_fraction": 0.006643524169921875,
+      "adamw_optimizer_state_tensors": 16916486
+    },
+    {
+      "seed": 2,
+      "init_eval_ce": 11.286358833312988,
+      "metro_eval_ce": 10.896719932556152,
+      "adamw_eval_ce": 8.564416885375977,
+      "edge_vs_adamw": -2.332303047180176,
+      "metro_delta": 0.38963890075683594,
+      "adamw_delta": 2.7219419479370117,
+      "metro_elapsed_s": 17.91112050000811,
+      "adamw_elapsed_s": 18.054477300000144,
+      "adamw_steps": 116,
+      "metro_peak_vram_mb": 1074.6884765625,
+      "adamw_peak_vram_mb": 1738.2236328125,
+      "metro_accept_rate": 0.525,
+      "metro_avg_actual_flip_fraction": 0.00671722412109375,
+      "adamw_optimizer_state_tensors": 16916486
+    },
+    {
+      "seed": 3,
+      "init_eval_ce": 11.559173583984375,
+      "metro_eval_ce": 11.09504508972168,
+      "adamw_eval_ce": 7.926560401916504,
+      "edge_vs_adamw": -3.168484687805176,
+      "metro_delta": 0.4641284942626953,
+      "adamw_delta": 3.632613182067871,
+      "metro_elapsed_s": 18.227097499999218,
+      "adamw_elapsed_s": 18.491753200010862,
+      "adamw_steps": 141,
+      "metro_peak_vram_mb": 1075.23583984375,
+      "adamw_peak_vram_mb": 1738.77099609375,
+      "metro_accept_rate": 0.48,
+      "metro_avg_actual_flip_fraction": 0.0067425537109375,
+      "adamw_optimizer_state_tensors": 16916486
+    }
+  ],
+  "summary": {
+    "total_seeds": 3,
+    "metro_beats_adamw": 0,
+    "success_rate": 0.0,
+    "mean_edge_vs_adamw": -2.4371401469,
+    "mean_vram_saving_mb": 666.2434895833334,
+    "mean_metro_delta": 0.40597057342529297,
+    "mean_adamw_delta": 2.843110720316569
+  }
+}

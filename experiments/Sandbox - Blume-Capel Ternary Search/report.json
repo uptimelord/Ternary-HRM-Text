@@ -1,0 +1,74 @@
+{
+  "args": {
+    "mode": "smoke",
+    "device": "cpu",
+    "hidden_size": 32,
+    "n_layers": 2,
+    "steps": 200,
+    "proposal_frac": 0.005,
+    "temperature": 0.001,
+    "cooling": 0.99,
+    "D": 0.0,
+    "flip_penalty": 0.0,
+    "train_batches": 4,
+    "eval_batches": 4,
+    "seeds": "1,2,3,4,5"
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "best_train_energy": 11.220684051513672,
+      "accept_rate": 0.445,
+      "init_eval_ce": 11.474108695983887,
+      "final_eval_ce": 11.052042961120605,
+      "random_eval_ce": 11.497523307800293,
+      "peak_vram_mb": 0.0,
+      "elapsed_s": 50.13872680001077
+    },
+    {
+      "seed": 2,
+      "best_train_energy": 11.070886611938477,
+      "accept_rate": 0.51,
+      "init_eval_ce": 11.652786254882812,
+      "final_eval_ce": 11.174349784851074,
+      "random_eval_ce": 11.744670867919922,
+      "peak_vram_mb": 0.0,
+      "elapsed_s": 41.54063000000315
+    },
+    {
+      "seed": 3,
+      "best_train_energy": 11.177227973937988,
+      "accept_rate": 0.465,
+      "init_eval_ce": 11.65612506866455,
+      "final_eval_ce": 11.173437118530273,
+      "random_eval_ce": 11.510785102844238,
+      "peak_vram_mb": 0.0,
+      "elapsed_s": 44.02933730001678
+    },
+    {
+      "seed": 4,
+      "best_train_energy": 10.856974601745605,
+      "accept_rate": 0.465,
+      "init_eval_ce": 11.429634094238281,
+      "final_eval_ce": 10.997357368469238,
+      "random_eval_ce": 11.505594253540039,
+      "peak_vram_mb": 0.0,
+      "elapsed_s": 42.8951659000013
+    },
+    {
+      "seed": 5,
+      "best_train_energy": 11.094049453735352,
+      "accept_rate": 0.5,
+      "init_eval_ce": 11.662897109985352,
+      "final_eval_ce": 11.2672119140625,
+      "random_eval_ce": 11.603948593139648,
+      "peak_vram_mb": 0.0,
+      "elapsed_s": 47.6171117000049
+    }
+  ],
+  "summary": {
+    "total_seeds": 5,
+    "beats_random": 5,
+    "success_rate": 1.0
+  }
+}

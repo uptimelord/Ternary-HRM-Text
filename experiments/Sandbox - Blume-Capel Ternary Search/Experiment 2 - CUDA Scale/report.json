@@ -1,0 +1,69 @@
+{
+  "args": {
+    "device": "cuda",
+    "hidden_size": 64,
+    "n_layers": 2,
+    "steps": 200,
+    "proposal_frac": 0.005,
+    "temperature": 0.001,
+    "cooling": 0.99,
+    "D": 0.0,
+    "flip_penalty": 0.0,
+    "train_batches": 16,
+    "eval_batches": 16,
+    "seeds": "1,2,3"
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "best_train_energy": 11.17325496673584,
+      "accept_rate": 0.415,
+      "avg_actual_flip_fraction": 0.006643524169921875,
+      "init_eval_ce": 11.649422645568848,
+      "final_eval_ce": 11.2852783203125,
+      "random_eval_ce": 11.644498825073242,
+      "metro_delta": 0.36414432525634766,
+      "random_delta": 0.004923820495605469,
+      "edge_vs_random": 0.3592205047607422,
+      "peak_vram_mb": 1066.01708984375,
+      "elapsed_s": 12.23675519999233
+    },
+    {
+      "seed": 2,
+      "best_train_energy": 10.860594749450684,
+      "accept_rate": 0.525,
+      "avg_actual_flip_fraction": 0.00671722412109375,
+      "init_eval_ce": 11.286358833312988,
+      "final_eval_ce": 10.896719932556152,
+      "random_eval_ce": 11.391881942749023,
+      "metro_delta": 0.38963890075683594,
+      "random_delta": -0.10552310943603516,
+      "edge_vs_random": 0.4951620101928711,
+      "peak_vram_mb": 1066.01708984375,
+      "elapsed_s": 12.09875259999535
+    },
+    {
+      "seed": 3,
+      "best_train_energy": 11.174844741821289,
+      "accept_rate": 0.48,
+      "avg_actual_flip_fraction": 0.0067425537109375,
+      "init_eval_ce": 11.559173583984375,
+      "final_eval_ce": 11.09504508972168,
+      "random_eval_ce": 11.533463478088379,
+      "metro_delta": 0.4641284942626953,
+      "random_delta": 0.025710105895996094,
+      "edge_vs_random": 0.4384183883666992,
+      "peak_vram_mb": 1066.298828125,
+      "elapsed_s": 13.15534560001106
+    }
+  ],
+  "summary": {
+    "total_seeds": 3,
+    "beats_random": 3,
+    "success_rate": 1.0,
+    "mean_metro_delta": 0.40597057342529297,
+    "mean_random_delta": -0.0249630610148112,
+    "mean_edge_vs_random": 0.4309336344401042,
+    "mean_peak_vram_mb": 1066.1110026041667
+  }
+}

@@ -47,6 +47,7 @@ def build_trm_lmhead(
     block_type: str = "transformer",
     use_state_carry: bool = False,
     zero_zl_init: bool = False,
+    bounded_recurrence: bool = False,
     use_halt_head: bool = False,
     halt_bce_weight: float = 0.5,
     ternary_body: bool = False,
@@ -81,6 +82,7 @@ def build_trm_lmhead(
     cfg["block_type"] = block_type
     cfg["use_state_carry"] = use_state_carry
     cfg["zero_zl_init"] = zero_zl_init
+    cfg["bounded_recurrence"] = bounded_recurrence
     cfg["ternary"] = {
         "enabled": bool(ternary_body),
         "target": "body",

@@ -30,24 +30,33 @@ from pathlib import Path
 HOME = Path.home()
 
 
-def _resolve_codex() -> str:
-    """Find the codex launcher. Prefer CODEX_BIN, then PATH, then the npm-global
-    .cmd shim (Windows has no codex.exe — it's a node shim)."""
+def _resolve_codex() -> list[str]:
+    """Return the codex launcher as an argv prefix.
+
+    Prefer `node codex.js` (no .cmd shim, no shell, stdin-safe) over the .cmd
+    wrapper — the shim mangles multi-line args and breaks stdin on Windows."""
     env = os.environ.get("CODEX_BIN")
     if env:
-        return env
+        return [env]
+    # node + codex.js entry (the .cmd shim just wraps this)
     from shutil import which
+    node = which("node")
+    codex_js = HOME / "AppData" / "Roaming" / "npm" / "node_modules" / "@openai" / "codex" / "bin" / "codex.js"
+    if node and codex_js.exists():
+        return [node, str(codex_js)]
+    # fallbacks: PATH codex, then the .cmd shim
     for cand in ("codex", "codex.cmd"):
         hit = which(cand)
         if hit:
-            return hit
+            return [hit]
     npm_cmd = HOME / "AppData" / "Roaming" / "npm" / "codex.cmd"
     if npm_cmd.exists():
-        return str(npm_cmd)
-    return "codex"  # last resort; will error clearly if missing
+        return [str(npm_cmd)]
+    return ["codex"]
 
 
-CODEX_BIN = _resolve_codex()
+CODEX_ARGV = _resolve_codex()
+CODEX_BIN = CODEX_ARGV[0]  # for diagnostics
 WT = "wt.exe"
 OUT_DIR = HOME / ".codex" / "_window_out"
 
@@ -71,50 +80,83 @@ ROLE_PROMPTS = {
     "raw": "",
 }
 
+PROJECT_CONTEXT_FILE = Path(__file__).resolve().parent / "project_context.md"
+
+
+def _project_context() -> str:
+    """Compact repo-invariants brief. Codex also auto-reads AGENTS.md from the
+    repo root, so this is belt-and-suspenders (off by default for codex)."""
+    try:
+        return PROJECT_CONTEXT_FILE.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
 
 def ask_codex(prompt: str, *, role: str = "raw", model: str | None = None,
               cwd: str | None = None, sandbox: str = "read-only",
-              effort: str = "xhigh", timeout_s: int = 600) -> str:
+              effort: str = "xhigh", project_context: bool = False,
+              timeout_s: int = 600) -> str:
     """Run `codex exec` non-interactively and return its final message.
 
     effort defaults to 'xhigh' (standing rule: codex always runs xhigh unless
-    explicitly told otherwise; the repo config.toml default is 'low')."""
+    explicitly told otherwise; the repo config.toml default is 'low').
+    project_context=True prepends the invariants brief (codex also auto-reads
+    AGENTS.md from cwd, so this is usually unnecessary)."""
     sysp = ROLE_PROMPTS.get(role, "")
-    full = f"{sysp}\n\n{prompt}" if sysp else prompt
+    ctx = (_project_context() + "\n\n---\n\n") if project_context else ""
+    head = f"{ctx}{sysp}".strip()
+    full = f"{head}\n\n{prompt}" if head else prompt
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_file = OUT_DIR / f"resp_{int(time.time())}.txt"
 
-    cmd = [CODEX_BIN, "exec", "--skip-git-repo-check",
+    # Pass the prompt via STDIN (codex exec '-' reads stdin), never as a CLI arg:
+    # multi-line args get truncated at the first newline by cmd.exe on the .cmd
+    # shim path. stdin is newline-safe and has no length limit.
+    cmd = [*CODEX_ARGV, "exec", "--skip-git-repo-check",
            "-c", f"model_reasoning_effort={effort}",
            "-s", sandbox, "-o", str(out_file)]
     if model:
         cmd += ["-m", model]
     if cwd:
         cmd += ["-C", cwd]
-    cmd.append(full)
+    cmd.append("-")  # read prompt from stdin
 
+    stderr_text = ""
     try:
-        # On Windows the codex launcher is a .cmd shim; subprocess needs shell=True
-        # to resolve it. With shell=True pass the command as a list is unreliable,
-        # so build a properly-quoted string via subprocess.list2cmdline.
-        if CODEX_BIN.lower().endswith(".cmd"):
-            run_cmd = subprocess.list2cmdline(cmd)
-            subprocess.run(run_cmd, timeout=timeout_s, shell=True,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        else:
-            subprocess.run(cmd, timeout=timeout_s,
-                           stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        # CODEX_ARGV is node+codex.js (no shell needed). Only a bare .cmd fallback
+        # would need shell=True; node path is a clean argv list. Stdin is passed as
+        # UTF-8 BYTES (not text=) because Windows text mode would encode via cp1252
+        # and codex requires valid UTF-8 on stdin. Capture stderr so a usage-limit /
+        # auth error surfaces as the reason instead of a silent "no output".
+        use_shell = CODEX_ARGV[0].lower().endswith(".cmd")
+        proc = subprocess.run(cmd if not use_shell else subprocess.list2cmdline(cmd),
+                              input=full.encode("utf-8"), timeout=timeout_s, shell=use_shell,
+                              stdout=subprocess.DEVNULL, stderr=subprocess.PIPE)
+        stderr_text = proc.stderr.decode("utf-8", "ignore") if proc.stderr else ""
     except subprocess.TimeoutExpired as exc:
         raise RuntimeError(f"codex exec timed out after {timeout_s}s") from exc
     except FileNotFoundError as exc:
         raise RuntimeError(f"codex binary not found ({CODEX_BIN}); set CODEX_BIN") from exc
 
+    def _reason() -> str:
+        low = stderr_text.lower()
+        if "usage limit" in low or "credits" in low:
+            # pull the codex usage-limit line for a precise reason
+            for line in stderr_text.splitlines():
+                if "usage limit" in line.lower():
+                    return line.strip()
+            return "usage limit reached"
+        if "auth" in low or "login" in low or "401" in low:
+            return "auth error (run `codex login`)"
+        tail = " ".join(stderr_text.split())[-200:]
+        return tail or "no stderr"
+
     if not out_file.exists():
-        raise RuntimeError("codex exec produced no output-last-message file")
+        raise RuntimeError(f"codex produced no output — {_reason()}")
     text = out_file.read_text(encoding="utf-8", errors="ignore").strip()
     if not text:
-        raise RuntimeError("codex exec produced an empty final message")
+        raise RuntimeError(f"codex produced an empty final message — {_reason()}")
     return text
 
 

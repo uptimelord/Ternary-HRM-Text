@@ -308,13 +308,13 @@ def test_alggradnorm_does_not_boost_zero_inactive_term():
     assert weights["zero"] <= weights["lm"]
 
 
-def test_alggradnorm_uses_single_batched_grad_call():
+def test_alggradnorm_avoids_batched_grad_call():
     import inspect
 
     from models.cmm_attractor import AlgGradNorm
 
     src = inspect.getsource(AlgGradNorm.update)
-    assert "is_grads_batched=True" in src
+    assert "is_grads_batched=True" not in src
 
 
 def test_cmm_aux_loss_backward_works_on_cpu():
@@ -638,3 +638,69 @@ def test_exp84_train_arm_steps_optimizer_per_schedule(monkeypatch):
     # Micro-batches do not accumulate together: effective batch is batch_size.
     assert report["effective_batch_size"] == 2
     assert report["micro_batches_per_outer_step"] == grad_accum_steps
+
+
+def test_exp84_checkpoint_roundtrip_restores_arm_state(tmp_path):
+    import importlib.util
+    import random
+    import sys
+    from pathlib import Path
+
+    path = Path(__file__).resolve().parents[1] / "experiments" / "Experiment 84 - Attractor Logic Recurrence" / "attractor_logic_recurrence.py"
+    spec = importlib.util.spec_from_file_location("exp84_checkpoint_test", path)
+    mod = importlib.util.module_from_spec(spec)
+    assert spec.loader is not None
+    sys.modules[spec.name] = mod
+    spec.loader.exec_module(mod)
+
+    model = torch.nn.Linear(2, 1)
+    opt = torch.optim.AdamW(model.parameters(), lr=0.1)
+    rng = random.Random(123)
+    loss = model(torch.ones(1, 2)).sum()
+    loss.backward()
+    opt.step()
+    expected_params = {k: v.detach().clone() for k, v in model.state_dict().items()}
+    expected_rng_state = rng.getstate()
+    arm_config = {"seed": 1, "use_cmm": True, "depth": "deep"}
+
+    checkpoint = tmp_path / "arm.pt"
+    mod.save_arm_checkpoint(
+        checkpoint,
+        model=model,
+        opt=opt,
+        rng=rng,
+        step=7,
+        froze_embedding=True,
+        last_loss=1.25,
+        arm_config=arm_config,
+        device=torch.device("cpu"),
+    )
+
+    restored_model = torch.nn.Linear(2, 1)
+    restored_opt = torch.optim.AdamW(restored_model.parameters(), lr=0.1)
+    restored_rng = random.Random(999)
+    restored = mod.load_arm_checkpoint(
+        checkpoint,
+        model=restored_model,
+        opt=restored_opt,
+        rng=restored_rng,
+        arm_config=arm_config,
+        device=torch.device("cpu"),
+    )
+
+    assert restored["step"] == 7
+    assert restored["froze_embedding"] is True
+    assert restored["last_loss"] == 1.25
+    assert restored_rng.getstate() == expected_rng_state
+    assert restored_opt.state_dict()["state"]
+    for name, value in restored_model.state_dict().items():
+        assert torch.equal(value, expected_params[name])
+
+    assert mod.load_arm_checkpoint(
+        checkpoint,
+        model=restored_model,
+        opt=restored_opt,
+        rng=restored_rng,
+        arm_config={"seed": 2, "use_cmm": True, "depth": "deep"},
+        device=torch.device("cpu"),
+    ) is None

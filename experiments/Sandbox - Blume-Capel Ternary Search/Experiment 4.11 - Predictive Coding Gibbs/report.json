@@ -1,0 +1,72 @@
+{
+  "args": {
+    "device": "cuda",
+    "hidden_size": 64,
+    "n_layers": 2,
+    "K": 20,
+    "cycles": 20,
+    "seeds": "1,2,3",
+    "D": 0.0,
+    "temperature": 0.001,
+    "cooling": 0.99,
+    "log_every": 5,
+    "adamw_lr": 0.001,
+    "adamw_weight_decay": 0.01,
+    "adamw_max_steps": 500,
+    "eval_batches": 16,
+    "train_batches": 16
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "init_eval_ce": 11.612007141113281,
+      "adamw_eval_ce": 1.9245713949203491,
+      "method_eval_ce": 11.61507511138916,
+      "edge_vs_adamw": 9.690503716468811,
+      "method_delta": -0.0030679702758789062,
+      "adamw_delta": 9.687435746192932,
+      "method_elapsed_s": 26.65416120001464,
+      "adamw_elapsed_s": 26.741024399991147,
+      "method_forwards": 400,
+      "method_peak_vram_mb": 1106.97705078125,
+      "adamw_peak_vram_mb": 1738.64111328125
+    },
+    {
+      "seed": 2,
+      "init_eval_ce": 11.314909934997559,
+      "adamw_eval_ce": 1.7227751016616821,
+      "method_eval_ce": 11.305378913879395,
+      "edge_vs_adamw": 9.582603812217712,
+      "method_delta": 0.009531021118164062,
+      "adamw_delta": 9.592134833335876,
+      "method_elapsed_s": 24.377073300012853,
+      "adamw_elapsed_s": 24.4475968000188,
+      "method_forwards": 400,
+      "method_peak_vram_mb": 1115.6494140625,
+      "adamw_peak_vram_mb": 1739.1884765625
+    },
+    {
+      "seed": 3,
+      "init_eval_ce": 11.559608459472656,
+      "adamw_eval_ce": 1.691447377204895,
+      "method_eval_ce": 11.561565399169922,
+      "edge_vs_adamw": 9.870118021965027,
+      "method_delta": -0.001956939697265625,
+      "adamw_delta": 9.868161082267761,
+      "method_elapsed_s": 24.107776799995918,
+      "adamw_elapsed_s": 24.138595099997474,
+      "method_forwards": 400,
+      "method_peak_vram_mb": 1116.19677734375,
+      "adamw_peak_vram_mb": 1739.73583984375
+    }
+  ],
+  "summary": {
+    "total_seeds": 3,
+    "method_beats_adamw": 0,
+    "mean_edge_vs_adamw": 9.71440851688385,
+    "max_method_peak_vram_mb": 1116.19677734375,
+    "noise_floor": 0.0203,
+    "promote_margin": 0.05,
+    "verdict": "kill"
+  }
+}

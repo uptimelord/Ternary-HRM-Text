@@ -1,0 +1,73 @@
+{
+  "args": {
+    "device": "cuda",
+    "hidden_size": 64,
+    "n_layers": 2,
+    "M": 3,
+    "K": 20,
+    "cycles": 15,
+    "proposal_frac": 0.005,
+    "temperature": 0.001,
+    "cooling": 0.99,
+    "D": 0.0,
+    "flip_penalty": 0.0,
+    "train_batches": 16,
+    "probe_batches": 16,
+    "eval_batches": 16,
+    "seeds": "1,2,3"
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "init_eval_ce": 11.571281433105469,
+      "blind_eval_ce": 10.85060977935791,
+      "rand_focus_eval_ce": 10.674201011657715,
+      "spsa_eval_ce": 10.986102104187012,
+      "blind_delta": 0.7206716537475586,
+      "rand_focus_delta": 0.8970804214477539,
+      "spsa_delta": 0.585179328918457,
+      "blind_elapsed_s": 34.22985730000073,
+      "rand_focus_elapsed_s": 43.114861000009114,
+      "spsa_elapsed_s": 40.72839110001223,
+      "spsa_peak_vram_mb": 1066.443359375
+    },
+    {
+      "seed": 2,
+      "init_eval_ce": 11.278621673583984,
+      "blind_eval_ce": 10.561286926269531,
+      "rand_focus_eval_ce": 10.71896743774414,
+      "spsa_eval_ce": 10.733183860778809,
+      "blind_delta": 0.7173347473144531,
+      "rand_focus_delta": 0.5596542358398438,
+      "spsa_delta": 0.5454378128051758,
+      "blind_elapsed_s": 45.16853589998209,
+      "rand_focus_elapsed_s": 39.175885599979665,
+      "spsa_elapsed_s": 34.65685389999999,
+      "spsa_peak_vram_mb": 1066.443359375
+    },
+    {
+      "seed": 3,
+      "init_eval_ce": 11.622596740722656,
+      "blind_eval_ce": 10.887420654296875,
+      "rand_focus_eval_ce": 10.845813751220703,
+      "spsa_eval_ce": 11.182331085205078,
+      "blind_delta": 0.7351760864257812,
+      "rand_focus_delta": 0.7767829895019531,
+      "spsa_delta": 0.4402656555175781,
+      "blind_elapsed_s": 36.75790959998267,
+      "rand_focus_elapsed_s": 39.90513810000266,
+      "spsa_elapsed_s": 35.65995609998936,
+      "spsa_peak_vram_mb": 1066.72509765625
+    }
+  ],
+  "summary": {
+    "total_seeds": 3,
+    "spsa_beats_rand_focus": 0,
+    "success_rate": 0.0,
+    "mean_edge_vs_rand_focus": -0.22087828318277994,
+    "mean_spsa_delta": 0.5236275990804037,
+    "mean_rand_focus_delta": 0.7445058822631836,
+    "mean_blind_delta": 0.724394162495931,
+    "max_spsa_peak_vram_mb": 1066.72509765625
+  }
+}

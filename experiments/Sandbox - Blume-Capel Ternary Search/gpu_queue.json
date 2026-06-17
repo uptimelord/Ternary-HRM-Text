@@ -1,0 +1,82 @@
+{
+  "agent_goals": [
+    {
+      "id": "exp4_4_verif_metro",
+      "status": "running",
+      "priority": 10,
+      "goal": "Verifier-energy Metropolis: energy=strict logic failures, random-focus proposals",
+      "gate": "promote if verif pass beats random-focus 2/3 seeds with CE regression <= 0.02"
+    },
+    {
+      "id": "exp4_5_hybrid_metro",
+      "status": "queued",
+      "priority": 20,
+      "goal": "Hybrid energy: failure_rate + 0.01*CE tie-break under same proposal policy",
+      "gate": "promote if beats 4.4 on verif without CE regression"
+    },
+    {
+      "id": "exp4_6_ff_lite",
+      "status": "queued",
+      "priority": 30,
+      "goal": "Forward-Forward lite: layer-local pos/neg goodness on ternary blocks",
+      "gate": "smoke on CPU first; CUDA only if helper tests green"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "exp4_5_hybrid_cuda",
+      "argv": [
+        "python",
+        "experiments/Sandbox - Blume-Capel Ternary Search/Experiment 4.4 - Verifier Metropolis/run_exp4_4.py",
+        "--device",
+        "cuda",
+        "--seeds",
+        "1,2,3",
+        "--K",
+        "20",
+        "--cycles",
+        "20",
+        "--verif-sample",
+        "4",
+        "--ce-weight",
+        "0.01"
+      ],
+      "goal": "Hybrid verifier+CE after 4.4",
+      "priority": 20,
+      "status": "pending",
+      "enqueued_at": 0
+    }
+  ],
+  "history": [
+    {
+      "id": "exp4_4_cuda",
+      "status": "failed",
+      "exit_code": 2,
+      "note": "path quoting bug; re-queued with argv array"
+    },
+    {
+      "id": "exp4_4_cuda",
+      "argv": [
+        "python",
+        "experiments/Sandbox - Blume-Capel Ternary Search/Experiment 4.4 - Verifier Metropolis/run_exp4_4.py",
+        "--device",
+        "cuda",
+        "--seeds",
+        "1,2,3",
+        "--K",
+        "20",
+        "--cycles",
+        "20",
+        "--verif-sample",
+        "4"
+      ],
+      "goal": "Verifier-energy Metropolis 3-seed CUDA",
+      "priority": 10,
+      "status": "done",
+      "enqueued_at": 0,
+      "started_at": 1781476237.8078325,
+      "finished_at": 1781492465.2769308,
+      "exit_code": 0
+    }
+  ]
+}

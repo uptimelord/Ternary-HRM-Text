@@ -47,12 +47,14 @@ class MlpMixerBlock(nn.Module):
             init_std_out=config.init_config.ff_out_std,
         )
         self.norm_eps = config.norm_eps
+        self.bounded_recurrence = bool(getattr(config, "bounded_recurrence", False))
 
     def forward(self, x: Tensor) -> Tensor:
         y = F.rms_norm(x, (x.shape[-1],), eps=self.norm_eps).transpose(1, 2)
         y = self.token_down(F.gelu(self.token_up(y))).transpose(1, 2)
         x = x + y
-        return x + self.channel(F.rms_norm(x, (x.shape[-1],), eps=self.norm_eps))
+        out = x + self.channel(F.rms_norm(x, (x.shape[-1],), eps=self.norm_eps))
+        return torch.tanh(out) if self.bounded_recurrence else out
 
 
 class MlpMixerRecurrentBlock(nn.Module):

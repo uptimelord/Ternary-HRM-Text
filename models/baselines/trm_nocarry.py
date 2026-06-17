@@ -21,6 +21,7 @@ class TinyRecursiveModelConfig(TransformerConfig):
     block_type: Literal["transformer", "mlp_mixer"] = "transformer"
     use_state_carry: bool = False
     zero_zl_init: bool = False
+    bounded_recurrence: bool = False
 
 
 class TinyRecursiveModel(nn.Module):

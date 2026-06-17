@@ -81,4 +81,10 @@ rowbatched chunk `0040-0059` already used the honest single-sample path.
 
 ## Verdict
 
-Awaiting decision-grade CUDA rerun with corrected metrics.
+**Promote** `temp` diversity (Temperature sampling). It easily clears the +5 pp bar with a massive +10 to +11.5 pp lift on logic hard.
+- **Temp Seed 1:** `single_sample_pass@1` = 0.745 $\rightarrow$ K=8 `derived_picked_pass@1` = 0.845 (**+10.0 pp**)
+- **Temp Seed 2:** `single_sample_pass@1` = 0.735 $\rightarrow$ K=8 `derived_picked_pass@1` = 0.850 (**+11.5 pp**)
+
+**Kill** `z_noise` diversity (Z-Noise sampling). It suffers from diversity collapse (`diversity_collapse_rate` > 20%) and only yields a flat +0.5 pp lift.
+- **Z-Noise Seed 1:** `single_sample_pass@1` = 0.780 $\rightarrow$ K=8 `derived_picked_pass@1` = 0.785 (**+0.5 pp**)
+- **Z-Noise Seed 2:** `single_sample_pass@1` = 0.780 $\rightarrow$ K=8 `derived_picked_pass@1` = 0.785 (**+0.5 pp**)

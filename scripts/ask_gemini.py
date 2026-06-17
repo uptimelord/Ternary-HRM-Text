@@ -48,6 +48,17 @@ ROLE_PROMPTS = {
     "raw": "",  # no role injection
 }
 
+PROJECT_CONTEXT_FILE = Path(__file__).resolve().parent / "project_context.md"
+
+
+def _project_context() -> str:
+    """The compact repo-invariants brief, prepended so the model answers with
+    project intent instead of blind. Empty if the file is missing."""
+    try:
+        return PROJECT_CONTEXT_FILE.read_text(encoding="utf-8")
+    except OSError:
+        return ""
+
 
 def _transcripts_snapshot() -> dict[Path, float]:
     """Map of transcript.jsonl -> mtime, for detecting the one this run creates."""
@@ -101,10 +112,16 @@ def _extract_response(transcript: Path) -> str:
 
 
 def ask_gemini(prompt: str, *, role: str = "raw", thinking: str = "high",
-               timeout_s: int = 300, model: str | None = None) -> str:
-    """Fire agy -p and recover the response from its transcript. Raises on failure."""
+               timeout_s: int = 300, model: str | None = None,
+               project_context: bool = False) -> str:
+    """Fire agy -p and recover the response from its transcript. Raises on failure.
+
+    project_context=True prepends the repo-invariants brief (Gemini has no repo
+    filesystem access here, so context must be injected)."""
     sys_prompt = ROLE_PROMPTS.get(role, "")
-    full_prompt = f"{sys_prompt}\n\n{prompt}" if sys_prompt else prompt
+    ctx = (_project_context() + "\n\n---\n\n") if project_context else ""
+    head = f"{ctx}{sys_prompt}".strip()
+    full_prompt = f"{head}\n\n{prompt}" if head else prompt
 
     before = _transcripts_snapshot()
     # Keep the invocation minimal: `agy -p <prompt>`. Extra flags before the

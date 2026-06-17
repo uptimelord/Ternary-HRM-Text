@@ -213,29 +213,18 @@ class AlgGradNorm:
         grad_norms = {name: 0.0 for name in loss_terms}
         active_items = [(name, term) for name, term in loss_terms.items() if term.requires_grad]
         if active_items and param_list:
-            names = [name for name, _term in active_items]
-            terms = tuple(term for _name, term in active_items)
-            n_terms = len(terms)
-            grad_outputs = []
-            for i, term in enumerate(terms):
-                eye_col = torch.zeros(n_terms, dtype=term.dtype, device=term.device)
-                eye_col[i] = 1.0
-                grad_outputs.append(eye_col)
-            grads = torch.autograd.grad(
-                terms,
-                param_list,
-                grad_outputs=tuple(grad_outputs),
-                retain_graph=True,
-                allow_unused=True,
-                is_grads_batched=True,
-            )
-            sq_by_term = terms[0].new_zeros((n_terms,), dtype=torch.float32)
-            for grad in grads:
-                if grad is not None:
-                    sq_by_term = sq_by_term + grad.detach().float().flatten(start_dim=1).pow(2).sum(dim=1)
-            norm_by_term = torch.sqrt(sq_by_term).cpu()
-            for i, name in enumerate(names):
-                grad_norms[name] = float(norm_by_term[i])
+            for name, term in active_items:
+                grads = torch.autograd.grad(
+                    term,
+                    param_list,
+                    retain_graph=True,
+                    allow_unused=True,
+                )
+                sq_norm = term.new_zeros((), dtype=torch.float32)
+                for grad in grads:
+                    if grad is not None:
+                        sq_norm = sq_norm + grad.detach().float().pow(2).sum()
+                grad_norms[name] = float(torch.sqrt(sq_norm).cpu())
         return self.update_from_values(losses=losses, grad_norms=grad_norms)
 
 

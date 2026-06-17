@@ -1,0 +1,74 @@
+{
+  "args": {
+    "device": "cpu",
+    "hidden_size": 64,
+    "n_layers": 2,
+    "K": 3,
+    "cycles": 2,
+    "seeds": "1,2,3",
+    "D": 0.0,
+    "flip_penalty": 0.0,
+    "proposal_frac": 0.005,
+    "temperature": 0.001,
+    "cooling": 0.99,
+    "ce_weight": 0.0,
+    "log_every": 50,
+    "eval_batches": 4,
+    "train_batches": 4
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "init_eval_ce": 11.493224143981934,
+      "blind_eval_ce": 11.471713066101074,
+      "rand_focus_eval_ce": 11.484417915344238,
+      "ff_eval_ce": 11.496227264404297,
+      "edge": -0.011809349060058594,
+      "blind_delta": 0.021511077880859375,
+      "rand_focus_delta": 0.008806228637695312,
+      "ff_delta": -0.0030031204223632812,
+      "ff_elapsed_s": 2.5450265999825206,
+      "ff_accept_rate": 0.5,
+      "ff_peak_vram_mb": 0.0,
+      "ff_avg_actual_flip_fraction": 0.006754557291666667
+    },
+    {
+      "seed": 2,
+      "init_eval_ce": 11.341676712036133,
+      "blind_eval_ce": 11.335387229919434,
+      "rand_focus_eval_ce": 11.335488319396973,
+      "ff_eval_ce": 11.340264320373535,
+      "edge": -0.0047760009765625,
+      "blind_delta": 0.006289482116699219,
+      "rand_focus_delta": 0.006188392639160156,
+      "ff_delta": 0.0014123916625976562,
+      "ff_elapsed_s": 2.5253391999867745,
+      "ff_accept_rate": 0.16666666666666666,
+      "ff_peak_vram_mb": 0.0,
+      "ff_avg_actual_flip_fraction": 0.007161458333333333
+    },
+    {
+      "seed": 3,
+      "init_eval_ce": 11.73273754119873,
+      "blind_eval_ce": 11.726265907287598,
+      "rand_focus_eval_ce": 11.724651336669922,
+      "ff_eval_ce": 11.727134704589844,
+      "edge": -0.002483367919921875,
+      "blind_delta": 0.0064716339111328125,
+      "rand_focus_delta": 0.008086204528808594,
+      "ff_delta": 0.005602836608886719,
+      "ff_elapsed_s": 2.6648547999793664,
+      "ff_accept_rate": 0.6666666666666666,
+      "ff_peak_vram_mb": 0.0,
+      "ff_avg_actual_flip_fraction": 0.006861368815104167
+    }
+  ],
+  "summary": {
+    "total_seeds": 3,
+    "ff_beats_rand_focus": 0,
+    "mean_edge_vs_rand_focus": -0.006356239318847656,
+    "max_ff_peak_vram_mb": 0.0,
+    "noise_floor": 0.0203,
+    "verdict": "kill"
+  }
+}

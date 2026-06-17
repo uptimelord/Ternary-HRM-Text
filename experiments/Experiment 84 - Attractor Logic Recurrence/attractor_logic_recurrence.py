@@ -8,6 +8,7 @@ import importlib.util
 import json
 import random
 import sys
+import time
 from pathlib import Path
 from typing import Any
 
@@ -35,6 +36,13 @@ DEFAULT_LOGIC_HELDOUT_HARD = REPO_ROOT / "experiments" / "Experiment 70 - Compar
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp84_cmm_logic"
 DEFAULT_RESULTS = REPO_ROOT / "experiments" / "Experiment 84 - Attractor Logic Recurrence" / "results_smoke_seed1.md"
 DEFAULT_FULL_RESULTS = REPO_ROOT / "experiments" / "Experiment 84 - Attractor Logic Recurrence" / "results_full_seed1.md"
+
+
+def append_jsonl(path: Path, record: dict[str, Any]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(record, default=str) + "\n")
+        f.flush()
 
 
 def _install_stubs():
@@ -209,9 +217,17 @@ def train_arm(
     compile_model: bool,
     control_recipe: str,
     deep_cycles: str,
+    progress_path: Path | None = None,
+    log_every_steps: int = 10,
+    checkpoint_path: Path | None = None,
+    checkpoint_every_steps: int = 100,
+    auto_resume: bool = True,
 ) -> dict[str, Any]:
+    t0 = time.perf_counter()
     random.seed(seed)
     torch.manual_seed(seed)
+    if device.type == "cuda":
+        torch.cuda.reset_peak_memory_stats(device)
     exp21 = _load_exp21()
     effective_cmm_loss = cmm_loss
     effective_use_alggradnorm = use_alggradnorm
@@ -236,6 +252,7 @@ def train_arm(
             identical_layers=identical_transformer_layers,
             use_state_carry=True,
             zero_zl_init=True,
+            bounded_recurrence=True,
             use_halt_head=effective_use_halt_head,
             halt_bce_weight=effective_halt_bce_weight,
         )
@@ -302,7 +319,63 @@ def train_arm(
     last_alg_weights: dict[str, float] = {}
     grad_params = tuple(model.parameters())
     froze_embedding = False
-    for step in range(steps):
+    start_step = 0
+    arm_config = {
+        "seed": seed,
+        "use_cmm": use_cmm,
+        "depth": depth,
+        "steps": steps,
+        "cmm_loss": cmm_loss,
+        "use_alggradnorm": use_alggradnorm,
+        "backbone": backbone,
+        "backbone_block": backbone_block,
+        "identical_transformer_layers": identical_transformer_layers,
+        "bounded_recurrence": backbone == "trm",
+        "batch_size": batch_size,
+        "grad_accum_steps": grad_accum_steps,
+        "n_super": n_super,
+        "n_accum": n_accum,
+        "use_halt_head": use_halt_head,
+        "halt_bce_weight": halt_bce_weight,
+        "amp": amp,
+        "optimizer": optimizer_name,
+        "lr": lr,
+        "weight_decay": weight_decay,
+        "freeze_embedding_after": freeze_embedding_after,
+        "control_recipe": control_recipe,
+        "deep_cycles": deep_cycles,
+        "vocab_size": vocab_size,
+    }
+    if auto_resume and checkpoint_path is not None:
+        checkpoint = load_arm_checkpoint(
+            checkpoint_path,
+            model=model,
+            opt=opt,
+            rng=rng,
+            arm_config=arm_config,
+            device=device,
+        )
+        if checkpoint is not None:
+            start_step = min(int(checkpoint["step"]), steps)
+            last_loss = float(checkpoint.get("last_loss", 0.0))
+            froze_embedding = bool(checkpoint.get("froze_embedding", False))
+            if froze_embedding:
+                freeze_input_embeddings(model)
+            if progress_path is not None:
+                append_jsonl(
+                    progress_path,
+                    {
+                        "event": "checkpoint_resume",
+                        "seed": seed,
+                        "use_cmm": use_cmm,
+                        "depth": depth,
+                        "step": start_step,
+                        "steps": steps,
+                        "checkpoint": str(checkpoint_path),
+                        "elapsed_s": time.perf_counter() - t0,
+                    },
+                )
+    for step in range(start_step, steps):
         opt.zero_grad(set_to_none=True)
         step_loss = 0.0
         if not froze_embedding and freeze_embedding_after >= 0 and step >= freeze_embedding_after:
@@ -337,9 +410,57 @@ def train_arm(
                     opt.step()
                     opt.zero_grad(set_to_none=True)
         last_loss = step_loss / max(1, segment_loss_count)
+        if progress_path is not None and (step == 0 or step + 1 == steps or (step + 1) % max(1, log_every_steps) == 0):
+            append_jsonl(
+                progress_path,
+                {
+                    "event": "train_step",
+                    "seed": seed,
+                    "use_cmm": use_cmm,
+                    "depth": depth,
+                    "step": step + 1,
+                    "steps": steps,
+                    "loss": last_loss,
+                    "segments": segment_loss_count,
+                    "elapsed_s": time.perf_counter() - t0,
+                    "peak_vram_mb": torch.cuda.max_memory_allocated(device) / (1024 * 1024) if device.type == "cuda" else 0.0,
+                    "cmm_loss_terms": last_cmm_terms,
+                    "alggradnorm_weights": last_alg_weights,
+                },
+            )
+        if checkpoint_path is not None and checkpoint_every_steps > 0 and (
+            step + 1 == steps or (step + 1) % checkpoint_every_steps == 0
+        ):
+            save_arm_checkpoint(
+                checkpoint_path,
+                model=model,
+                opt=opt,
+                rng=rng,
+                step=step + 1,
+                froze_embedding=froze_embedding,
+                last_loss=last_loss,
+                arm_config=arm_config,
+                device=device,
+            )
+            if progress_path is not None:
+                append_jsonl(
+                    progress_path,
+                    {
+                        "event": "checkpoint_save",
+                        "seed": seed,
+                        "use_cmm": use_cmm,
+                        "depth": depth,
+                        "step": step + 1,
+                        "steps": steps,
+                        "checkpoint": str(checkpoint_path),
+                        "elapsed_s": time.perf_counter() - t0,
+                    },
+                )
     del opt
 
     acc = eval_logic(train_model, eval_rows, device=device, vocab_size=vocab_size, tokenizer=tokenizer, bp_steps=2)
+    elapsed_s = time.perf_counter() - t0
+    peak_vram_mb = torch.cuda.max_memory_allocated(device) / (1024 * 1024) if device.type == "cuda" else 0.0
     return {
         "use_cmm": use_cmm,
         "arm_label": "cmm" if use_cmm else "base_recipe",
@@ -370,11 +491,102 @@ def train_arm(
         "compile_model": compile_model,
         "compiled": compile_model and device.type == "cuda",
         "identical_transformer_layers": identical_transformer_layers,
+        "bounded_recurrence": backbone == "trm",
         "control_recipe": control_recipe,
         "deep_cycles": deep_cycles,
         "cmm_loss_terms": last_cmm_terms,
         "alggradnorm_weights": last_alg_weights,
+        "elapsed_s": elapsed_s,
+        "peak_vram_mb": peak_vram_mb,
     }
+
+
+def serializable_args(args: argparse.Namespace) -> dict[str, Any]:
+    return {k: str(v) if isinstance(v, Path) else v for k, v in vars(args).items()}
+
+
+def write_text_atomic(path: Path, text: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    tmp.write_text(text, encoding="utf-8")
+    tmp.replace(path)
+
+
+def tensors_to_device(obj, device: torch.device):
+    if torch.is_tensor(obj):
+        return obj.to(device)
+    if isinstance(obj, dict):
+        return {k: tensors_to_device(v, device) for k, v in obj.items()}
+    if isinstance(obj, list):
+        return [tensors_to_device(v, device) for v in obj]
+    if isinstance(obj, tuple):
+        return tuple(tensors_to_device(v, device) for v in obj)
+    return obj
+
+
+def move_optimizer_state(opt, device: torch.device) -> None:
+    for state in opt.state.values():
+        for key, value in list(state.items()):
+            if torch.is_tensor(value):
+                state[key] = value.to(device)
+
+
+def save_arm_checkpoint(
+    path: Path,
+    *,
+    model,
+    opt,
+    rng: random.Random,
+    step: int,
+    froze_embedding: bool,
+    last_loss: float,
+    arm_config: dict[str, Any],
+    device: torch.device,
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "step": step,
+        "froze_embedding": froze_embedding,
+        "last_loss": last_loss,
+        "arm_config": arm_config,
+        "model_state": {k: v.detach().cpu() for k, v in model.state_dict().items()},
+        "optimizer_state": tensors_to_device(opt.state_dict(), torch.device("cpu")),
+        "rng_state": rng.getstate(),
+        "torch_rng_state": torch.get_rng_state(),
+        "cuda_rng_state_all": torch.cuda.get_rng_state_all() if device.type == "cuda" else None,
+    }
+    tmp = path.with_suffix(path.suffix + ".tmp")
+    torch.save(payload, tmp)
+    tmp.replace(path)
+
+
+def load_arm_checkpoint(
+    path: Path,
+    *,
+    model,
+    opt,
+    rng: random.Random,
+    arm_config: dict[str, Any],
+    device: torch.device,
+) -> dict[str, Any] | None:
+    if not path.exists():
+        return None
+    payload = torch.load(path, map_location="cpu", weights_only=False)
+    if payload.get("arm_config") != arm_config:
+        return None
+    model.load_state_dict(payload["model_state"])
+    opt.load_state_dict(payload["optimizer_state"])
+    move_optimizer_state(opt, device)
+    rng.setstate(payload["rng_state"])
+    torch.set_rng_state(payload["torch_rng_state"].cpu())
+    if device.type == "cuda" and payload.get("cuda_rng_state_all") is not None:
+        torch.cuda.set_rng_state_all(payload["cuda_rng_state_all"])
+    return payload
+
+
+def arm_checkpoint_path(output_dir: Path, mode: str, seed: int, use_cmm: bool, depth: str) -> Path:
+    arm = "cmm" if use_cmm else "base"
+    return output_dir / "checkpoints" / f"{mode}_seed{seed}_{arm}_{depth}.pt"
 
 
 def build_arg_parser() -> argparse.ArgumentParser:
@@ -414,10 +626,14 @@ def build_arg_parser() -> argparse.ArgumentParser:
     parser.add_argument("--amp", action=argparse.BooleanOptionalAction, default=True)
     parser.add_argument("--freeze-embedding-after", type=int, default=2500)
     parser.add_argument("--compile-model", action=argparse.BooleanOptionalAction, default=True)
+    parser.add_argument("--log-every-steps", type=int, default=10)
+    parser.add_argument("--checkpoint-every-steps", type=int, default=100)
+    parser.add_argument("--auto-resume", action=argparse.BooleanOptionalAction, default=True)
     return parser
 
 
 def main() -> int:
+    t0 = time.perf_counter()
     parser = build_arg_parser()
     args = parser.parse_args()
 
@@ -454,66 +670,113 @@ def main() -> int:
         seed=8400,
     )
 
+    args.output_dir.mkdir(parents=True, exist_ok=True)
+    progress_path = args.output_dir / f"progress_{args.mode}.jsonl"
+    if not args.auto_resume:
+        progress_path.unlink(missing_ok=True)
     runs = []
     for seed in [int(s.strip()) for s in args.seeds.split(",") if s.strip()]:
-        results = []
+        seed_run = {"seed": seed, "grid": []}
+        runs.append(seed_run)
         for use_cmm in (False, True):
             for depth in ("shallow", "deep"):
                 print(f"seed={seed} arm cmm={use_cmm} depth={depth}", flush=True)
-                results.append(
-                    train_arm(
-                        use_cmm=use_cmm,
-                        depth=depth,
-                        train_rows=train_rows,
-                        eval_rows=eval_rows,
-                        device=device,
-                        vocab_size=args.vocab_size,
-                        steps=args.steps,
-                        seed=seed,
-                        cmm_loss=args.cmm_loss,
-                        use_alggradnorm=args.use_alggradnorm,
-                        backbone=args.backbone,
-                        backbone_block=args.backbone_block,
-                        identical_transformer_layers=args.identical_transformer_layers,
-                        batch_size=args.batch_size,
-                        grad_accum_steps=args.grad_accum_steps,
-                        n_super=args.n_super,
-                        n_accum=args.n_accum,
-                        use_halt_head=args.use_halt_head,
-                        halt_bce_weight=args.halt_bce_weight,
-                        amp=args.amp,
-                        optimizer_name=args.optimizer,
-                        lr=args.lr,
-                        weight_decay=args.weight_decay,
-                        freeze_embedding_after=args.freeze_embedding_after,
-                        compile_model=args.compile_model,
-                        control_recipe=args.control_recipe,
-                        deep_cycles=args.deep_cycles,
-                    )
+                result = train_arm(
+                    use_cmm=use_cmm,
+                    depth=depth,
+                    train_rows=train_rows,
+                    eval_rows=eval_rows,
+                    device=device,
+                    vocab_size=args.vocab_size,
+                    steps=args.steps,
+                    seed=seed,
+                    cmm_loss=args.cmm_loss,
+                    use_alggradnorm=args.use_alggradnorm,
+                    backbone=args.backbone,
+                    backbone_block=args.backbone_block,
+                    identical_transformer_layers=args.identical_transformer_layers,
+                    batch_size=args.batch_size,
+                    grad_accum_steps=args.grad_accum_steps,
+                    n_super=args.n_super,
+                    n_accum=args.n_accum,
+                    use_halt_head=args.use_halt_head,
+                    halt_bce_weight=args.halt_bce_weight,
+                    amp=args.amp,
+                    optimizer_name=args.optimizer,
+                    lr=args.lr,
+                    weight_decay=args.weight_decay,
+                    freeze_embedding_after=args.freeze_embedding_after,
+                    compile_model=args.compile_model,
+                    control_recipe=args.control_recipe,
+                    deep_cycles=args.deep_cycles,
+                    progress_path=progress_path,
+                    log_every_steps=args.log_every_steps,
+                    checkpoint_path=arm_checkpoint_path(args.output_dir, args.mode, seed, use_cmm, depth),
+                    checkpoint_every_steps=args.checkpoint_every_steps,
+                    auto_resume=args.auto_resume,
                 )
-        runs.append({"seed": seed, "grid": results})
+                seed_run["grid"].append(result)
+                write_text_atomic(
+                    args.output_dir / f"report_{args.mode}_partial.json",
+                    json.dumps(
+                        {
+                            "partial": True,
+                            "mode": args.mode,
+                            "argv": sys.argv[1:],
+                            "args": serializable_args(args),
+                            "seeds": args.seeds,
+                            "device": str(device),
+                            "train_source": train_source,
+                            "eval_source": eval_source,
+                            "train_n": len(train_rows),
+                            "eval_n": len(eval_rows),
+                            "progress_jsonl": str(progress_path),
+                            "auto_resume": args.auto_resume,
+                            "checkpoint_every_steps": args.checkpoint_every_steps,
+                            "completed_arms": sum(len(run["grid"]) for run in runs),
+                            "runs": runs,
+                            "elapsed_s": time.perf_counter() - t0,
+                        },
+                        indent=2,
+                    ),
+                )
 
     report = {
         "mode": args.mode,
+        "argv": sys.argv[1:],
+        "args": serializable_args(args),
         "seeds": args.seeds,
+        "device": str(device),
         "train_source": train_source,
         "eval_source": eval_source,
         "train_n": len(train_rows),
         "eval_n": len(eval_rows),
         "control_recipe": args.control_recipe,
         "deep_cycles": args.deep_cycles,
+        "progress_jsonl": str(progress_path),
+        "auto_resume": args.auto_resume,
+        "checkpoint_every_steps": args.checkpoint_every_steps,
         "runs": runs,
+        "elapsed_s": time.perf_counter() - t0,
     }
     args.output_dir.mkdir(parents=True, exist_ok=True)
     out = args.output_dir / f"report_{args.mode}.json"
-    out.write_text(json.dumps(report, indent=2), encoding="utf-8")
+    write_text_atomic(out, json.dumps(report, indent=2))
     lines = ["# Exp84 Attractor Logic Recurrence", ""]
+    lines.append(f"- report json: `{out}`")
+    lines.append(f"- mode: `{args.mode}`")
+    lines.append(f"- device: `{device}`")
+    lines.append(f"- steps: `{args.steps}`")
     lines.append(f"- train source: `{train_source}`")
     lines.append(f"- eval source: `{eval_source}`")
     lines.append(f"- train n: `{len(train_rows)}`")
     lines.append(f"- eval n: `{len(eval_rows)}`")
     lines.append(f"- control recipe: `{args.control_recipe}`")
     lines.append(f"- deep cycles: `{args.deep_cycles}`")
+    lines.append(f"- auto resume: `{args.auto_resume}`")
+    lines.append(f"- checkpoint every steps: `{args.checkpoint_every_steps}`")
+    lines.append(f"- progress jsonl: `{progress_path}`")
+    lines.append(f"- elapsed_s: `{report['elapsed_s']:.1f}`")
     lines.append("")
     for run in runs:
         lines.append(f"## seed {run['seed']}")
@@ -523,11 +786,11 @@ def main() -> int:
                 f"loss={r['loss_type']} opt={r['optimizer']} b={r['batch_size']}x{r['grad_accum_steps']} "
                 f"n_super={r['n_super']} n_accum={r['n_accum']} "
                 f"halt_bce={r['use_halt_head']}:{r['halt_bce_weight']} amp={r['amp']} "
-                f"alggradnorm={r['alggradnorm']} pass@1={r['logic_pass@1']:.3f}"
+                f"alggradnorm={r['alggradnorm']} pass@1={r['logic_pass@1']:.3f} "
+                f"elapsed_s={r['elapsed_s']:.1f} peak_vram_mb={r['peak_vram_mb']:.1f}"
             )
         lines.append("")
-    args.results_md.parent.mkdir(parents=True, exist_ok=True)
-    args.results_md.write_text("\n".join(lines), encoding="utf-8")
+    write_text_atomic(args.results_md, "\n".join(lines))
     print(f"wrote {out}", flush=True)
     return 0
 

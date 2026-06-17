@@ -1,0 +1,73 @@
+{
+  "args": {
+    "device": "cuda",
+    "hidden_size": 64,
+    "n_layers": 2,
+    "K": 20,
+    "cycles": 20,
+    "seeds": "1,2,3",
+    "D": 0.0,
+    "beta": 0.5,
+    "bop_threshold": 0.01,
+    "max_flips_per_step": 8,
+    "log_every": 5,
+    "adamw_lr": 0.001,
+    "adamw_weight_decay": 0.01,
+    "adamw_max_steps": 500,
+    "eval_batches": 16,
+    "train_batches": 16
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "init_eval_ce": 11.612007141113281,
+      "adamw_eval_ce": 2.204667329788208,
+      "method_eval_ce": 11.612007141113281,
+      "edge_vs_adamw": 9.407339811325073,
+      "method_delta": 0.0,
+      "adamw_delta": 9.407339811325073,
+      "method_elapsed_s": 91.07833240000764,
+      "adamw_elapsed_s": 68.22605080000358,
+      "method_forwards": 800,
+      "method_peak_vram_mb": 1833.48095703125,
+      "adamw_peak_vram_mb": 1738.64111328125
+    },
+    {
+      "seed": 2,
+      "init_eval_ce": 11.314909934997559,
+      "adamw_eval_ce": 2.0275325775146484,
+      "method_eval_ce": 11.314909934997559,
+      "edge_vs_adamw": 9.28737735748291,
+      "method_delta": 0.0,
+      "adamw_delta": 9.28737735748291,
+      "method_elapsed_s": 98.20112029998563,
+      "adamw_elapsed_s": 69.20192210000823,
+      "method_forwards": 800,
+      "method_peak_vram_mb": 1842.1533203125,
+      "adamw_peak_vram_mb": 1739.1884765625
+    },
+    {
+      "seed": 3,
+      "init_eval_ce": 11.559608459472656,
+      "adamw_eval_ce": 2.0568244457244873,
+      "method_eval_ce": 11.559608459472656,
+      "edge_vs_adamw": 9.502784013748169,
+      "method_delta": 0.0,
+      "adamw_delta": 9.502784013748169,
+      "method_elapsed_s": 96.72958630000358,
+      "adamw_elapsed_s": 68.5055008000054,
+      "method_forwards": 800,
+      "method_peak_vram_mb": 1842.70068359375,
+      "adamw_peak_vram_mb": 1739.73583984375
+    }
+  ],
+  "summary": {
+    "total_seeds": 3,
+    "method_beats_adamw": 0,
+    "mean_edge_vs_adamw": 9.39916706085205,
+    "max_method_peak_vram_mb": 1842.70068359375,
+    "noise_floor": 0.0203,
+    "promote_margin": 0.05,
+    "verdict": "kill"
+  }
+}

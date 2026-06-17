@@ -1,0 +1,77 @@
+{
+  "args": {
+    "device": "cuda",
+    "hidden_size": 64,
+    "n_layers": 2,
+    "K": 20,
+    "cycles": 20,
+    "seeds": "1,2,3",
+    "D": 0.0,
+    "pop_size": 8,
+    "generations": 0,
+    "elite_frac": 0.2,
+    "smooth": 0.3,
+    "prob_eps": 0.05,
+    "proj_dim": 32,
+    "head_seed": 42,
+    "log_every": 5,
+    "adamw_lr": 0.001,
+    "adamw_weight_decay": 0.01,
+    "adamw_max_steps": 500,
+    "eval_batches": 16,
+    "train_batches": 16
+  },
+  "seeds": [
+    {
+      "seed": 1,
+      "init_eval_ce": 11.612007141113281,
+      "adamw_eval_ce": 2.099013328552246,
+      "method_eval_ce": 11.608223915100098,
+      "edge_vs_adamw": 9.509210586547852,
+      "method_delta": 0.0037832260131835938,
+      "adamw_delta": 9.512993812561035,
+      "method_elapsed_s": 66.42067170000519,
+      "adamw_elapsed_s": 66.6295885000145,
+      "method_forwards": 640,
+      "method_peak_vram_mb": 1112.18017578125,
+      "adamw_peak_vram_mb": 1738.64111328125
+    },
+    {
+      "seed": 2,
+      "init_eval_ce": 11.314909934997559,
+      "adamw_eval_ce": 1.9760478734970093,
+      "method_eval_ce": 11.59539794921875,
+      "edge_vs_adamw": 9.61935007572174,
+      "method_delta": -0.2804880142211914,
+      "adamw_delta": 9.33886206150055,
+      "method_elapsed_s": 74.99786619999213,
+      "adamw_elapsed_s": 75.23935560000245,
+      "method_forwards": 640,
+      "method_peak_vram_mb": 1120.8525390625,
+      "adamw_peak_vram_mb": 1739.1884765625
+    },
+    {
+      "seed": 3,
+      "init_eval_ce": 11.559608459472656,
+      "adamw_eval_ce": 1.9836044311523438,
+      "method_eval_ce": 11.564841270446777,
+      "edge_vs_adamw": 9.581236839294434,
+      "method_delta": -0.005232810974121094,
+      "adamw_delta": 9.576004028320312,
+      "method_elapsed_s": 81.60742149999714,
+      "adamw_elapsed_s": 81.61657489999197,
+      "method_forwards": 640,
+      "method_peak_vram_mb": 1121.39990234375,
+      "adamw_peak_vram_mb": 1739.73583984375
+    }
+  ],
+  "summary": {
+    "total_seeds": 3,
+    "method_beats_adamw": 0,
+    "mean_edge_vs_adamw": 9.569932500521341,
+    "max_method_peak_vram_mb": 1121.39990234375,
+    "noise_floor": 0.0203,
+    "promote_margin": 0.05,
+    "verdict": "kill"
+  }
+}
