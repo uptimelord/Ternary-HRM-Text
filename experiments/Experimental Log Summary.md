@@ -92,8 +92,8 @@ Architecture probes (Exp 77–84)
 | Item | Status |
 |---|---|
 | **Missing folder** | **76** only |
-| **Indexed READMEs** | **92** folders, each with README |
-| **Decision Rule** | **58** post-DISCIPLINE READMEs; **28** legacy (Exp 1–28, 5b, 5c) intentionally not retrofitted |
+| **Indexed READMEs** | **93** folders, each with README |
+| **Decision Rule** | **59** post-DISCIPLINE READMEs; **28** legacy (Exp 1–28, 5b, 5c) intentionally not retrofitted |
 | **Pending runs** | **Exp32** (recurrence sweep), **Exp37** (dataset gen needs API key), **Exp74** (planned), **Exp81** (infra-ready / awaiting decision-grade run), **Exp84** (unblocked: Exp83 promote + Exp79 verdict in). *Exp80 (kill), Exp82 (kill) decided 2026-06-13.* |
 
 > Do not use the deleted `_exp575859_run.log` summary. Exp57–59 READMEs + JSON are canonical.
@@ -182,6 +182,7 @@ Architecture probes (Exp 77–84)
 | 90.1 | [Messy Comparative Robustness](Experiment%2090.1%20-%20Messy%20Comparative%20Robustness/README.md) | On **real** deepseek paraphrases, does a prose-reader or a relation-lattice survive? Same 227k-param/0.87 MB model. | Text-readers collapse (TRM **0.02**, transformer **0.00**); relation lattice (Exp92, reads structured edges) holds at **0.81/0.795 neural, 1.00 constrained** (2 seeds) — **Because** the lattice is phrasing-invariant by construction; ordering is robust given clean edges | **promote** lattice schema for comparative; parser (prose→edges) is the open step |
 | 90.2 | [Prose To Lattice Parser](Experiment%2090.2%20-%20Prose%20To%20Lattice%20Parser/README.md) | Can a tiny reader parse messy prose → relation lattice → exact solver (the READ half Exp90.1 left open)? | Ladder: prose-reader 0.02 → rank head 0.245 → +token-tagging 0.305 → **atomic-edge pair head 0.59/0.55 (2 seeds, mean 0.57)** on real paraphrases — **Because** per-pair directional edge supervision + confidence-thresholded topo-sort cleanly splits READ (parse edges) from SOLVE (rank). Fixed 3 traps: gold-edge leak, BCE-on-closure collapse, noise-edge decode. | **promote** parse-then-solve shape; residual lever = reader data diversity |
 | 90.3 | [Shared Reachability / Resonance](Experiment%2090.3%20-%20Shared%20Reachability%20Machine/README.md) | Can comparative + logic share one reachability machine without over-crediting the solver? | Solver-assisted closure hits **0.9925/0.995** (diagnostic only); deep resonance seed1 reaches **0.7225** combined (comparative 0.715, logic 0.730), peak VRAM 2827 MB — **Because** resonance reduces handholding but has not cleared the 0.80 two-seed bar | partial / continue |
+| 119 | [Stepwise Reachability](Experiment%20119%20-%20Stepwise%20Reachability/README.md) | Does stepwise message-passing (one hop per round) extrapolate to longer chains than trained on? | seed1, train ≤4-hop: K 0.989 → K+1 0.185 → K+2 0.019 (comparative K+2 0.000). Baseline (one-shot comparative) was K+2 0.602 — the halt-fix made comparative actually take 3–5 rounds (was 1) and extrapolation got **worse** — **Because** residual message-passing converges to a wrong-but-stable attractor on unseen chain lengths; thesis falsified for comparative in this form | **kill** |
 | 84 | [Attractor Logic Recurrence](Experiment%2084%20-%20Attractor%20Logic%20Recurrence/README.md) | Does CMM revive depth on logic hard? | `n_super` semantics fixed; base-recipe label, repo control, and `l6` depth axis wired | infra-ready / awaiting run |
 
 ### Phase 0 adapters & deploy locks (37–42)

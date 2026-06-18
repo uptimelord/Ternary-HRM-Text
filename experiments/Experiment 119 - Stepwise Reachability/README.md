@@ -96,6 +96,35 @@ not composing steps.
 Between: partial — in-distribution generalizes but extrapolation fails; record
 which hop count breaks and whether backtracking recovers it.
 
+## Verdict — KILL (thesis falsified, 2026-06-18)
+
+Two CUDA runs, seed 1, 8000 steps, train ≤4-hop, factorized-emb-dim=16:
+
+| Run | max_rounds | K | K+1 | K+2 |
+|---|---:|---:|---:|---:|
+| baseline (one-shot comparative) | 8 | 0.987 | 0.868 | 0.602 |
+| halt-fix (stepwise comparative) | 12 | 0.989 | **0.185** | **0.019** |
+
+Strict-rule kill: K+2 dropped 97 pp from K (bar was 20 pp). Full account in
+`results_seed1.md`.
+
+The baseline exposed a design bug (comparative halted at round 1 — any total
+order is acyclic — so the thesis wasn't actually tested; K+2 comp 0.603 was
+one-shot failure). The halt-fix made comparative take 3–5 rounds (trace
+confirmed) — and extrapolation got **worse**: K+2 comp 0.603 → 0.000. The
+residual message-passing converges to a wrong-but-stable attractor on unseen
+chain lengths. That falsifies the thesis for comparative in this form.
+
+Rules out: residual message-passing + stability halt as a generalization
+mechanism for longer comparative chains. Does **not** rule out stepwise
+reasoning entirely — explicit per-hop teacher forcing, a different state
+representation, or external memory (the Exp115/TAM direction) are different
+experiments. Kill recorded; the generalize-to-longer-chains question moves to a
+new experiment, not a revival of this one.
+
+The code stays (reusable substrate: checkpointing, factorized embedding, hop
+curriculum, extrapolation eval harness). The architecture as wired is a kill.
+
 ## Relationship to ternarization
 
 The ternary-embedding arm wired in Exp90.3 transfers here unchanged (the

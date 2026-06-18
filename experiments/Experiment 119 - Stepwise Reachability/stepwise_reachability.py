@@ -294,13 +294,26 @@ def _logic_answer(logits_row, row, conf):
                     stack.append(j)
     return False
 
-def _halted(k, logits_row, row, conf):
-    """Goal-conditioned halt: stop once the query is answered."""
+def _halted(k, logits_row, row, conf, prev_order=None):
+    """Goal-conditioned halt: stop once the query is answered.
+
+    logic: halt when the query is reachable-or-not (answer is determined).
+    comparative: halt when the order is STABLE across the last two rounds
+    (round k's order == round k-1's order), not merely when an acyclic order
+    exists -- any total order is acyclic, so the old rule halted at round 1 and
+    comparative never took steps. Stability forces actual propagation first.
+    """
     if row["domain"] == "logic_rules":
         ans = _logic_answer(logits_row, row, conf)
         return ans is not None
-    # comparative: halt when a complete acyclic order exists
-    return _consistent_order(logits_row, row, conf) is not None
+    order = _consistent_order(logits_row, row, conf)
+    if order is None:
+        return False
+    if k == 0:
+        # round 0 can't be stable-vs-previous; require at least one more round
+        # so propagation always runs at least once on comparative.
+        return False
+    return prev_order is not None and order == prev_order
 
 @torch.no_grad()
 def evaluate(model, rows, tokenizer, device, *, max_len, max_rounds, conf,
@@ -319,14 +332,29 @@ def evaluate(model, rows, tokenizer, device, *, max_len, max_rounds, conf,
         round_logits, trace = model(ids, mask, tag, sym_mask, dom_ids,
                                     max_rounds=max_rounds, bp_steps=0, need_trace=need_trace)
         for ki, row in enumerate(batch):
-            # walk rounds until halt, then read out with backtrack
+            # walk rounds until halt, then read out with backtrack.
+            # comparative halt now needs the previous round's order (stability),
+            # so track it as we walk. Abstain if comparative never stabilizes
+            # within max_rounds (no confident answer past its depth).
             answer = None
             halted_at = max_rounds
+            comparative_unstable = False
+            prev_order = None
             for k in range(max_rounds):
                 lr = round_logits[k][ki].cpu()
-                if _halted(k, lr, row, conf):
-                    halted_at = k + 1
-                    break
+                if row["domain"] == "comparative_order":
+                    order_now = _consistent_order(lr, row, conf)
+                    if _halted(k, lr, row, conf, prev_order=prev_order):
+                        halted_at = k + 1
+                        break
+                    prev_order = order_now
+                else:
+                    if _halted(k, lr, row, conf):
+                        halted_at = k + 1
+                        break
+            if row["domain"] == "comparative_order" and halted_at >= max_rounds:
+                # never stabilized by max_rounds -> abstain
+                comparative_unstable = True
             # backtrack over conf thresholds at the halt round (or last round)
             for c in backtrack_confs:
                 lr = round_logits[min(halted_at, max_rounds) - 1][ki].cpu()
@@ -351,7 +379,8 @@ def evaluate(model, rows, tokenizer, device, *, max_len, max_rounds, conf,
             per[row["domain"]][1] += 1
             if need_trace and len(traces) < 20:
                 traces.append({"id": row["id"], "domain": row["domain"],
-                               "halted_at": halted_at, "answered": bool(answer)})
+                               "halted_at": halted_at, "answered": bool(answer),
+                               "unstable": comparative_unstable})
     out = {}
     ok = n = 0
     for d, (o, nn_) in per.items():
@@ -467,8 +496,8 @@ def build_arg_parser():
     p.add_argument("--heads", type=int, default=4)
     p.add_argument("--layers", type=int, default=2)
     p.add_argument("--max-len", type=int, default=128)
-    p.add_argument("--max-rounds", type=int, default=8)
-    p.add_argument("--bp-steps", type=int, default=8, help="rounds with gradients (last N); <= max_rounds")
+    p.add_argument("--max-rounds", type=int, default=12)
+    p.add_argument("--bp-steps", type=int, default=12, help="rounds with gradients (last N); <= max_rounds")
     p.add_argument("--checkpoint", action="store_true", default=True)
     p.add_argument("--no-checkpoint", dest="checkpoint", action="store_false")
     p.add_argument("--factorized-emb-dim", type=int, default=0,
