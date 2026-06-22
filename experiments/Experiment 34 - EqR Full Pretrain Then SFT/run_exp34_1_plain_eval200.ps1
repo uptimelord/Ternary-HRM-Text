@@ -7,8 +7,8 @@ Set-Location $RepoRoot
 
 & rtk python -u "experiments/Experiment 30 - Arithmetic Reasoning SFT Pilot/arithmetic_sft_pilot.py" `
     --base-checkpoint "artifacts/phase0_eqr_full/h256_exp34_1_eqrpretrain_plain2000_then_eqr_d015_zl010_h246_bp4_steps10000_seed1/eqr_sft/checkpoint_fp32.pt" `
-    --train-jsonl "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" `
-    --valid-jsonl "data/synthetic_arithmetic_reasoning/v2_frozen_like/valid.jsonl" `
+    --train-jsonl "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" `
+    --valid-jsonl "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/valid.jsonl" `
     --steps 0 `
     --seed 1 `
     --batch-size 4 `

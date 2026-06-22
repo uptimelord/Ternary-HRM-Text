@@ -41,8 +41,8 @@ if str(REPO_ROOT) not in sys.path:
 from training.sft_lib import DEFAULT_TOKENIZER  # noqa: E402
 
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 119 - Stepwise Reachability"
-DEFAULT_TRAIN = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "train.jsonl"
-DEFAULT_EVAL = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "heldout.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "train.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "heldout.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp119_stepwise"
 
 

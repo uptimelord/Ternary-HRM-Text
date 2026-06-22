@@ -77,8 +77,8 @@ def build_name_token_table(tokenizer: Tokenizer) -> tuple[torch.Tensor, torch.Te
     return table, mask
 
 
-DEFAULT_TRAIN = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "train_30k_messy.jsonl"
-DEFAULT_EVAL = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "eval_paraphrase_1k.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "train_30k_messy.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "eval_paraphrase_1k.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp90_2_prose_to_lattice"
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 90.2 - Prose To Lattice Parser"
 

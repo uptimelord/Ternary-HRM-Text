@@ -37,25 +37,25 @@ rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_t
 Exp83.1 TRM + mixed_top512_tequila, ternary pair head:
 
 ```powershell
-rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head ternary --loss-recipe pair_bce --train "experiments/Experiment 70 - Comparative Logic Corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --output-dir "artifacts/exp93c_trm_tequila_train30k" --log-interval 300
+rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head ternary --loss-recipe pair_bce --train "datasets/comparative_logic_corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --output-dir "artifacts/exp93c_trm_tequila_train30k" --log-interval 300
 ```
 
 Seed 2:
 
 ```powershell
-rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head ternary --loss-recipe pair_bce --train "experiments/Experiment 70 - Comparative Logic Corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --seed 2 --output-dir "artifacts/exp93c_trm_tequila_train30k_seed2" --log-interval 300
+rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head ternary --loss-recipe pair_bce --train "datasets/comparative_logic_corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --seed 2 --output-dir "artifacts/exp93c_trm_tequila_train30k_seed2" --log-interval 300
 ```
 
 Exp83.1 TRM + mixed_top512_tequila, dense pair head + permutation margin:
 
 ```powershell
-rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head dense --loss-recipe pair_bce_perm_margin --perm-margin-weight 0.2 --train "experiments/Experiment 70 - Comparative Logic Corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --output-dir "artifacts/exp93c_trm_tequila_dense_perm_train30k" --log-interval 300
+rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head dense --loss-recipe pair_bce_perm_margin --perm-margin-weight 0.2 --train "datasets/comparative_logic_corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --output-dir "artifacts/exp93c_trm_tequila_dense_perm_train30k" --log-interval 300
 ```
 
 Seed 2:
 
 ```powershell
-rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head dense --loss-recipe pair_bce_perm_margin --perm-margin-weight 0.2 --train "experiments/Experiment 70 - Comparative Logic Corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --seed 2 --output-dir "artifacts/exp93c_trm_tequila_dense_perm_train30k_seed2" --log-interval 300
+rtk python "experiments/Experiment 93c - Learned Raw Text Compiler/learned_raw_text_compiler.py" --compiler-arch trm_tequila --pair-head dense --loss-recipe pair_bce_perm_margin --perm-margin-weight 0.2 --train "datasets/comparative_logic_corpus/train_30k_vgr.jsonl" --steps 3000 --train-limit 30000 --eval-limit 200 --batch-size 64 --width 64 --layers 2 --heads 4 --device cuda --seed 2 --output-dir "artifacts/exp93c_trm_tequila_dense_perm_train30k_seed2" --log-interval 300
 ```
 
 ## Outputs

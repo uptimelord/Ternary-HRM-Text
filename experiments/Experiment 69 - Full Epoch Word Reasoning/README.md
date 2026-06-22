@@ -83,8 +83,8 @@ verifier checks. Student + calculator > student alone, on real word problems.
 # full-epoch SFT
 rtk python "experiments/Experiment 30 - Arithmetic Reasoning SFT Pilot/arithmetic_sft_pilot.py" \
   --base-checkpoint "artifacts/phase0_eqr_full/h256_exp34_1_..._steps10000_eval200_h246/checkpoint_fp32.pt" \
-  --train-jsonl "data/exp66_word_reasoning_sft/v1/train.jsonl" \
-  --valid-jsonl "data/exp66_word_reasoning_sft/v1/valid.jsonl" \
+  --train-jsonl "datasets/exp66_word_reasoning_sft/v1/train.jsonl" \
+  --valid-jsonl "datasets/exp66_word_reasoning_sft/v1/valid.jsonl" \
   --output-dir "artifacts/phase0_exp69_fullepoch/h256_word100k_b16_s18000_seed1" \
   --steps 18000 --batch-size 16 --total-len 128 --lr 1e-4 --bp-steps 4 --device auto
   # add --amp for 1.7x

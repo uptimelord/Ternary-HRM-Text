@@ -92,5 +92,5 @@ Read:
 Exp70 baseline:
 
 ```text
-experiments/Experiment 70 - Comparative Logic Corpus/_eval_30k_term.log
+datasets/comparative_logic_corpus/_eval_30k_term.log
 ```

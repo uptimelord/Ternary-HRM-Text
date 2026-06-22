@@ -1,7 +1,7 @@
 # Exp93e Multidomain Schema Compiler
 
-- train source: `C:\Users\Dos\AppData\Local\Temp\pytest-of-Dos\pytest-205\test_train_model_runs_maze_trm0\maze\train.jsonl`
-- eval source: `C:\Users\Dos\AppData\Local\Temp\pytest-of-Dos\pytest-205\test_train_model_runs_maze_trm0\maze\heldout.jsonl`
+- train source: `C:\Users\Dos\AppData\Local\Temp\pytest-of-Dos\pytest-208\test_train_model_runs_maze_trm0\maze\train.jsonl`
+- eval source: `C:\Users\Dos\AppData\Local\Temp\pytest-of-Dos\pytest-208\test_train_model_runs_maze_trm0\maze\heldout.jsonl`
 - train n: `4`
 - eval n: `2`
 - steps: `1`
@@ -38,7 +38,7 @@
 - packed exact: `True`
 - peak_vram_mb: `0.0`
 - elapsed_s: `0.0`
-- checkpoint: `C:\Users\Dos\AppData\Local\Temp\pytest-of-Dos\pytest-205\test_train_model_runs_maze_trm0\out_maze_field_head\checkpoint.pt`
+- checkpoint: `C:\Users\Dos\AppData\Local\Temp\pytest-of-Dos\pytest-208\test_train_model_runs_maze_trm0\out_maze_field_head\checkpoint.pt`
 
 ## Per Domain
 

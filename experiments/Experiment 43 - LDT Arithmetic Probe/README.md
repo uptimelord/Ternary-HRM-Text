@@ -42,7 +42,7 @@ This probe tests **lattice solving on pre-parsed bounded arithmetic**. It is NOT
   sign head (2-way) + digit head (4×10). Lattice state detached between steps by
   default. Loss = per-slot cross-entropy at **every** recurrent step (deep
   supervision).
-- **Data:** train/valid from `data/synthetic_arithmetic_reasoning/v2_frozen_like/`.
+- **Data:** train/valid from `datasets/synthetic_arithmetic_reasoning/v2_frozen_like/`.
 
 ## Held-Out Discipline
 

@@ -35,8 +35,8 @@ from training.sft_lib import (  # noqa: E402
 from training.verified_breadth import logic_answer_pass, row_prompt  # noqa: E402
 
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 90 - VGR TRM Train"
-DEFAULT_TRAIN = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "train_1k_vgr_sft.jsonl"
-DEFAULT_EVAL = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k_vgr_sft.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "train_1k_vgr_sft.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k_vgr_sft.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp90_vgr_trm_train"
 
 

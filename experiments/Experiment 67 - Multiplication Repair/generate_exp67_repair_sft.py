@@ -12,7 +12,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXP66_DIR = REPO_ROOT / "experiments" / "Experiment 66 - Word Problem Reasoning Corpus"
-DEFAULT_OUT_DIR = REPO_ROOT / "data" / "exp67_mul_repair_sft" / "v1"
+DEFAULT_OUT_DIR = REPO_ROOT / "datasets" / "exp67_mul_repair_sft" / "v1"
 VERSION = "exp67_mul_repair_sft_v1"
 
 

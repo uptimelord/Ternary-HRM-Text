@@ -34,8 +34,8 @@ from training import multidomain_schema_slots as mds_slots  # noqa: E402
 from training.arch_backbone import apply_mixed_top512_head, build_trm_lmhead  # noqa: E402
 
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 93e - Multidomain Schema Compiler"
-DEFAULT_TRAIN = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "train.jsonl"
-DEFAULT_EVAL = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "heldout.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "train.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "heldout.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp93e_multidomain_schema_compiler"
 
 PAD = "<pad>"

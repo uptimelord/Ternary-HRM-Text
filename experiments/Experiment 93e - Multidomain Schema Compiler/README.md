@@ -21,31 +21,31 @@ Kill if either seed is below `0.250` `raw_solver_verified@1`, or `json_valid@1 <
 Default v2 + pointer per-domain slots:
 
 ```powershell
-rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --train "data/multidomain_schema/v2/train.jsonl" --eval "data/multidomain_schema/v2/heldout.jsonl" --steps 3000 --train-limit 100000 --eval-limit 200 --batch-size 4 --eval-batch-size 4 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --head-dense-k 512 --max-seq-len 1024 --device cuda --output-dir "artifacts/exp93e_exp831_pointer_v2_seed1" --log-interval 300
+rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --train "datasets/multidomain_schema/v2/train.jsonl" --eval "datasets/multidomain_schema/v2/heldout.jsonl" --steps 3000 --train-limit 100000 --eval-limit 200 --batch-size 4 --eval-batch-size 4 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --head-dense-k 512 --max-seq-len 1024 --device cuda --output-dir "artifacts/exp93e_exp831_pointer_v2_seed1" --log-interval 300
 ```
 
 Legacy free-JSON surface (stress test only):
 
 ```powershell
-rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --target-surface json --train "data/multidomain_schema/v1/train.jsonl" --eval "data/multidomain_schema/v1/heldout.jsonl" ...
+rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --target-surface json --train "datasets/multidomain_schema/v1/train.jsonl" --eval "datasets/multidomain_schema/v1/heldout.jsonl" ...
 ```
 
 Seed 2:
 
 ```powershell
-rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --train "data/multidomain_schema/v2/train.jsonl" --eval "data/multidomain_schema/v2/heldout.jsonl" --steps 3000 --train-limit 100000 --eval-limit 200 --batch-size 4 --eval-batch-size 4 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --head-dense-k 512 --max-seq-len 1024 --device cuda --seed 2 --output-dir "artifacts/exp93e_exp831_pointer_v2_seed2" --log-interval 300
+rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --train "datasets/multidomain_schema/v2/train.jsonl" --eval "datasets/multidomain_schema/v2/heldout.jsonl" --steps 3000 --train-limit 100000 --eval-limit 200 --batch-size 4 --eval-batch-size 4 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --head-dense-k 512 --max-seq-len 1024 --device cuda --seed 2 --output-dir "artifacts/exp93e_exp831_pointer_v2_seed2" --log-interval 300
 ```
 
 Smoke:
 
 ```powershell
-rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --train "data/multidomain_schema/v2/train.jsonl" --eval "data/multidomain_schema/v2/heldout.jsonl" --steps 5 --train-limit 32 --eval-limit 4 --batch-size 2 --eval-batch-size 2 --width 32 --layers 1 --heads 4 --h-cycles 1 --l-cycles 1 --head-dense-k 512 --device cuda --output-dir "artifacts/exp93e_exp831_pointer_smoke" --log-interval 1
+rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --train "datasets/multidomain_schema/v2/train.jsonl" --eval "datasets/multidomain_schema/v2/heldout.jsonl" --steps 5 --train-limit 32 --eval-limit 4 --batch-size 2 --eval-batch-size 2 --width 32 --layers 1 --heads 4 --h-cycles 1 --l-cycles 1 --head-dense-k 512 --device cuda --output-dir "artifacts/exp93e_exp831_pointer_smoke" --log-interval 1
 ```
 
 Input-backed repair check:
 
 ```powershell
-rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --decode-repair input --train "data/multidomain_schema/v2/train.jsonl" --eval "data/multidomain_schema/v2/heldout.jsonl" --steps 0 --train-limit 32 --eval-limit 200 --batch-size 4 --eval-batch-size 32 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --head-dense-k 512 --max-seq-len 1024 --device cpu --output-dir "artifacts/exp93e_input_repair_v2_seed1" --log-interval 0
+rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch exp83_1_mixed_top512_tequila --target-surface pointer --decode-repair input --train "datasets/multidomain_schema/v2/train.jsonl" --eval "datasets/multidomain_schema/v2/heldout.jsonl" --steps 0 --train-limit 32 --eval-limit 200 --batch-size 4 --eval-batch-size 32 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --head-dense-k 512 --max-seq-len 1024 --device cpu --output-dir "artifacts/exp93e_input_repair_v2_seed1" --log-interval 0
 ```
 
 Comparative-only field-head run:
@@ -81,7 +81,7 @@ rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain
 Routed TRM field-head probe, warm-started from the four single-domain checkpoints and frozen:
 
 ```powershell
-rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch routed_trm_field_head --target-surface pointer --train "data/multidomain_schema/v2/train.jsonl" --eval "data/multidomain_schema/v2/heldout.jsonl" --steps 300 --train-limit 20000 --eval-limit 200 --batch-size 16 --eval-batch-size 16 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --device cuda --output-dir "artifacts/exp93e_routed_trm_field_head_warm_probe" --comparative-checkpoint "artifacts/exp93e_comparative_trm_field_head_probe_pairspan/checkpoint.pt" --logic-checkpoint "artifacts/exp93e_logic_trm_field_head_probe_fact_ce/checkpoint.pt" --arithmetic-checkpoint "artifacts/exp93e_arithmetic_trm_field_head_probe_seed2/checkpoint.pt" --maze-checkpoint "artifacts/exp93e_maze_trm_field_head_probe/checkpoint.pt" --freeze-field-heads --log-interval 100
+rtk python "experiments/Experiment 93e - Multidomain Schema Compiler/multidomain_schema_compiler.py" --compiler-arch routed_trm_field_head --target-surface pointer --train "datasets/multidomain_schema/v2/train.jsonl" --eval "datasets/multidomain_schema/v2/heldout.jsonl" --steps 300 --train-limit 20000 --eval-limit 200 --batch-size 16 --eval-batch-size 16 --width 64 --layers 2 --heads 4 --h-cycles 2 --l-cycles 3 --device cuda --output-dir "artifacts/exp93e_routed_trm_field_head_warm_probe" --comparative-checkpoint "artifacts/exp93e_comparative_trm_field_head_probe_pairspan/checkpoint.pt" --logic-checkpoint "artifacts/exp93e_logic_trm_field_head_probe_fact_ce/checkpoint.pt" --arithmetic-checkpoint "artifacts/exp93e_arithmetic_trm_field_head_probe_seed2/checkpoint.pt" --maze-checkpoint "artifacts/exp93e_maze_trm_field_head_probe/checkpoint.pt" --freeze-field-heads --log-interval 100
 ```
 
 ## Outputs

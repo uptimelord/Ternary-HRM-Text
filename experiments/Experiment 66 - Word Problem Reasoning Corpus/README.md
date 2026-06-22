@@ -117,8 +117,8 @@ Base checkpoint:
 `artifacts/phase0_eqr_full/h256_exp34_1_eqrpretrain_plain2000_then_eqr_d015_zl010_h246_bp4_steps10000_eval200_h246/checkpoint_fp32.pt`
 
 SFT data:
-`data/exp66_word_reasoning_sft/v1/train.jsonl` (98k)
-`data/exp66_word_reasoning_sft/v1/valid.jsonl` (2k)
+`datasets/exp66_word_reasoning_sft/v1/train.jsonl` (98k)
+`datasets/exp66_word_reasoning_sft/v1/valid.jsonl` (2k)
 
 Result artifact:
 `artifacts/phase0_exp66_word_reasoning/h256_exp34_1_word100k_sft2000_seed1/checkpoint_fp32.pt`

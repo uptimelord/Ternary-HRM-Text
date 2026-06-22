@@ -26,7 +26,7 @@ h256 EqR mixed pretrain from scratch
 The mixed token cache is built at:
 
 ```text
-data/exp35_mixed_language_arithmetic/tokens_flat.npy
+datasets/exp35_mixed_language_arithmetic/tokens_flat.npy
 ```
 
 Default cache size is 8M unique tokens:

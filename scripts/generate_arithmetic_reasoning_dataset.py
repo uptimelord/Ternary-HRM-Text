@@ -16,7 +16,7 @@ from typing import Callable
 
 
 VERSION = "synthetic_arithmetic_reasoning_v1"
-DEFAULT_OUTPUT = Path("data/synthetic_arithmetic_reasoning/v1")
+DEFAULT_OUTPUT = Path("datasets/synthetic_arithmetic_reasoning/v1")
 DEFAULT_FROZEN = Path("evaluation/frozen/frozen_arithmetic_200.jsonl")
 
 

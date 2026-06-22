@@ -48,7 +48,7 @@ N:M `final_eval` minus baseline. Per-cell files: `results_h{128,256}_steps{500,2
 | h256 / 2000 | +0.0064 | +0.0054 | -0.0078 | **+0.0013** | yes |
 
 On the LM eval-loss axis alone, 6:8 N:M looks free — Sparse-BitNet's "stacks
-cleanly on ternary" claim reproduces. Packed size is unchanged (4.64 MB h128 /
+cleanly on ternary" claim reproduces. Packed size is unchanged (~4.64 MB h128 /
 13.82 MB h256), so there is no size penalty either.
 
 ### Frozen gate: FAILS all 12 N:M seeds

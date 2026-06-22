@@ -48,28 +48,40 @@ class LMHead(nn.Module):
                                        input_embedding,
                                        **{k: v for k, v in batch.items() if k not in ("inputs", "labels")},
                                        **kwargs)
-        logits = self.lm_head(hidden)
+        all_logits = self.lm_head(hidden)
 
         # Loss & Metrics
         if "labels" in batch:
             # Masks & labels
             labels = batch["labels"]
             masks = labels != IGNORE_LABEL_ID
+            supervision_steps = int(getattr(self.model, "deep_supervision_steps", 1))
+            if supervision_steps > 1:
+                loss_logits = all_logits.flatten(0, 1)
+                loss_labels = labels.repeat(supervision_steps)
+                logits = all_logits[-1]
+                final_hidden = hidden[-1]
+            else:
+                loss_logits = all_logits
+                loss_labels = labels
+                logits = all_logits
+                final_hidden = hidden
 
             # Loss (CE in F32)
             loss_type = getattr(self, "loss_type", "cross_entropy")
             if loss_type == "stablemax":
-                loss = stablemax_cross_entropy(logits, labels, order=1, ignore_index=IGNORE_LABEL_ID, reduction="sum")
+                loss = stablemax_cross_entropy(loss_logits, loss_labels, order=1, ignore_index=IGNORE_LABEL_ID, reduction="sum")
             elif loss_type == "stablemax3":
-                loss = stablemax_cross_entropy(logits, labels, order=3, ignore_index=IGNORE_LABEL_ID, reduction="sum")
+                loss = stablemax_cross_entropy(loss_logits, loss_labels, order=3, ignore_index=IGNORE_LABEL_ID, reduction="sum")
             elif loss_type == "stablemax5":
-                loss = stablemax_cross_entropy(logits, labels, order=5, ignore_index=IGNORE_LABEL_ID, reduction="sum")
+                loss = stablemax_cross_entropy(loss_logits, loss_labels, order=5, ignore_index=IGNORE_LABEL_ID, reduction="sum")
             else:
-                loss = F.cross_entropy(logits.to(torch.float32), labels.to(torch.long), ignore_index=IGNORE_LABEL_ID, reduction="sum")
+                loss = F.cross_entropy(loss_logits.to(torch.float32), loss_labels.to(torch.long), ignore_index=IGNORE_LABEL_ID, reduction="sum")
             # AllReduce loss divisor. Divide by mean of valid tokens across all processes, as gradient will be averaged.
             loss_divisor = masks.sum().to(torch.float32)
-            dist.all_reduce(loss_divisor, op=dist.ReduceOp.AVG)
-            normalized_loss = loss / loss_divisor
+            if dist.is_available() and dist.is_initialized():
+                dist.all_reduce(loss_divisor, op=dist.ReduceOp.AVG)
+            normalized_loss = loss / (loss_divisor * supervision_steps)
 
             # Accuracy
             with torch.no_grad():
@@ -82,7 +94,7 @@ class LMHead(nn.Module):
                 seq_is_exact = (seq_num_tokens_correct == seq_num_valid_tokens) & seq_is_valid
                 # Metrics
                 metrics = {
-                    "loss": (loss.detach(), local_valid_counts),
+                    "loss": (loss.detach() / supervision_steps, local_valid_counts),
                     "accuracy": (is_correct.sum(), local_valid_counts),
                     "exact_accuracy": (seq_is_exact.sum(), seq_is_valid.sum()),
                 }
@@ -90,7 +102,7 @@ class LMHead(nn.Module):
             self._last_lm_loss = normalized_loss
             if self.use_halt_head:
                 seq_last_idx = batch["cu_seqlens"][1:].to(device=hidden.device, dtype=torch.long) - 1
-                halt_logits = self.halt_head(hidden[seq_last_idx]).squeeze(-1).to(torch.float32)
+                halt_logits = self.halt_head(final_hidden[seq_last_idx]).squeeze(-1).to(torch.float32)
                 halt_targets = seq_is_exact.to(device=halt_logits.device, dtype=halt_logits.dtype)
                 halt_loss_sum = F.binary_cross_entropy_with_logits(halt_logits, halt_targets, reduction="sum")
                 seq_count = seq_is_valid.sum().to(device=halt_logits.device, dtype=halt_logits.dtype).clamp_min(1.0)
@@ -103,4 +115,4 @@ class LMHead(nn.Module):
 
             return new_carry, normalized_loss, metrics
 
-        return new_carry, logits
+        return new_carry, all_logits

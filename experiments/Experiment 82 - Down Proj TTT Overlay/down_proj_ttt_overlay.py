@@ -52,8 +52,8 @@ DEFAULT_BASE = REPO_ROOT / "artifacts" / "exp76_smoke" / "plain_sft" / "checkpoi
 FALLBACK_BASE = (
     REPO_ROOT / "artifacts" / "phase0_first_pretrain" / "h256_steps50000_seed1_exportcalib3000" / "checkpoint_fp32.pt"
 )
-DEFAULT_TRAIN = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
-DEFAULT_LOGIC_HELDOUT_HARD = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
+DEFAULT_LOGIC_HELDOUT_HARD = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k.jsonl"
 DEFAULT_FROZEN = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp82_down_proj_ttt"
 DEFAULT_RESULTS = REPO_ROOT / "experiments" / "Experiment 82 - Down Proj TTT Overlay" / "results_smoke_seed1.md"

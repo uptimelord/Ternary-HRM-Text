@@ -32,6 +32,25 @@ _FALLBACK_TOKENIZER = Path(r"C:/Users/Dos/Documents/GRAM/data_io/trained_tokeniz
 DEFAULT_TOKENIZER = Path(os.environ.get("BITNET_TOKENIZER", str(_FALLBACK_TOKENIZER)))
 
 
+def make_optimizer(
+    params,
+    *,
+    optimizer_name: str,
+    lr: float,
+    device: torch.device,
+) -> torch.optim.Optimizer:
+    kwargs = {"lr": lr, "betas": (0.9, 0.95), "weight_decay": 0.0}
+    if optimizer_name == "adamw":
+        return torch.optim.AdamW(params, **kwargs)
+    if optimizer_name == "adam8bit":
+        if device.type != "cuda":
+            raise ValueError("adam8bit requires CUDA")
+        from bitsandbytes.optim import Adam8bit
+
+        return Adam8bit(params, **kwargs)
+    raise ValueError(f"unknown optimizer: {optimizer_name}")
+
+
 @dataclass(frozen=True)
 class SFTSequence:
     prompt_tokens: list[int]
@@ -205,9 +224,15 @@ def train_sft(
     log_interval: int,
     amp: bool = False,
     compile_model: bool = False,
+    optimizer_name: str = "adamw",
 ) -> dict[str, float]:
     rng = random.Random(seed)
-    opt = torch.optim.AdamW(model.parameters(), lr=lr, betas=(0.9, 0.95), weight_decay=0.0)
+    opt = make_optimizer(
+        model.parameters(),
+        optimizer_name=optimizer_name,
+        lr=lr,
+        device=device,
+    )
     last_loss = 0.0
     last_token_acc = 0.0
     last_exact_acc = 0.0
@@ -266,6 +291,8 @@ def train_sft(
         "elapsed_s": elapsed,
         "peak_vram_mb": peak_vram_mb,
         "tokens_per_sec": (steps * batch_size * total_len) / max(1e-9, elapsed),
+        "optimizer": optimizer_name,
+        "amp": use_amp,
     }
 
 

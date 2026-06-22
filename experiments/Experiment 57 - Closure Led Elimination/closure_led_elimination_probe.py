@@ -48,8 +48,8 @@ from evaluation.guard_rail import check_no_held_out_leak
 
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-TRAIN_PATH = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "train.jsonl"
-VALID_PATH = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "valid.jsonl"
+TRAIN_PATH = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "train.jsonl"
+VALID_PATH = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "valid.jsonl"
 FROZEN_PATH = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"
 TRAIN_VISIBLE_PATH = REPO_ROOT / "evaluation" / "frozen" / "train_visible_arithmetic_160.jsonl"
 HELD_OUT_PATH = REPO_ROOT / "evaluation" / "frozen" / "held_out_arithmetic_40.jsonl"

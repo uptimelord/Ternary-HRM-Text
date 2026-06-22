@@ -26,7 +26,7 @@ Kill if any domain is missing, any positive row fails verification, any train/he
 ## Run
 
 ```powershell
-rtk python -m training.multidomain_schema_rows --output-dir "data/multidomain_schema/v2" --train-per-domain 25000 --heldout-per-domain 1000 --seed 9304
+rtk python -m training.multidomain_schema_rows --output-dir "datasets/multidomain_schema/v2" --train-per-domain 25000 --heldout-per-domain 1000 --seed 9304
 ```
 
 Smoke:
@@ -60,15 +60,15 @@ v1 default build (superseded — curriculum flaws, keep as stress test only):
 - heldout rows: `4000`
 - positive_pass: `104000`
 - signature_overlap: `false`
-- report: `data/multidomain_schema/v1/report.json`
+- report: `datasets/multidomain_schema/v1/report.json`
 
 v1 audit warnings: comparative order leak, maze full-grid copy, heldout hard OOD in all domains.
 
 v2 default build (current):
 
 ```powershell
-rtk python -m training.multidomain_schema_rows --output-dir "data/multidomain_schema/v2" --train-per-domain 25000 --heldout-per-domain 1000 --seed 9304
-rtk python -m training.multidomain_schema_audit --train "data/multidomain_schema/v2/train.jsonl" --heldout "data/multidomain_schema/v2/heldout.jsonl" --output "artifacts/exp93d_multidomain_schema_audit_v2/report.json"
+rtk python -m training.multidomain_schema_rows --output-dir "datasets/multidomain_schema/v2" --train-per-domain 25000 --heldout-per-domain 1000 --seed 9304
+rtk python -m training.multidomain_schema_audit --train "datasets/multidomain_schema/v2/train.jsonl" --heldout "datasets/multidomain_schema/v2/heldout.jsonl" --output "artifacts/exp93d_multidomain_schema_audit_v2/report.json"
 ```
 
 Expected v2 audit:

@@ -50,10 +50,10 @@ fails heldout (train/eval mode mismatch).
 ## Data
 
 ```text
-experiments/Experiment 70 - Comparative Logic Corpus/train_100k.jsonl
-experiments/Experiment 70 - Comparative Logic Corpus/train_30k_sft.jsonl
-experiments/Experiment 70 - Comparative Logic Corpus/valid_easy_sft.jsonl
-experiments/Experiment 70 - Comparative Logic Corpus/_train.sigs
+datasets/comparative_logic_corpus/train_100k.jsonl
+datasets/comparative_logic_corpus/train_30k_sft.jsonl
+datasets/comparative_logic_corpus/valid_easy_sft.jsonl
+datasets/comparative_logic_corpus/_train.sigs
 ```
 
 Local note: the JSONL split files in this working tree were restored with
@@ -72,14 +72,14 @@ Term checkpoint (promote this):
 artifacts/exp70_comparative_logic_sft/h256_30k_steps8000_seed1_term/checkpoint_fp32.pt
 artifacts/exp70_comparative_logic_sft/h256_30k_steps8000_seed1_term/checkpoint_packed.pt
 artifacts/exp70_comparative_logic_sft/h256_30k_steps8000_seed1_term/metrics.json
-experiments/Experiment 70 - Comparative Logic Corpus/eval_30k_steps8000_term.json
+datasets/comparative_logic_corpus/eval_30k_steps8000_term.json
 ```
 
 Non-term ablation (reference only):
 
 ```text
 artifacts/exp70_comparative_logic_sft/h256_30k_steps8000_seed1/checkpoint_fp32.pt
-experiments/Experiment 70 - Comparative Logic Corpus/eval_30k_steps8000.json
+datasets/comparative_logic_corpus/eval_30k_steps8000.json
 ```
 
 Base checkpoint:

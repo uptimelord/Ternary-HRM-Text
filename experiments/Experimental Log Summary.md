@@ -76,7 +76,7 @@ Architecture probes (Exp 77–84)
 
 | Lane | Recipe / checkpoint | Why this is the baseline | Key numbers |
 |---|---|---|---|
-| **Deploy compression** | `mixed_top512_tequila_L_mlp_gate_up` | Only recipe that passes export parity + 2×2 deploy lock (Exp 22–23, 38) | ~4.64 MB packed (~7.55× vs dense tied) |
+| **Deploy compression** | `mixed_top512_tequila_L_mlp_gate_up` | Only recipe that passes export parity + 2×2 deploy lock (Exp 22–23, 38) | ~4.64 MB packed at h128 (7.55×); size target unlocked 2026-06-20 — bounded by 4 GB GPU envelope (peak <= 3,800 MiB), not a byte ceiling |
 | **Locked arithmetic (loose)** | **Exp34.1** | Best EqR-from-scratch arithmetic lock before word-reasoning fork | Frozen eval200: H=2/4/6 **55.5/56.5/55.5%**, invalid 0% |
 | **Locked arithmetic (strict)** | Exp64 on Exp34.1 | Same checkpoint under honest verifier — real compute ability | Strict frozen **~8.5%** (not 55%); CoT shape without digit reliability |
 | **Word reasoning (raw)** | **Exp69** | Full-epoch SFT fixes READING; best raw word checkpoint | heldout_word **62.5%**, frozen chain **72%** |
@@ -131,7 +131,7 @@ Architecture probes (Exp 77–84)
 | 20 | [Tequila Export Parity](Experiment%2020%20-%20Tequila%20Export%20Parity/README.md) | Does packed export match training eval? | Export gap +0.0003 — **Because** deploy uses packed weights | **promote** |
 | 21 | [Body Sensitivity Map](Experiment%2021%20-%20Body%20Sensitivity%20Map/README.md) | Which H/L body targets tolerate ternary before long runs? | L_mlp_gate_up −0.035 best — **Because** avoid expensive blind body sweeps | open |
 | 22 | [Vocab Body Combo Confirmation](Experiment%2022%20-%20Vocab%20Body%20Combo%20Confirmation/README.md) | Does best vocab + best body combine at 5000 steps? | Combo −0.0063 (noise); 0.04179 quality/MB — **Because** final deploy recipe candidate | **promote** |
-| 23 | [Combo Export Parity](Experiment%2023%20-%20Combo%20Export%20Parity/README.md) | Does hard-export combo match training? | Gap +0.0033; 4.64 MB — **Because** ship path is packed inference | **promote** (deploy lock) |
+| 23 | [Combo Export Parity](Experiment%2023%20-%20Combo%20Export%20Parity/README.md) | Does hard-export combo match training? | Gap +0.0033; 4.64 MB — **Because** ship path is packed inference | **promote** (deploy lock; MB target later unlocked 2026-06-20) |
 | 24 | [Two Bit Body Sensitivity](Experiment%2024%20-%20Two%20Bit%20Body%20Sensitivity/README.md) | Does 2-bit beat 1.58-bit body penalty? | both_attention_gqkv −0.066 — opposite of 1.58-bit map | open |
 | 25 | [Stacked Two Bit Compression](Experiment%2025%20-%20Stacked%20Two%20Bit%20Compression/README.md) | Does 2-bit attention stack on deploy combo? | Fails h128; passes h256 (−4.67 MB, +0.0134) | open (h256 only) |
 | 26 | [H256 Two Bit Attention Export Parity](Experiment%2026%20-%20H256%20Two%20Bit%20Attention%20Export%20Parity/README.md) | Does h256 2-bit attention export cleanly? | Gap +0.0011; 9.15 MB — **Because** extra MB only if export-safe | **promote** (h256 candidate) |

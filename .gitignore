@@ -12,8 +12,8 @@
 /experiments/Sandbox - HVM and Interaction Nets/
 # WandB
 /wandb/
-# datasets
-/data/
+# datasets (regenerable, large; keep small frozen/heldout splits only)
+/datasets/
 # checkpoints
 /checkpoints/
 /artifacts/

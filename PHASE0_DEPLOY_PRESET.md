@@ -1,6 +1,10 @@
-# Phase 0 Deploy Preset - Locked Compression Recipe
+# Phase 0 Deploy Preset - Compression Recipe
 
-**Status:** Locked and deploy-ready as of 2026-05-31. Phase 0 is closed.
+**Status:** Compression recipe locked and deploy-ready as of 2026-05-31. Phase 0 is closed.
+
+> **Size policy (2026-06-20):** the packed-MB deploy target is unlocked. The deploy north star is now
+> bounded by the 4 GB GPU envelope (peak VRAM <= 3,800 MiB), not a byte ceiling. The recipe below stays
+> the compression method; the *size class* is no longer fixed at ~4.64 MB and may scale with the envelope.
 
 ## The Preset
 
@@ -13,8 +17,8 @@ mixed_top512_tequila_L_mlp_gate_up
 - L-level MLP gate_up projection: ternary 1.58-bit (threshold 0.5, group-size 128, Tequila STE)
 - Everything else: dense (attention gqkv/o, L/H down_proj, H-level MLP, norms)
 
-**Compression achieved:**
-- h128: 7.55x (4.64 MB packed vs 35.0 MB dense)
+**Compression achieved (h128/h256 reference points, not a target):**
+- h128: 7.55x (~4.64 MB packed vs 35.0 MB dense)
 - h256: 5.46x (13.82 MB packed vs 75.5 MB dense)
 
 **Quality vs dense (Exp38, 3 seeds per cell):**

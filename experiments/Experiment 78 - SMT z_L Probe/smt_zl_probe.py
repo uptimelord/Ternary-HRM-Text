@@ -38,7 +38,7 @@ from models.smt_memory_training import SMTConfig, SMTModel  # noqa: E402
 
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp78_smt_probe" / "smoke_seed1"
 DEFAULT_RESULTS = REPO_ROOT / "experiments" / "Experiment 78 - SMT z_L Probe" / "results_smoke_seed1.md"
-DEFAULT_TOKENS = REPO_ROOT / "data" / "exp76_reasoning_language" / "tokens_flat.npy"
+DEFAULT_TOKENS = REPO_ROOT / "datasets" / "exp76_reasoning_language" / "tokens_flat.npy"
 DEFAULT_HRM_CKPT = REPO_ROOT / "artifacts" / "exp76_smoke" / "plain_sft" / "checkpoint_fp32.pt"
 
 

@@ -26,7 +26,7 @@ if str(REPO_ROOT) not in sys.path:
 
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 93 - Compiler Solver MoE"
 PAIRWISE_PATH = REPO_ROOT / "experiments" / "Experiment 92 - Pairwise Relation LDT" / "pairwise_relation_ldt.py"
-DEFAULT_EVAL = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k_vgr.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k_vgr.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp93_compiler_solver_moe"
 
 ROUTE_COMPARATIVE_LDT = "comparative_ldt"

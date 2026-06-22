@@ -59,7 +59,7 @@ def test_heldout_refused(monkeypatch):
     import training.sft_lib as sft_lib
     monkeypatch.setattr(sft_lib, "check_no_held_out_leak", mock_guard)
     
-    heldout_path = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k.jsonl"
+    heldout_path = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k.jsonl"
     with pytest.raises(ValueError, match="Guard rail hit"):
         mod.load_train_visible_data(heldout_path)
 

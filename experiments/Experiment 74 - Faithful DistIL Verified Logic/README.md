@@ -68,5 +68,5 @@ No results available.
 ```text
 Status: not run / artifacts not retained
 Baseline for comparison when run: Exp70 heldout_easy=91.0%, heldout_hard=83.0%
-  (experiments/Experiment 70 - Comparative Logic Corpus/_eval_30k_term.log)
+  (datasets/comparative_logic_corpus/_eval_30k_term.log)
 ```

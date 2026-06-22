@@ -72,8 +72,8 @@ experiments/Experiment 71 - Body Compression Revival/eval_stageB_attn_o.json
 Training corpus (shared with Exp70):
 
 ```text
-experiments/Experiment 70 - Comparative Logic Corpus/train_30k_sft.jsonl
-experiments/Experiment 70 - Comparative Logic Corpus/valid_easy_sft.jsonl
+datasets/comparative_logic_corpus/train_30k_sft.jsonl
+datasets/comparative_logic_corpus/valid_easy_sft.jsonl
 ```
 
 ## Results

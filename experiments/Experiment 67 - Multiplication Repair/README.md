@@ -41,14 +41,14 @@ Read: the model does not mainly fail by junk output. It gives clean answer-shape
 Generated:
 
 ```powershell
-rtk python "experiments/Experiment 67 - Multiplication Repair/generate_exp67_repair_sft.py" --train-rows 30000 --valid-rows 2000 --seed 1 --out-dir "data/exp67_mul_repair_sft/v1"
+rtk python "experiments/Experiment 67 - Multiplication Repair/generate_exp67_repair_sft.py" --train-rows 30000 --valid-rows 2000 --seed 1 --out-dir "datasets/exp67_mul_repair_sft/v1"
 ```
 
 Files:
 
-- `data/exp67_mul_repair_sft/v1/train.jsonl`
-- `data/exp67_mul_repair_sft/v1/valid.jsonl`
-- `data/exp67_mul_repair_sft/v1/manifest.json`
+- `datasets/exp67_mul_repair_sft/v1/train.jsonl`
+- `datasets/exp67_mul_repair_sft/v1/valid.jsonl`
+- `datasets/exp67_mul_repair_sft/v1/manifest.json`
 
 Data check:
 

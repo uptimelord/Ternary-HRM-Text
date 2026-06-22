@@ -13,8 +13,8 @@ if ($LASTEXITCODE -ne 0) {
 
 & rtk python -u "experiments/Experiment 33 - EqR Lite Recurrence Stability/eqr_lite_recurrence_sft.py" `
     --base-checkpoint "artifacts/phase0_first_pretrain/h256_steps50000_seed1_exportcalib3000/checkpoint_fp32.pt" `
-    --train-jsonl "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" `
-    --valid-jsonl "data/synthetic_arithmetic_reasoning/v2_frozen_like/valid.jsonl" `
+    --train-jsonl "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" `
+    --valid-jsonl "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/valid.jsonl" `
     --steps 2000 `
     --seed 1 `
     --batch-size 4 `

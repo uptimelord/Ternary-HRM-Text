@@ -32,7 +32,7 @@ from training.comparative_logic import (  # noqa: E402
 
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 93b - Raw Text Compiler"
 PAIRWISE_PATH = REPO_ROOT / "experiments" / "Experiment 92 - Pairwise Relation LDT" / "pairwise_relation_ldt.py"
-DEFAULT_EVAL = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k_vgr.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k_vgr.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp93b_raw_text_compiler"
 
 ROUTE_COMPARATIVE_LDT = "comparative_ldt"

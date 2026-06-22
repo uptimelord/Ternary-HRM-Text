@@ -200,8 +200,8 @@ def write_audit(
 
 def main(argv: Iterable[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Audit multidomain schema rows.")
-    parser.add_argument("--train", type=Path, default=Path("data/multidomain_schema/v2/train.jsonl"))
-    parser.add_argument("--heldout", type=Path, default=Path("data/multidomain_schema/v2/heldout.jsonl"))
+    parser.add_argument("--train", type=Path, default=Path("datasets/multidomain_schema/v2/train.jsonl"))
+    parser.add_argument("--heldout", type=Path, default=Path("datasets/multidomain_schema/v2/heldout.jsonl"))
     parser.add_argument("--output", type=Path, default=Path("artifacts/exp93d_multidomain_schema_audit/report.json"))
     parser.add_argument("--train-limit", type=int, default=0)
     parser.add_argument("--heldout-limit", type=int, default=0)

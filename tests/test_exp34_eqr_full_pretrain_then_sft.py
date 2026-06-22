@@ -49,8 +49,8 @@ def test_exp34_1_runner_wires_plain_arithmetic_bridge_before_eqr_sft():
     assert "arithmetic_sft_pilot.py" in text
     assert "eqr_lite_recurrence_sft.py" in text
     assert "h256_exp34_eqr_d015_zl010_h246_bp4_steps50000_sft10000_seed1/pretrain/checkpoint_fp32.pt" in text
-    assert "data/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
-    assert "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
     assert "--steps 2000" in text
     assert "--bp-steps 2" in text
     assert "--steps 10000" in text
@@ -88,8 +88,8 @@ def test_exp34_1_seed2_runner_reproduces_full_pipeline_from_scratch():
     assert "h256_exp34_eqr_d015_zl010_h246_bp4_steps50000_seed2/pretrain/checkpoint_fp32.pt" in text
     assert "h256_exp34_1_eqrpretrain_seed2_plain2000_then_eqr_d015_zl010_h246_bp4_steps10000_seed2/plain_sft/checkpoint_fp32.pt" in text
     assert "h256_exp34_1_eqrpretrain_seed2_plain2000_then_eqr_d015_zl010_h246_bp4_steps10000_seed2/eqr_sft" in text
-    assert "data/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
-    assert "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
     assert "--steps 2000" in text
     assert "--steps 10000" in text
     assert "--bp-steps 2" in text
@@ -132,8 +132,8 @@ def test_exp34_1_seed2_pretrain_sftseed1_runner_isolates_sft_seed():
     assert "h256_exp34_eqr_d015_zl010_h246_bp4_steps50000_seed2/pretrain/checkpoint_fp32.pt" in text
     assert "h256_exp34_1_eqrpretrain_seed2_plain2000_sftseed1_then_eqr_d015_zl010_h246_bp4_steps10000_sftseed1/plain_sft/checkpoint_fp32.pt" in text
     assert "h256_exp34_1_eqrpretrain_seed2_plain2000_sftseed1_then_eqr_d015_zl010_h246_bp4_steps10000_sftseed1/eqr_sft" in text
-    assert "data/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
-    assert "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
     assert "--seed 1" in text
     assert "--steps 2000" in text
     assert "--steps 10000" in text
@@ -173,8 +173,8 @@ def test_exp34_2_runner_wires_four_stage_plain_v1_v2_bridge():
     assert text.count("arithmetic_sft_pilot.py") == 2
     assert text.count("eqr_lite_recurrence_sft.py") == 1
     assert "h256_exp34_eqr_d015_zl010_h246_bp4_steps50000_sft10000_seed1/pretrain/checkpoint_fp32.pt" in text
-    assert "data/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
-    assert "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v1/train.jsonl" in text
+    assert "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" in text
     assert "plain_v1_sft/checkpoint_fp32.pt" in text
     assert "plain_v2_sft/checkpoint_fp32.pt" in text
     assert "eqr_sft" in text

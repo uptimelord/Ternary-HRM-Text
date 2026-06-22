@@ -27,8 +27,8 @@ from tokenizers import Tokenizer
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_TOKENIZER = Path(r"C:/Users/Dos/Documents/GRAM/data_io/trained_tokenizers/bpe/tokenizer.json")
-DEFAULT_OUTPUT_DIR = REPO_ROOT / "data" / "exp35_mixed_language_arithmetic"
-DEFAULT_ARITH_COT = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "train.jsonl"
+DEFAULT_OUTPUT_DIR = REPO_ROOT / "datasets" / "exp35_mixed_language_arithmetic"
+DEFAULT_ARITH_COT = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "train.jsonl"
 DEFAULT_ARITH_ANSWER = DEFAULT_ARITH_COT
 DEFAULT_DATASET = "allenai/dolma3_dolmino_mix-10B-1025"
 DEFAULT_TARGET_TOKENS = 8_000_000

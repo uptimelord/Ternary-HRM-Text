@@ -18,7 +18,7 @@ for comparison.
 - Train (messy): `training/messy_prompts.py` re-renders each row's atomic directed
   facts into 5 varied templates, reversed wording, shuffled order, and filler
   sentences, with no grid. Targets/answers/verifier fields are untouched.
-  - `experiments/Experiment 70 - Comparative Logic Corpus/train_30k_messy.jsonl` (29k rows)
+  - `datasets/comparative_logic_corpus/train_30k_messy.jsonl` (29k rows)
 - Eval (real LLM paraphrases): `eval_paraphrase_1k.jsonl` -- the deepseek
   `llm_enrichment.paraphrase` text, not my templates. This defeats the
   "model just memorized 5 templates" objection: eval phrasings are
@@ -44,7 +44,7 @@ constrained solver). Constrained pass is not the question here.
 ## Data build (reproducible, no API)
 
 ```bash
-D="experiments/Experiment 70 - Comparative Logic Corpus"
+D="datasets/comparative_logic_corpus"
 # 1. real-paraphrase eval (prompt = deepseek llm_enrichment.paraphrase) + its id list.
 #    committed artifacts: $D/eval_paraphrase_1k.jsonl , $D/_paraphrase_eval_src_ids.txt
 #    rebuild: read train_1k_vgr_deepseek.jsonl, emit {prompt: paraphrase, answer, order,
@@ -57,7 +57,7 @@ python -m training.messy_prompts --in "$D/train_30k_sft.jsonl" \
 ## Run
 
 ```powershell
-$D = "experiments/Experiment 70 - Comparative Logic Corpus"
+$D = "datasets/comparative_logic_corpus"
 # TRM
 rtk python "experiments/Experiment 90 - VGR TRM Train/vgr_trm_train.py" --backbone trm `
   --train "$D/train_30k_messy.jsonl" --eval "$D/eval_paraphrase_1k.jsonl" `
@@ -80,7 +80,7 @@ The lattice reads structured edges from `grid.rows.claim` (e.g. `"Tom > Max"`),
 deepseek-paraphrase rows, eval on hard heldout — same harness as Exp92:
 
 ```powershell
-$D = "experiments/Experiment 70 - Comparative Logic Corpus"
+$D = "datasets/comparative_logic_corpus"
 rtk python "experiments/Experiment 92 - Pairwise Relation LDT/pairwise_relation_ldt.py" `
   --train "$D/train_1k_vgr_deepseek.jsonl" --eval "$D/heldout_hard_1k_vgr.jsonl" `
   --steps 3000 --train-limit 1000 --eval-limit 200 --batch-size 64 --device cuda `

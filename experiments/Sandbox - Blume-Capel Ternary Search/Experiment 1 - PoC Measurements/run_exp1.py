@@ -67,7 +67,7 @@ from training.arch_backbone import build_trm_lmhead
 from training.sft_lib import DEFAULT_TOKENIZER, read_jsonl, tokenize_sft_rows, make_fixed_sft_batch
 from training.comparative_logic import convert_comparative_logic_row, is_comparative_logic_row
 
-DEFAULT_LOGIC_TRAIN = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "train_30k_sft.jsonl"
+DEFAULT_LOGIC_TRAIN = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "train_30k_sft.jsonl"
 EXP_DIR = REPO_ROOT / "experiments" / "Sandbox - Blume-Capel Ternary Search"
 
 def load_train_visible_data(path: Path, limit: int = 100):

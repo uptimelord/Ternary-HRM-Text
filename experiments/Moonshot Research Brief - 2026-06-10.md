@@ -119,7 +119,7 @@ Headline:  domains at frontier parity max(F1,F2) (count) + storage_ratio panel +
 A reader should be able to implement this as a state machine + oracle calls + self-edit rules. Neural internals are a swappable implementation detail of the control unit.
 
 ### 3.1 Control unit (slow store / ROM)
-Packed ternary HRM, ~4.64 MB deploy preset (h256-class; C5 may replace with a tied recursive block — the spec is agnostic). **Fixed at inference.** Its only jobs: READ (parse task into internal/tape representation), PLAN (choose next action: emit, call coprocessor, revise, halt-request), TRANSLATE (formalize for coprocessors — the membrane). It is *forbidden* from being the arithmetic ALU (Exp67 kill; two-lever thesis).
+Packed ternary HRM, deploy recipe `mixed_top512_tequila_L_mlp_gate_up` (h256-class; C5 may replace with a tied recursive block — the spec is agnostic). Size is bounded by the 4 GB GPU envelope (peak <= 3,800 MiB), not a fixed MB target. **Fixed at inference.** Its only jobs: READ (parse task into internal/tape representation), PLAN (choose next action: emit, call coprocessor, revise, halt-request), TRANSLATE (formalize for coprocessors — the membrane). It is *forbidden* from being the arithmetic ALU (Exp67 kill; two-lever thesis).
 
 ### 3.2 Step semantics — one CPU cycle
 ```text

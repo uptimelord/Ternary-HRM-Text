@@ -851,7 +851,7 @@ def write_corpus(out_dir: Path, *, train_per_domain: int, heldout_per_domain: in
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Build verified multidomain schema corpus.")
-    parser.add_argument("--output-dir", type=Path, default=Path("data/multidomain_schema/v2"))
+    parser.add_argument("--output-dir", type=Path, default=Path("datasets/multidomain_schema/v2"))
     parser.add_argument("--train-per-domain", type=int, default=25000)
     parser.add_argument("--heldout-per-domain", type=int, default=1000)
     parser.add_argument("--seed", type=int, default=9304)

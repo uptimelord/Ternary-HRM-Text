@@ -41,8 +41,8 @@ from training.sft_lib import (  # noqa: E402
 from training.verified_breadth import logic_answer_pass, row_prompt  # noqa: E402
 
 EXP21_PATH = REPO_ROOT / "experiments" / "Experiment 21 - Body Sensitivity Map" / "body_sensitivity_map.py"
-DEFAULT_LOGIC_TRAIN = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "train_30k_sft.jsonl"
-DEFAULT_LOGIC_HELDOUT_HARD = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k.jsonl"
+DEFAULT_LOGIC_TRAIN = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "train_30k_sft.jsonl"
+DEFAULT_LOGIC_HELDOUT_HARD = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp83_trm_tied"
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 83 - Tied Recursive Block"
 DEFAULT_RESULTS = REPO_ROOT / "experiments" / "Experiment 83 - Tied Recursive Block" / "results_smoke_seed1.md"

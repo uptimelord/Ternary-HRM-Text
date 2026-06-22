@@ -51,9 +51,10 @@ def test_gap_format_includes_noise_floor_and_interpretation():
 
 
 def test_quality_per_mb_is_inverse_loss_per_packed_mb():
-    score = discipline.quality_per_packed_mb(loss=5.1570, packed_mb=4.64)
+    # ponytail: 8.0 is a sample packed_mb, not a deploy target (size target unlocked 2026-06-20).
+    score = discipline.quality_per_packed_mb(loss=5.1570, packed_mb=8.0)
 
-    assert score == pytest.approx((1 / 5.1570) / 4.64)
+    assert score == pytest.approx((1 / 5.1570) / 8.0)
 
 
 def test_frozen_gap_gate_uses_positive_noise_limit():

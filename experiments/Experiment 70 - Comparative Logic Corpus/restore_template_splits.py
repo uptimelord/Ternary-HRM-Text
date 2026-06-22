@@ -25,7 +25,7 @@ from training.comparative_logic import (  # noqa: E402
     generate_comparative_logic_rows,
 )
 
-DEFAULT_OUT = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus"
+DEFAULT_OUT = REPO_ROOT / "datasets" / "comparative_logic_corpus"
 
 
 def _write_jsonl(path: Path, rows: list[dict]) -> None:

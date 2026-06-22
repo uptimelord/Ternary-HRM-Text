@@ -31,7 +31,7 @@ from typing import Any
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
 VERSION = "exp37_deepseek_custom_rehearsal_v1"
-DEFAULT_OUTPUT = REPO_ROOT / "data" / "deepseek_custom_rehearsal" / "v1"
+DEFAULT_OUTPUT = REPO_ROOT / "datasets" / "deepseek_custom_rehearsal" / "v1"
 DEFAULT_FROZEN = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"
 DEFAULT_TRAIN_COUNT = 100_000
 DEFAULT_VALID_COUNT = 4_000

@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent (Split-Path -Parent $PSScriptRoot)
 Set-Location $RepoRoot
 
-$TokenDir = "data/exp35_mixed_language_arithmetic"
+$TokenDir = "datasets/exp35_mixed_language_arithmetic"
 $TokenPath = "$TokenDir/tokens_flat.npy"
 
 if (-not (Test-Path $TokenPath)) {

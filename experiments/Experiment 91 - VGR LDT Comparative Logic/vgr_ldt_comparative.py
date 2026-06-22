@@ -35,8 +35,8 @@ from training.comparative_logic import (  # noqa: E402
 )
 
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 91 - VGR LDT Comparative Logic"
-DEFAULT_TRAIN = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "train_1k_vgr_deepseek.jsonl"
-DEFAULT_EVAL = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k_vgr.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "train_1k_vgr_deepseek.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k_vgr.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp91_vgr_ldt_comparative"
 
 MAX_ENTITIES = 6

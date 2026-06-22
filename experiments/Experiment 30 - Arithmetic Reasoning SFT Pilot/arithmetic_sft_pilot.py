@@ -70,7 +70,7 @@ DEFAULT_BASE_CHECKPOINT = (
     / "h256_steps50000_seed1_exportcalib3000"
     / "checkpoint_fp32.pt"
 )
-DEFAULT_DATA_DIR = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1"
+DEFAULT_DATA_DIR = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1"
 DEFAULT_TRAIN_JSONL = DEFAULT_DATA_DIR / "train.jsonl"
 DEFAULT_VALID_JSONL = DEFAULT_DATA_DIR / "valid.jsonl"
 DEFAULT_FROZEN = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"

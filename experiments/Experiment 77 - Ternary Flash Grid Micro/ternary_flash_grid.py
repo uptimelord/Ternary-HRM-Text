@@ -45,8 +45,8 @@ FALLBACK_BASE = (
     / "h256_steps50000_seed1_exportcalib3000"
     / "checkpoint_fp32.pt"
 )
-DEFAULT_TRAIN = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
-DEFAULT_VALID = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1" / "valid.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
+DEFAULT_VALID = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1" / "valid.jsonl"
 DEFAULT_FROZEN = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"
 DEFAULT_TOKENIZER = Path(r"C:/Users/Dos/Documents/GRAM/data_io/trained_tokenizers/bpe/tokenizer.json")
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp77_flash_grid" / "smoke_seed1"

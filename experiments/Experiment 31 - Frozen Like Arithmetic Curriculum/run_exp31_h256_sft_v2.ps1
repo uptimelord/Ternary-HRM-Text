@@ -13,8 +13,8 @@ if ($LASTEXITCODE -ne 0) {
 
 & rtk python -u "experiments/Experiment 30 - Arithmetic Reasoning SFT Pilot/arithmetic_sft_pilot.py" `
     --base-checkpoint "artifacts/phase0_arithmetic_sft_pilot/h256_steps2000_seed1/checkpoint_fp32.pt" `
-    --train-jsonl "data/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" `
-    --valid-jsonl "data/synthetic_arithmetic_reasoning/v2_frozen_like/valid.jsonl" `
+    --train-jsonl "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/train.jsonl" `
+    --valid-jsonl "datasets/synthetic_arithmetic_reasoning/v2_frozen_like/valid.jsonl" `
     --steps 2000 `
     --seed 1 `
     --batch-size 4 `

@@ -34,7 +34,7 @@
 | Wall-clock anchors | 50k steps h256 b4 = 128.8 min (Exp29); 18k steps b16 = 96.2 min (Exp69); 8k steps b4 = 12.9 min (Exp70) | results files |
 | Train dtype today | FP32 everywhere; **no gradient checkpointing in any runner** (grep-verified) | agent sweep |
 | Quality gates | strict pass@1 parity / eval loss within ±0.0203 @ 5k; invalid 0% | DISCIPLINE.md |
-| Deploy preset | `mixed_top512_tequila_L_mlp_gate_up` ~4.64 MB — **unchanged, lane closed** | PHASE0_DEPLOY_PRESET.md |
+| Deploy recipe | `mixed_top512_tequila_L_mlp_gate_up` (compression method; packed-MB target unlocked 2026-06-20, sized by 4 GB GPU envelope, peak <= 3,800 MiB) | PHASE0_DEPLOY_PRESET.md |
 | Local model family | h128–h256 × 2–4 layers, vocab 65,536 tied, seq 128, HRM H=2/L=3, bp_steps 2–5 | Exp29/34/69 runners, `config/arch/net/hrm.yaml` |
 
 Note: upstream `config/arch/size/{B,L,XL,XXL}` (12–72 layers, h1024–2560) are datacenter presets; the local lane has its own h128/h256 configs in experiment runners. The envelope below maps both.
@@ -114,7 +114,8 @@ peak_vram:     predicted 2.6–3.2 GB (MUST be measured at 500 steps before comm
 wall-clock:    ~300M tokens ≈ 15–20 h (weekend run, checkpoint_interval small, resumable)
 deploy path:   Phase 0 recipe applies unchanged (mixed_top512 vocab + L_mlp gate_up);
                packed est. ~15–25 MB at h512 — this is a CAPABILITY-DISCOVERY artifact,
-               not a deploy candidate; deploy north star stays h128/h256 (~4.64 MB preset)
+               not a deploy candidate; deploy north star is sized by the 4 GB GPU envelope
+               (peak <= 3,800 MiB), no fixed packed-MB target (unlocked 2026-06-20)
 ```
 
 **Conservative fallback:** h384×6, ~39M, Tier 1.5+2 only (no checkpointing), predicted ~1.8–2.2 GB, overnight class.

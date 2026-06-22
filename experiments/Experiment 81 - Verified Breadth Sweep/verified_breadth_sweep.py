@@ -49,7 +49,7 @@ DEFAULT_LOGIC_CKPT = (
     REPO_ROOT / "artifacts" / "exp70_comparative_logic_sft" / "h256_30k_steps8000_seed1_term" / "checkpoint_fp32.pt"
 )
 DEFAULT_WORD_HELDOUT = REPO_ROOT / "experiments" / "Experiment 66 - Word Problem Reasoning Corpus" / "heldout_word_1k.jsonl"
-DEFAULT_LOGIC_HELDOUT_HARD = REPO_ROOT / "experiments" / "Experiment 70 - Comparative Logic Corpus" / "heldout_hard_1k.jsonl"
+DEFAULT_LOGIC_HELDOUT_HARD = REPO_ROOT / "datasets" / "comparative_logic_corpus" / "heldout_hard_1k.jsonl"
 DEFAULT_FROZEN = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp81_breadth_sweep" / "run"
 DEFAULT_RESULTS = REPO_ROOT / "experiments" / "Experiment 81 - Verified Breadth Sweep" / "results_smoke_seed1.md"

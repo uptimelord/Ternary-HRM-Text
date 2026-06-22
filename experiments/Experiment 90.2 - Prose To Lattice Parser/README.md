@@ -46,7 +46,7 @@ the softer secondary number). Constrained/exact must use predicted edges only.
 ## Run
 
 ```powershell
-$D = "experiments/Experiment 70 - Comparative Logic Corpus"
+$D = "datasets/comparative_logic_corpus"
 python "experiments/Experiment 90.2 - Prose To Lattice Parser/prose_to_lattice.py" `
   --train "$D/train_30k_messy.jsonl" --eval "$D/eval_paraphrase_1k.jsonl" `
   --steps 3000 --train-limit 29000 --eval-limit 200 --batch-size 64 --device cuda `

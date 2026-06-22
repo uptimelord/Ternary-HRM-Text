@@ -28,9 +28,9 @@ DeepSeek is used where we need better language shape.
 ## Output
 
 ```text
-data/deepseek_custom_rehearsal/v1/train.jsonl
-data/deepseek_custom_rehearsal/v1/valid.jsonl
-data/deepseek_custom_rehearsal/v1/manifest.json
+datasets/deepseek_custom_rehearsal/v1/train.jsonl
+datasets/deepseek_custom_rehearsal/v1/valid.jsonl
+datasets/deepseek_custom_rehearsal/v1/manifest.json
 ```
 
 ## Run
@@ -80,5 +80,5 @@ Kill if generation stalls below target size, DeepSeek rows fail validation at
 ## Results
 
 Not run yet — `DEEPSEEK_API_KEY` required in repo-local `.env`. Generator scripts
-and safety checks are in place; no `data/deepseek_custom_rehearsal/v1/` artifacts
+and safety checks are in place; no `datasets/deepseek_custom_rehearsal/v1/` artifacts
 on disk.

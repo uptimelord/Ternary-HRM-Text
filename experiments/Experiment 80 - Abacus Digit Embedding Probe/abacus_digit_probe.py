@@ -43,8 +43,8 @@ DEFAULT_BASE = (
     / "h256_exp34_1_eqrpretrain_plain2000_then_eqr_d015_zl010_h246_bp4_steps10000_eval200_h246"
     / "checkpoint_fp32.pt"
 )
-DEFAULT_TRAIN = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
-DEFAULT_VALID = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1" / "valid.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
+DEFAULT_VALID = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1" / "valid.jsonl"
 DEFAULT_FROZEN = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp80_abacus_probe"
 DEFAULT_RESULTS = REPO_ROOT / "experiments" / "Experiment 80 - Abacus Digit Embedding Probe" / "results_smoke_seed1.md"

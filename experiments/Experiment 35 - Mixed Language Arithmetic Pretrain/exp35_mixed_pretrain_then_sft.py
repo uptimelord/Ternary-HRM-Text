@@ -55,14 +55,14 @@ DEFAULT_EXPORT_CALIBRATION_STEPS = 3_000
 DEFAULT_PLAIN_BRIDGE_STEPS = 2_000
 DEFAULT_EQR_SFT_STEPS = 10_000
 DEFAULT_BP_STEPS = 4
-DEFAULT_TOKENS = REPO_ROOT / "data" / "exp35_mixed_language_arithmetic" / "tokens_flat.npy"
-DEFAULT_TOKEN_MANIFEST = REPO_ROOT / "data" / "exp35_mixed_language_arithmetic" / "manifest.json"
+DEFAULT_TOKENS = REPO_ROOT / "datasets" / "exp35_mixed_language_arithmetic" / "tokens_flat.npy"
+DEFAULT_TOKEN_MANIFEST = REPO_ROOT / "datasets" / "exp35_mixed_language_arithmetic" / "manifest.json"
 DEFAULT_TOKENIZER = Path(r"C:/Users/Dos/Documents/GRAM/data_io/trained_tokenizers/bpe/tokenizer.json")
 DEFAULT_FROZEN = REPO_ROOT / "evaluation" / "frozen" / "frozen_arithmetic_200.jsonl"
-DEFAULT_PLAIN_TRAIN_JSONL = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
-DEFAULT_PLAIN_VALID_JSONL = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v1" / "valid.jsonl"
-DEFAULT_EQR_TRAIN_JSONL = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "train.jsonl"
-DEFAULT_EQR_VALID_JSONL = REPO_ROOT / "data" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "valid.jsonl"
+DEFAULT_PLAIN_TRAIN_JSONL = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1" / "train.jsonl"
+DEFAULT_PLAIN_VALID_JSONL = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v1" / "valid.jsonl"
+DEFAULT_EQR_TRAIN_JSONL = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "train.jsonl"
+DEFAULT_EQR_VALID_JSONL = REPO_ROOT / "datasets" / "synthetic_arithmetic_reasoning" / "v2_frozen_like" / "valid.jsonl"
 DEFAULT_OUTPUT = (
     REPO_ROOT
     / "artifacts"

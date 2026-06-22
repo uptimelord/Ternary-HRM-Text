@@ -93,7 +93,7 @@ NON-NERFED FRONTIER RESEARCH (in repo scope)
 
 | Lane | Anchor |
 |------|--------|
-| Deploy | `mixed_top512_tequila_L_mlp_gate_up` ~4.64 MB packed |
+| Deploy | `mixed_top512_tequila_L_mlp_gate_up` (compression recipe; no fixed MB target — sized by the 4 GB GPU envelope, peak <= 3,800 MiB) |
 | Strict frozen arithmetic | Exp64 on Exp34.1 ~**8.5%** (shape ≠ math) |
 | Word raw | Exp69 `phase0_exp69_fullepoch/.../checkpoint_fp32.pt` heldout ~62.5% |
 | Word tool | Exp69 + calculator ~98% overall |

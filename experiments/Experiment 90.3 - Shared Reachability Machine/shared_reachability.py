@@ -63,8 +63,8 @@ class TernaryEmbedding(nn.Module):
     def forward(self, ids: torch.Tensor) -> torch.Tensor:
         return F.embedding(ids, self.ternary.effective_weight())
 EXP_DIR = REPO_ROOT / "experiments" / "Experiment 90.3 - Shared Reachability Machine"
-DEFAULT_TRAIN = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "train.jsonl"
-DEFAULT_EVAL = REPO_ROOT / "data" / "multidomain_schema" / "v2" / "heldout.jsonl"
+DEFAULT_TRAIN = REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "train.jsonl"
+DEFAULT_EVAL = REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "heldout.jsonl"
 DEFAULT_OUTPUT = REPO_ROOT / "artifacts" / "exp90_3_shared_reachability"
 
 

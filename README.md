@@ -41,8 +41,9 @@ Exp 22, 5000 steps, seeds 1/2/3:
 Plain-English read: the raw loss gaps are within the measured noise floor, so
 the real win is size-normalized quality. The combo gives the best quality per
 packed MB while staying heavily compressed. Exp 23 then checked export behavior:
-hard-export eval was only `+0.0033` worse than Tequila train-mode eval, with
-the same `4.64 MB` packed size.
+hard-export eval was only `+0.0033` worse than Tequila train-mode eval, at the
+same packed size as the combo (~4.64 MB at h128; the packed-MB target was later
+unlocked on 2026-06-20 in favor of the 4 GB GPU envelope).
 
 Exp 25/26/27/28 h256 result: stacking full 2-bit attention on top of the combo
 cut packed size from `13.82 MB` to `9.15 MB` at `h256` and passed export parity.

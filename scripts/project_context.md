@@ -32,7 +32,7 @@ parameter count. Optimize for **verified pass@k × difficulty coverage ÷ packed
 - Verdicts: Exp80 abacus **kill**, Exp82 down-proj TTT **kill**, Exp83 TRM **promote**;
   Exp81 verified-breadth running (temp arm +9–12 pp over greedy, seed-1; seed-2 pending).
 - Baselines: word raw ~62.5% heldout, word+calculator ~98%, logic Exp70, LDT Exp57.
-- Deploy preset locked: `mixed_top512_tequila_L_mlp_gate_up` ~4.64 MB packed.
+- Deploy compression recipe: `mixed_top512_tequila_L_mlp_gate_up` (Phase 0 preset). No fixed packed-size target; deploy sizing is bounded by the 4 GB GPU envelope (peak <= 3,800 MiB), not a byte ceiling.
 
 ## Canonical docs (read these for detail; don't duplicate them)
 - `CLAUDE.md` — intent stability, scope, voice.

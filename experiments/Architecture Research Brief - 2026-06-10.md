@@ -31,7 +31,7 @@
 | Constraint | Value | Source |
 |---|---|---|
 | GPU | RTX 3050 Ti laptop, ~4 GB VRAM | CLAUDE.md, repo-wide |
-| Deploy size class | ~4.64 MB packed (`mixed_top512_tequila_L_mlp_gate_up`); h256 lane ~9.15 MB | Log summary baselines |
+| Deploy size class | No fixed packed-MB target; bounded by the 4 GB GPU envelope (peak <= 3,800 MiB). Recipe: `mixed_top512_tequila_L_mlp_gate_up` | PHASE0_DEPLOY_PRESET.md |
 | Model scale | h128/h256, HRM H_cycles=2, L_cycles=3, half_layers | `config/arch/net/hrm.yaml`, `config/arch/size/*` |
 | Realistic train budget | 5k–50k steps per run (Exp29 did 50k locally); full-epoch SFT feasible (Exp69) | Log summary |
 | Noise floor | ±0.0203 eval loss @ 5000 steps; pp-level bars per experiment | DISCIPLINE.md |

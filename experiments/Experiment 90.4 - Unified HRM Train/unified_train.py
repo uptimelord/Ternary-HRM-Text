@@ -198,8 +198,8 @@ def train(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--train-data", type=Path, default=REPO_ROOT / "data" / "multidomain_schema" / "v2" / "train.jsonl")
-    parser.add_argument("--eval-data", type=Path, default=REPO_ROOT / "data" / "multidomain_schema" / "v2" / "heldout.jsonl")
+    parser.add_argument("--train-data", type=Path, default=REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "train.jsonl")
+    parser.add_argument("--eval-data", type=Path, default=REPO_ROOT / "datasets" / "multidomain_schema" / "v2" / "heldout.jsonl")
     parser.add_argument("--tokenizer", type=Path, default=DEFAULT_TOKENIZER)
     parser.add_argument("--steps", type=int, default=1000)
     parser.add_argument("--batch-size", type=int, default=32)

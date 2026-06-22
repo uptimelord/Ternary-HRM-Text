@@ -7,8 +7,6 @@ import torch.nn.functional as F
 from einops import rearrange
 
 from models.common import trunc_normal_init_, unwrap_tensor
-from models.flash_attention_prefixlm_v2 import flash_attn_varlen_prefixlm
-from flash_attn_interface import flash_attn_with_kvcache
 
 
 Carry = dict[str, Any]
@@ -325,9 +323,11 @@ class Attention(nn.Module):
         is_causal = self.attn_type == "causal"
         if cache is None:
             # flash attn (training)
+            from models.flash_attention_prefixlm_v2 import flash_attn_varlen_prefixlm
             attn_output = flash_attn_varlen_prefixlm(query, key, value, is_causal, **{name: unwrap_tensor(tensor) for name, tensor in seq_info.items()})
         else:
             # Regardless of auto / non-autoregressive, apply attention based on current concatenated with cache.
+            from flash_attn_interface import flash_attn_with_kvcache
             attn_output = flash_attn_with_kvcache(q=query, k=key, v=value,
                                                   k_cache=cache.keys, v_cache=cache.values, cache_seqlens=cache_lengths,
                                                   num_splits=1,  # Must set to support torch.compile tracing.
