@@ -101,6 +101,12 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--nobp-refit-steps", type=int, default=0)
     parser.add_argument("--nobp-refit-ridge", type=float, default=1e-3)
     parser.add_argument(
+        "--nobp-refit-ema-alpha",
+        type=float,
+        default=1.0,
+        help="arm 5: EMA-blend refit output M <- (1-a)M + a*M_refit (1.0 = arm-3 hard replace; <1.0 damps oscillation)",
+    )
+    parser.add_argument(
         "--nobp-refit-log-dir",
         type=Path,
         default=None,
@@ -296,6 +302,7 @@ def main() -> int:
             feedback_refit_interval=args.nobp_refit_interval,
             feedback_refit_steps=args.nobp_refit_steps,
             feedback_refit_ridge=args.nobp_refit_ridge,
+            feedback_refit_ema_alpha=args.nobp_refit_ema_alpha,
             refit_log_dir=args.nobp_refit_log_dir,
             checkpoint_path=args.output_dir / "pretrain_progress.pt",
             checkpoint_interval=args.checkpoint_interval,

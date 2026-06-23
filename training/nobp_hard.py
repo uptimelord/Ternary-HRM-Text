@@ -797,6 +797,7 @@ def _refit_feedback_matrices(
     bp_steps: int,
     ridge: float,
     step_offset: int,
+    ema_alpha: float = 1.0,
 ) -> None:
     """Periodic bounded-BP refit of the DFA feedback matrices (arm 3).
 
@@ -808,6 +809,10 @@ def _refit_feedback_matrices(
     No autograd graph, grad, or optimizer state survives past this call -- the
     no-BP invariants hold between refits. The refit is a bounded transient (same
     mechanism as the arm-2 warmup), not steady-state training.
+
+    `ema_alpha` < 1.0 (arm 5) low-pass-filters the refit output: M <- (1-a) M +
+    a * M_refit, damping the over-correction oscillation (arm-4 Phase-1a found
+    consecutive-delta cosine ~ -0.45). alpha=1.0 reproduces arm-3 (hard replace).
     """
     for _name, module in named_ternary_modules(model):
         module.ternary_ste_mode = "tequila"
@@ -826,8 +831,16 @@ def _refit_feedback_matrices(
         )
     finally:
         configure_hard_ternary(model)
-    feedback_matrices.clear()
-    feedback_matrices.update(fresh)
+    if ema_alpha >= 1.0:
+        feedback_matrices.clear()
+        feedback_matrices.update(fresh)
+    else:
+        for name, new_matrix in fresh.items():
+            old = feedback_matrices.get(name)
+            if old is None or old.shape != new_matrix.shape or old.device != new_matrix.device:
+                feedback_matrices[name] = new_matrix
+            else:
+                feedback_matrices[name] = (1.0 - ema_alpha) * old + ema_alpha * new_matrix
 
 
 def train_pretrain_fprm_nobp_hard(
@@ -851,6 +864,7 @@ def train_pretrain_fprm_nobp_hard(
     feedback_refit_interval: int = 0,
     feedback_refit_steps: int = 0,
     feedback_refit_ridge: float = 1e-3,
+    feedback_refit_ema_alpha: float = 1.0,
     refit_log_dir: Path | None = None,
     checkpoint_path: Path | None = None,
     checkpoint_interval: int = 0,
@@ -985,6 +999,7 @@ def train_pretrain_fprm_nobp_hard(
                 bp_steps=bp_steps,
                 ridge=feedback_refit_ridge,
                 step_offset=step + 1,
+                ema_alpha=feedback_refit_ema_alpha,
             )
             if refit_log_dir is not None and m_before:
                 m_after = {

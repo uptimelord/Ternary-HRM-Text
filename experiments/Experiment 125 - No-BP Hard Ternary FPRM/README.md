@@ -741,3 +741,64 @@ arm-3's refit loop has too much gain and bounces. A momentum/oscillation model
 -- it would carry the previous delta as state, not predict a low-rank correction
 from layer stats, and the deltas are full-rank so there is no cheap low-rank win
 either way. Left as a noted observation, not pursued under arm 4.
+
+## Arm 5 (preregistration): oscillation-damped refit -- branch exp125-arm5-damped-refit
+
+The arm-4 Phase-1a finding (consecutive-delta cosine ~ -0.45: the refit
+over-corrects and bounces) points at a direct fix: low-pass filter the refit
+output. Instead of hard-replacing the feedback matrices at each refit
+(`M <- M_refit`, arm-3), EMA-blend: `M <- (1-alpha) M + alpha * M_refit`.
+alpha=1.0 reproduces arm-3 (hard replace, oscillates); alpha<1.0 damps the
+over-correction. The blend is closed-form (no optimizer state), the refit's BP
+is still a bounded transient (no autograd at training time), quantizer untouched.
+This is a LOSS-improvement play (smoother feedback -> less time in the bad part
+of the oscillation -> better final state), not a speed play.
+
+Question: does damping arm-3's refit oscillation improve eval below 6.69 while
+keeping all Promote gates, and does it reduce the matrix-trajectory bouncing?
+
+Mechanism: `feedback_refit_ema_alpha` param on the trainer (default 1.0 = arm-3);
+_refit_feedback_matrices blends instead of clear/update when alpha<1.0. CLI:
+`--nobp-refit-ema-alpha`. Sweep alpha in {0.3, 0.5, 0.7} at 5000 steps, seed 1
+first (measure-twice); run seed 2 only if seed 1 clears the gate. Use the
+refit_log_dir instrumentation (from arm 4) to measure consecutive matrix cosine
+(should rise toward 0/positive as the trajectory smooths).
+
+Promote-if: both seeds eval < 6.5 at 5000 steps (beats arm-3 6.69 by > 0.19,
+well over the 0.0203 noise floor), mean flip in [1e-4,1e-2], steady-state VRAM
+<= 600 MiB, no training-time autograd, no optimizer state, hard from step 0, no
+NaN. Secondary (reported, not gated): consecutive matrix cosine improves over
+arm-3's delta-cosine -0.45.
+
+Kill-if: eval >= 6.6 (no meaningful improvement over arm-3 6.69) or any invariant
+breaks. If all alpha values land 6.6-6.69 (flat, no improvement), the oscillation
+is not hurting the final eval -- arm-3's bounce is mid-training noise that washes
+out by step 5000, and damping is not worth the added lag. That would be a clean
+negative result, not a failure.
+
+### Phase 1 result: KILL -- the oscillation is mid-training noise, not a bottleneck
+
+Swept alpha in {0.3, 0.5, 0.7} at 5000 steps, seed 1 (chunk 16384, all other
+params = arm-3). All invariants held throughout (flip in band, no autograd/opt
+state, hard step 0, steady VRAM 478 MiB, no NaN).
+
+| alpha | eval | vs arm-3 (alpha=1.0, 6.645) |
+|---:|---:|---|
+| 1.0 (arm-3) | 6.645 | baseline |
+| 0.7 | 6.656 | +0.011 (flat, within 0.0203 noise) |
+| 0.5 | 6.716 | +0.071 (worse) |
+| 0.3 | 6.867 | +0.222 (worse) |
+
+Monotonic: more damping = more lag = worse eval. None beat the 6.5 Promote line;
+alpha=0.5 and 0.3 clear the Kill-if (>= 6.6). The damping works mechanically
+(smoother matrix trajectory) but the oscillation is NOT hurting the final eval
+-- it washes out by step 5000, and the EMA blend just adds feedback staleness.
+Arm-3's hard-replace (alpha=1.0) is optimal; the bounce is mid-training noise,
+not a loss bottleneck.
+
+Verdict: **KILL (arm 5).** Clean negative result, exactly as the preregistration
+anticipated. No seed 2 run (the trend is monotonic; a second seed will not
+reverse a +0.071 / +0.222 regression). Arm-3 stays the promoted baseline. The
+oscillation observation from arm-4 Phase-1a is real (consecutive-delta cosine
+~-0.45) but benign for the final eval -- it is a training-dynamics curiosity,
+not a lever. Phases/gates not widened; quantizer untouched.
