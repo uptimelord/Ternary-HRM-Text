@@ -553,6 +553,58 @@ def test_feedback_refit_re_anchors_matrices_and_restores_hard_invariants() -> No
         assert module.ternary_ste_mode == "standard"
 
 
+def test_refit_log_dir_dumps_before_after_and_features(tmp_path) -> None:
+    """Arm 4 Phase 1 instrumentation: with refit_log_dir set, each refit writes a
+    file with the features + M_before/M_after so an offline proxy can be trained
+    on (features -> M_after - M_before). No behavior change when the dir is None.
+    """
+    nobp = _nobp_module()
+    model = _tiny_fprm()
+    seed = nobp.bp_warmup_seed_feedback(
+        model,
+        batch_fn=lambda _step: _tiny_batch(),
+        device=torch.device("cpu"),
+        warmup_steps=12,
+        train_rule="nobp-dfa-full-hard",
+        bp_steps=1,
+        ridge=1e-3,
+    )
+    log_dir = tmp_path / "refit_log"
+    nobp.train_pretrain_fprm_nobp_hard(
+        model,
+        batch_fn=lambda _step: _tiny_batch(),
+        device=torch.device("cpu"),
+        steps=3,
+        train_rule="nobp-dfa-full-hard",
+        vocab_chunk_size=8,
+        head_lr=0.0,
+        core_lr=0.01,
+        beta=0.03,
+        residual_lambda=0.003,
+        update_clip=1.0,
+        bp_steps=1,
+        log_interval=0,
+        feedback_matrices_seed=seed,
+        feedback_refit_interval=2,
+        feedback_refit_steps=12,
+        feedback_refit_ridge=1e-3,
+        refit_log_dir=log_dir,
+    )
+    files = sorted(log_dir.glob("refit_step*.pt"))
+    assert len(files) == 1  # refit fires at step 2 (the only step < 3 on the interval)
+    payload = torch.load(files[0], map_location="cpu", weights_only=False)
+    assert payload["step"] == 2
+    assert set(payload["M_before"]) == set(seed)
+    assert set(payload["M_after"]) == set(seed)
+    assert payload["features"]["step"] == 2
+    assert "loss" in payload["features"] and "ternary_flip_rate" in payload["features"]
+    # M_after differs from M_before (the refit re-anchored to the moved model).
+    assert any(
+        not torch.equal(payload["M_after"][n], payload["M_before"][n])
+        for n in payload["M_before"]
+    )
+
+
 def test_spsa_hard_runs_without_autograd_and_updates_tied_master(monkeypatch) -> None:
     nobp = _nobp_module()
     model = _tiny_fprm()

@@ -100,6 +100,12 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--nobp-refit-steps", type=int, default=0)
     parser.add_argument("--nobp-refit-ridge", type=float, default=1e-3)
+    parser.add_argument(
+        "--nobp-refit-log-dir",
+        type=Path,
+        default=None,
+        help="arm 4 Phase 1: dump (features, M_before, M_after) at each refit for offline proxy analysis",
+    )
     parser.add_argument("--dense-top-k", type=int, default=0)
     parser.add_argument("--pretrain-steps", type=int, default=1000)
     parser.add_argument("--export-calibration-steps", type=int, default=0)
@@ -290,6 +296,7 @@ def main() -> int:
             feedback_refit_interval=args.nobp_refit_interval,
             feedback_refit_steps=args.nobp_refit_steps,
             feedback_refit_ridge=args.nobp_refit_ridge,
+            refit_log_dir=args.nobp_refit_log_dir,
             checkpoint_path=args.output_dir / "pretrain_progress.pt",
             checkpoint_interval=args.checkpoint_interval,
             resume=args.resume,

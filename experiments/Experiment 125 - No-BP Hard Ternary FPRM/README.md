@@ -626,3 +626,118 @@ refit) plus no Adam/second-order state.
   the refit transient reported transparently rather than hidden.
 - Both seeds run. builder_gate PASS (guard_rail, 14 tests, known_verdicts,
   hygiene); preflight-readme exit 0.
+
+### Optimization: vocab_chunk_size 2048 -> 16384 (1.42x, numerics-safe)
+
+Before the full-scale comparison, arm3 was profiled. The refits are NOT the
+bottleneck (1.4 min of 20.0 over 5000 steps); the per-step chunked vocab CE is
+(2 passes x 32 chunks of 2048 = 64 small GEMMs/step vs BP's one full softmax).
+The chunking exists for the VRAM invariant (no [tokens,vocab] tensor survives a
+chunk) but at 1 seq x 128 tokens a bigger chunk is still tiny VRAM and exact-
+math identical (same logsumexp, fewer iterations).
+
+Benchmark (200-step bursts, no refit, pure forward throughput):
+
+| chunk | tok/s (cool) | train VRAM MiB | 200-step eval |
+|---:|---:|---:|---:|
+| 2048 (old) | 698 | 467 | 8.969 |
+| 8192 | 863 | 467 | 8.966 |
+| 16384 | 960 | 467 | 8.967 |
+| 32768 | 977 | 498 | 8.966 |
+
+16384 is the knee (32768 barely helps, +1.8%, for +31 MiB). Re-validated at the
+full 5000 steps, both seeds, because the per-step float logsumexp-reduction-
+order difference could accumulate:
+
+| | chunk 2048 | chunk 16384 |
+|---|---:|---:|
+| seed 1 eval | 6.610 | 6.645 |
+| seed 2 eval | 6.774 | 6.741 |
+| 2-seed mean | 6.692 | 6.693 |
+| time / seed | 20.0 min | 14.1 min (1.42x) |
+| flip / invariants | hold | hold |
+
+The 2-seed mean is identical (6.693 vs 6.692) -- the float-accumulation concern
+did not materialize over 5000 steps. 16384 is adopted as the canonical arm3
+config (run_exp125_arm3_refit500_chunk16384_promote.ps1). No numerics change,
+no gate widened, VRAM unchanged (477.9 MiB steady-state).
+
+## Arm 4 (preregistration): PRISM-style refit amortization -- branch exp125-arm4-prism-refit
+
+Arm-3 is the frozen promoted baseline; arm 4 is an optimization arm on a new
+branch. Arm-3 works (eval 6.69, gap 1.47) but pays a periodic bounded-BP refit
+every 500 steps (steady-state 478 MiB, refit-transient 921 MiB, ~1.4 min of the
+14.1 min/5000-step run). The PRISM-style idea: learn a cheap proxy that
+approximates the refit correction `Delta M_l ~= M_l^{true-refit} - M_l^t`, so
+fewer real BP refits are needed. Predictor targets LOW-RANK corrections
+(`Delta M_l ~= sum_r g_lr u_lr v_lr^T`, rank R in {1,2,4}), not full dense
+matrices. Teacher = real refits (distillation); student = the proxy.
+
+Phased, no-risk-first (each phase gated before the next):
+
+- **Phase 1a (diagnostic, this run):** instrument arm-3 to dump
+  (features, M_before, M_after) at each refit, then offline-analyze: (1) SVD
+  effective rank of each layer's refit delta (is it low-rank at all?),
+  (2) consecutive-delta cosine (is the correction direction stable across
+  refits?), (3) leave-one-out mean-delta predictor cosine (does a trivial
+  constant proxy already work?). Decides whether a features->low-rank predictor
+  is viable BEFORE building one.
+- **Phase 1b (predictor):** if 1a shows signal, train features -> low-rank-delta
+  (fixed SVD basis per layer, ridge on the R*R coeffs), leave-one-out cosine.
+- **Phase 2 (assisted):** proxy correction every 100 steps + real refit every
+  500. Gate: eval <= 6.69 + 0.1, steady VRAM <= 500, tok/s not worse, flip in
+  band, no NaN.
+- **Phase 3 (reduce):** real refit every 1000-2000 + proxy. Gate: eval <= 6.8,
+  tok/s improves, fewer refit peaks, steady VRAM ~478.
+- **Phase 4 (no periodic BP):** warmup only + proxy. The "true no-BP after init"
+  version.
+
+Phase 1 gate (cosine of predicted vs true refit delta): mean cosine > 0.3
+useful, > 0.5 promising; deep qkv cosine improving on arm-2's partial fit is the
+key open question. Kill-if deltas are full-rank and direction-unstable (no cheap
+proxy can work). Quantizer untouched; no arm-3 gate widened; arm-3 branch is not
+modified. The proxy is offline-trained/frozen (distillation), preserving the
+no-BP training invariants (no autograd/optimizer state at training time); online
+proxy training is a Phase-4 question.
+
+### Phase 1a result: KILL -- the refit deltas are full-rank and oscillating
+
+Instrumented arm-3 (chunk 16384, seed 1, 5000 steps, 9 refits) dumped
+(features, M_before, M_after) at each refit; the run reproduced the arm-3
+Promote exactly (eval 6.645, flip 1.22e-4 -- instrumentation is behavior-
+preserving). Offline diagnostic (`arm4_phase1a_analyze.py`) over 9 refits x 19
+layers:
+
+| layer group | top-1 energy | top-4 energy | top-16 energy | consec cosine | LOO-mean cosine |
+|---|---:|---:|---:|---:|---:|
+| deep qkv (4 layers) | 0.12-0.18 | 0.30-0.38 | 0.57-0.67 | -0.49 | -0.60 |
+| attn.out / mlp (15 layers) | 0.02-0.03 | 0.06-0.11 | 0.19-0.35 | -0.41 to -0.47 | -0.39 to -0.55 |
+| OVERALL (19) | -- | -- | -- | -0.45 | -0.49 |
+
+Three findings, all uniform across the 19 layers (so structural, not sample
+noise despite n=9):
+1. Deltas are NOT low-rank. Top-4 singular-value energy is only 0.06-0.38; the
+   PRISM proxy needs rank 1/2/4 to capture most energy, but 4 ranks capture
+   <=38%. Even top-16 reaches only 0.57-0.67 on the best (qkv) layers. The
+   low-rank-correction hypothesis fails.
+2. Consecutive-delta cosine is ~-0.45 -- the correction direction FLIPS between
+   refits. Not noise (noise ~= 0): systematic anti-correlation. The refit
+   over-corrects and the next refit bounces back (body update moves the model,
+   refit re-anchors, body update moves it the other way).
+3. LOO mean-predictor cosine is ~-0.49 -- a constant proxy is WORSE THAN ZERO;
+   it would actively hurt.
+
+Verdict: **KILL (arm 4, Phase 1a).** The preregistered kill-if is met (full-rank
+AND direction-unstable). The PRISM-style low-rank proxy assumes iterative
+corrections converge along a stable low-rank direction; arm-3's refits oscillate
+around a moving target instead. No features->low-rank predictor (Phase 1b) can
+plausibly clear the >0.3 gate when the mean predictor is at -0.49 and the deltas
+need >16 ranks -- running it would go against the preregistered kill condition.
+Phases 2-4 not pursued; arm-3 stays the promoted baseline.
+
+The oscillation finding is a separate, genuine observation (not a proxy signal):
+arm-3's refit loop has too much gain and bounces. A momentum/oscillation model
+(predict D_{k+1} ~= -c * D_k) is a DIFFERENT idea than the PRISM low-rank proxy
+-- it would carry the previous delta as state, not predict a low-rank correction
+from layer stats, and the deltas are full-rank so there is no cheap low-rank win
+either way. Left as a noted observation, not pursued under arm 4.

@@ -851,6 +851,7 @@ def train_pretrain_fprm_nobp_hard(
     feedback_refit_interval: int = 0,
     feedback_refit_steps: int = 0,
     feedback_refit_ridge: float = 1e-3,
+    refit_log_dir: Path | None = None,
     checkpoint_path: Path | None = None,
     checkpoint_interval: int = 0,
     resume: bool = False,
@@ -970,6 +971,10 @@ def train_pretrain_fprm_nobp_hard(
                     steady_state_peak_bytes, torch.cuda.max_memory_allocated()
                 )
                 torch.cuda.reset_peak_memory_stats()
+            m_before = {
+                name: matrix.detach().clone().cpu()
+                for name, matrix in feedback_matrices.items()
+            }
             _refit_feedback_matrices(
                 model,
                 batch_fn=batch_fn,
@@ -981,6 +986,31 @@ def train_pretrain_fprm_nobp_hard(
                 ridge=feedback_refit_ridge,
                 step_offset=step + 1,
             )
+            if refit_log_dir is not None and m_before:
+                m_after = {
+                    name: matrix.detach().clone().cpu()
+                    for name, matrix in feedback_matrices.items()
+                }
+                features = {
+                    "step": step + 1,
+                    "steps_since_refit": feedback_refit_interval,
+                    "loss": float(last_step_metrics.loss.cpu()),
+                    "mean_residual": last_step_metrics.mean_residual,
+                    "ternary_flip_rate": last_step_metrics.ternary_flip_rate,
+                    "core_update_norm": last_step_metrics.core_update_norm,
+                    "hidden_feedback_norm": last_step_metrics.hidden_feedback_norm,
+                    "vocab_update_norm": last_step_metrics.vocab_update_norm,
+                    "requantization_delta_norm": last_step_metrics.requantization_delta_norm,
+                    "master_weight_norm": last_step_metrics.master_weight_norm,
+                    "iterations": last_step_metrics.iterations,
+                    "halt_rate": last_step_metrics.halt_rate,
+                }
+                refit_log_dir.mkdir(parents=True, exist_ok=True)
+                torch.save(
+                    {"step": step + 1, "features": features,
+                     "M_before": m_before, "M_after": m_after},
+                    refit_log_dir / f"refit_step{step + 1:05d}.pt",
+                )
             if device.type == "cuda":
                 refit_peak_bytes = max(
                     refit_peak_bytes, torch.cuda.max_memory_allocated()
