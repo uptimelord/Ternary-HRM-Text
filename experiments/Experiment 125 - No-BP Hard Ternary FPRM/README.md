@@ -657,8 +657,12 @@ order difference could accumulate:
 | time / seed | 20.0 min | 14.1 min (1.42x) |
 | flip / invariants | hold | hold |
 
-The 2-seed mean is identical (6.693 vs 6.692) -- the float-accumulation concern
-did not materialize over 5000 steps. 16384 is adopted as the canonical arm3
+The per-seed eval shifts +/-0.035 (seed 1: 6.610 -> 6.645, seed 2: 6.774 ->
+6.741), flipping sign across seeds so the 2-seed mean is coincidentally
+identical (6.692 vs 6.693). The stronger evidence is the step-by-step training
+trajectory, which is identical within float reduction-order noise (max 0.060
+per step, signs flipping -- 32 chunks vs 4 chunks sum the logsumexp in different
+orders, not a systematic drift). 16384 is adopted as the canonical arm3
 config (run_exp125_arm3_refit500_chunk16384_promote.ps1). No numerics change,
 no gate widened, VRAM unchanged (477.9 MiB steady-state).
 
@@ -790,11 +794,16 @@ state, hard step 0, steady VRAM 478 MiB, no NaN).
 | 0.3 | 6.867 | +0.222 (worse) |
 
 Monotonic: more damping = more lag = worse eval. None beat the 6.5 Promote line;
-alpha=0.5 and 0.3 clear the Kill-if (>= 6.6). The damping works mechanically
-(smoother matrix trajectory) but the oscillation is NOT hurting the final eval
--- it washes out by step 5000, and the EMA blend just adds feedback staleness.
-Arm-3's hard-replace (alpha=1.0) is optimal; the bounce is mid-training noise,
-not a loss bottleneck.
+alpha=0.5 and 0.3 clear the Kill-if (>= 6.6). Damping the matrix bounce does NOT
+smooth the training-loss bounce: same chunk (16384), same seed, same logging,
+alpha=1.0 vs 0.5 give near-identical loss trajectories (range 2.68 vs 2.51; lows
+and highs land at the same steps). So the visible loss jitter is minibatch
+variance -- each step sees a different sequence, as in any SGD-ish training and
+as observed in exp123 -- NOT the refit matrix oscillation. The arm-4 Phase-1a
+matrix-bounce (consecutive-delta cosine ~ -0.45) is a real matrix-trajectory
+phenomenon but it does not visibly drive the loss bounce. Arm-3's hard-replace
+(alpha=1.0) is optimal; the eval (4-batch, no-update average) trends down
+cleanly to 6.69 regardless, so the bounce is benign for the final state.
 
 Verdict: **KILL (arm 5).** Clean negative result, exactly as the preregistration
 anticipated. No seed 2 run (the trend is monotonic; a second seed will not
