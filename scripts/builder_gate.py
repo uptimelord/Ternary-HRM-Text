@@ -140,9 +140,7 @@ def check_guard_rail(files: list[Path]) -> CheckResult:
 
     py = [f for f in files if f.suffix == ".py" and f.exists()
           and "scripts" not in f.resolve().parts          # don't scan the scanners
-          and "tests" not in f.resolve().parts            # tests reference leaks on purpose
-          and "schema" not in str(f).lower()              # data generators legitimately mention train/heldout
-          and "multidomain" not in str(f).lower()]
+          and "tests" not in f.resolve().parts]            # tests reference leaks on purpose
     suspects = []
     train_ctx = re.compile(r"\b(train|sft|fit|ingest)\b", re.I)
     heldout_ref = re.compile(r"held[_-]?out|heldout_|frozen_arithmetic_200|reporting[_-]?only", re.I)
