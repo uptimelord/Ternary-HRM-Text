@@ -811,3 +811,86 @@ reverse a +0.071 / +0.222 regression). Arm-3 stays the promoted baseline. The
 oscillation observation from arm-4 Phase-1a is real (consecutive-delta cosine
 ~-0.45) but benign for the final eval -- it is a training-dynamics curiosity,
 not a lever. Phases/gates not widened; quantizer untouched.
+
+## Arm 6 (preregistration): deep-layer fit via composed feedback -- branch exp125-arm6-deep-fit
+
+The arm-2 fit residuals exposed the structural source of the ~1.47-nat BP gap:
+shallow output-near layers capture ~88% of the gradient direction (residual
+0.34), deep qkv layers only ~28% (residual 0.85). A single free linear map
+H -> out_l cannot represent a 4-layer-deep nonlinear chain rule. Confirmed a
+CAPACITY limit (not sample count): a 200-step warmup (10x samples) left the
+residuals FLAT-to-higher (qkv 0.83 -> 0.89; the 50-step fit was mildly
+overfitting), and across arm-3's 9 refits (5000 steps of forward adaptation) the
+qkv residual stayed 0.80-0.83, never dropping. More warmup/steps/refits will
+not help; the fix must be a composed/structured M.
+
+Question: can a depth-aware composed feedback matrix close the deep-qkv
+residual (and the BP gap) while keeping the no-BP invariants?
+
+Mechanism: transpose-derived composed feedback (DFA-T). Instead of a free M_l
+fitted head-error -> grad_l (one hop, blind to structure), DERIVE M_l from the
+forward weights' transposes chained along the actual forward path (tape_reader ->
+conv -> 4x[attn+mlp] -> tape_writer -> head): a linear approximation of the true
+chain rule. Uses the existing ternary weights (already in memory), no fitting,
+no samples, no autograd -- a fixed-form operation. Periodic re-derivation (like
+arm-3's refit) is closed-form transpose+matmul, no BP. The nonlinearity gap
+(softmax in attention, GELU in MLP) is the known approximation cost.
+
+Phase 1 (diagnostic, FREE -- no training run): during a warmup that captures the
+true BP grads, compute the transpose-chain residual per layer and compare to the
+fitted-free-matrix residual. Gate to proceed to a training run: transpose-chain
+residual < fitted residual for the deep qkv layers (i.e. structural composition
+beats free fitting where it matters). Kill-if transpose-chain residual >=
+fitted for deep layers (the nonlinearity gap dominates; transpose composition
+does not help, need a different composition or a nonlinear predictor).
+
+Phase 2 (training run, only if Phase 1 passes): DFA-T feedback, 5000 steps, both
+seeds, periodic transpose re-derivation. Promote-if: both seeds eval < 6.3
+(beats arm-3 6.69 by > 0.39, addressing the capacity limit), flip in [1e-4,1e-2],
+steady VRAM <= 600 MiB, no training-time autograd, no optimizer state, hard step
+0, no NaN. Kill-if eval >= 6.6 or any invariant breaks.
+
+Quantizer untouched; no arm-3 gate widened; arm-3 branch not modified. The
+transpose derivation is closed-form (transpose+matmul on existing weights), so
+the no-BP invariants hold (no autograd/optimizer state at training time).
+
+### Phase 1 result: KILL -- the deep-fit ceiling is a NONLINEARITY limit, not composition
+
+Ran the free diagnostic (`arm6_phase1_diagnostic.py`, no training run): captured
+true BP grads during a 50-step warmup, then per layer compared the free-fit
+residual (current arm-2/3 mechanism) to the transpose-chain residual.
+
+| layer group | free_fit | transpose | winner |
+|---|---:|---:|---|
+| tape_reader/writer (shallow) | 0.37-0.68 | 0.99-2.11 | free_fit |
+| deep qkv (4 layers) | 0.83-0.86 | 54-266 | free_fit |
+| other body (attn.out/mlp) | 0.37-0.70 | 5.5-39 | free_fit |
+
+Transpose-chain is catastrophically worse (deep qkv mean 135.6 vs free_fit 0.849;
+0/4 deep qkv improved). Two compounding reasons, both real: (1) AMPLIFICATION --
+chaining 4+ ternary weight transposes compounds the mean-abs scale
+multiplicatively (~scale^8), exploding the prediction norm to hundreds of times
+the target (ridge-controlled free fit does not amplify); (2) NONLINEARITY -- the
+chain ignores softmax (attention) and GELU (MLP); for qkv the V-only linear
+approximation is terrible, and no linear approx fixes a grad flowing through a
+softmax.
+
+The decisive insight: the deep-qkv ceiling (0.85) is a NONLINEARITY limit, not a
+composition limit. The free fit's 0.85 is actually a GOOD linear fit -- the best
+any linear map can do. A composed LINEAR map is worse (amplification +
+nonlinearity gap), not better. This also explains why DFA uses RANDOM (not
+transpose) feedback in the literature: random projection is more stable than
+chained transposes for deep nonlinear nets.
+
+Verdict: **KILL (arm 6, Phase 1).** Transpose-derived linear composition does
+not beat the free fit on any layer; the preregistered kill-if (transpose >=
+free_fit for deep qkv) is met (0/4). Phase 2 not pursued; arm-3 stays the
+promoted baseline.
+
+Implication for the remaining BP gap: beating the deep-qkv 0.85 residual
+requires a NONLINEAR feedback predictor (e.g. a small offline-trained MLP
+mapping hidden_error -> grad_l, frozen at training time to preserve the no-BP
+invariants). That is a heavier, separate direction -- not a closed-form fix --
+and is left as a noted option, not pursued under arm 6. The cheap linear
+approaches (more samples: Killed by the capacity diagnostic; composed
+transpose: Killed here) are both ruled out.
