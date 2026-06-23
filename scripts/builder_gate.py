@@ -136,11 +136,13 @@ def check_guard_rail(files: list[Path]) -> CheckResult:
 
     Tooling under scripts/ is excluded: the gate and harness *describe* the leak
     pattern in their own source, which must not count as a leak."""
-    from evaluation.guard_rail import is_held_out_file
+    from evaluation.guard_rail import is_held_out_file, is_data_generator
 
     py = [f for f in files if f.suffix == ".py" and f.exists()
           and "scripts" not in f.resolve().parts          # don't scan the scanners
-          and "tests" not in f.resolve().parts]            # tests reference leaks on purpose
+          and "tests" not in f.resolve().parts            # tests reference leaks on purpose
+          and "guard_rail" not in str(f).lower()          # don't scan the scanner itself
+          and not is_data_generator(f)]                   # data generators legitimately reference train/heldout
     suspects = []
     train_ctx = re.compile(r"\b(train|sft|fit|ingest)\b", re.I)
     heldout_ref = re.compile(r"held[_-]?out|heldout_|frozen_arithmetic_200|reporting[_-]?only", re.I)

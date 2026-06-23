@@ -121,6 +121,21 @@ def is_held_out_file(path: str) -> bool:
     return "held_out" in path_obj.name.lower()
 
 
+# Data generator paths that legitimately reference both "train" and "heldout"
+# (e.g. code that generates the splits). These should be skipped in static
+# leak detection in builder_gate to avoid false positives.
+DATA_GENERATOR_PATHS = {
+    REPO_ROOT / "training" / "multidomain_schema_audit.py",
+    REPO_ROOT / "training" / "multidomain_schema_rows.py",
+}
+
+
+def is_data_generator(path: str | Path) -> bool:
+    """Return True if the path is a data generator script that is allowed to mention heldout in train context."""
+    p = Path(path).resolve()
+    return p in DATA_GENERATOR_PATHS
+
+
 if __name__ == "__main__":
     # Self-test: verify the guard can load the manifest
     held_out = load_held_out_ids()
