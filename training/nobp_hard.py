@@ -607,6 +607,9 @@ def _nobp_checkpoint_payload(
     update_clip: float,
     spsa_epsilon: float,
     master_dtype: str,
+    feedback_refit_interval: int,
+    feedback_refit_steps: int,
+    feedback_refit_ridge: float,
     feedback_matrices: dict[str, torch.Tensor],
     last_loss: float,
     elapsed_s: float,
@@ -639,6 +642,9 @@ def _nobp_checkpoint_payload(
         "nobp_update_clip": update_clip,
         "spsa_epsilon": spsa_epsilon,
         "nobp_master_dtype": master_dtype,
+        "nobp_feedback_refit_interval": feedback_refit_interval,
+        "nobp_feedback_refit_steps": feedback_refit_steps,
+        "nobp_feedback_refit_ridge": feedback_refit_ridge,
         "torch_rng_state": torch.get_rng_state(),
         "cuda_rng_state_all": torch.cuda.get_rng_state_all() if device.type == "cuda" else None,
         "last_loss": last_loss,
@@ -680,6 +686,7 @@ def bp_warmup_seed_feedback(
     train_rule: str,
     bp_steps: int,
     ridge: float = 1e-3,
+    label: str = "warmup fit",
 ) -> dict[str, torch.Tensor]:
     """Bounded offline BP warmup to fit DFA feedback matrices by least squares.
 
@@ -771,12 +778,56 @@ def bp_warmup_seed_feedback(
             / max(1e-12, float(torch.linalg.norm(G).cpu()))
         )
         print(
-            f"warmup fit {name}: rel residual {rel_residual:.4f} "
+            f"{label} {name}: rel residual {rel_residual:.4f} "
             f"(0=perfect, 1=random guess)",
             flush=True,
         )
         matrices[name] = M.to(device)
     return matrices
+
+
+def _refit_feedback_matrices(
+    model: nn.Module,
+    *,
+    batch_fn: Callable[[int], dict[str, torch.Tensor]],
+    feedback_matrices: dict[str, torch.Tensor],
+    device: torch.device,
+    refit_steps: int,
+    train_rule: str,
+    bp_steps: int,
+    ridge: float,
+    step_offset: int,
+) -> None:
+    """Periodic bounded-BP refit of the DFA feedback matrices (arm 3).
+
+    Re-anchors the matrices to the CURRENT model weights: flips the model to
+    tequila/autograd mode, runs `refit_steps` forward+backward passes with NO
+    optimizer step (weights unchanged), ridge-least-squares-fits each matrix to
+    the fresh true-grad targets, then restores hard mode. Updates
+    `feedback_matrices` in place so the trainer's held reference stays valid.
+    No autograd graph, grad, or optimizer state survives past this call -- the
+    no-BP invariants hold between refits. The refit is a bounded transient (same
+    mechanism as the arm-2 warmup), not steady-state training.
+    """
+    for _name, module in named_ternary_modules(model):
+        module.ternary_ste_mode = "tequila"
+    for parameter in model.parameters():
+        parameter.requires_grad_(True)
+    try:
+        fresh = bp_warmup_seed_feedback(
+            model,
+            batch_fn=lambda i: batch_fn(step_offset + i),
+            device=device,
+            warmup_steps=refit_steps,
+            train_rule=train_rule,
+            bp_steps=bp_steps,
+            ridge=ridge,
+            label="refit fit",
+        )
+    finally:
+        configure_hard_ternary(model)
+    feedback_matrices.clear()
+    feedback_matrices.update(fresh)
 
 
 def train_pretrain_fprm_nobp_hard(
@@ -797,6 +848,9 @@ def train_pretrain_fprm_nobp_hard(
     master_dtype: str = "fp32",
     spsa_epsilon: float = 1e-3,
     feedback_matrices_seed: dict[str, torch.Tensor] | None = None,
+    feedback_refit_interval: int = 0,
+    feedback_refit_steps: int = 0,
+    feedback_refit_ridge: float = 1e-3,
     checkpoint_path: Path | None = None,
     checkpoint_interval: int = 0,
     resume: bool = False,
@@ -805,6 +859,12 @@ def train_pretrain_fprm_nobp_hard(
         raise ValueError("steps must be non-negative")
     if master_dtype not in ("fp32", "fp16"):
         raise ValueError(f"unsupported no-BP master dtype: {master_dtype}")
+    if feedback_refit_interval > 0 and feedback_refit_steps <= 0:
+        raise ValueError("feedback refit requires feedback_refit_steps > 0")
+    if feedback_refit_interval > 0 and train_rule == "nobp-head-hard":
+        raise ValueError(
+            "feedback refit requires a core train rule with body layers, not nobp-head-hard"
+        )
     configure_hard_ternary(model)
     feedback_matrices: dict[str, torch.Tensor] = (
         dict(feedback_matrices_seed) if feedback_matrices_seed else {}
@@ -817,6 +877,8 @@ def train_pretrain_fprm_nobp_hard(
     residual_sum = 0.0
     flip_rate_sum = 0.0
     last_step_metrics: NoBPStep | None = None
+    steady_state_peak_bytes = 0.0
+    refit_peak_bytes = 0.0
 
     if resume and checkpoint_path is not None and checkpoint_path.exists():
         payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
@@ -830,6 +892,9 @@ def train_pretrain_fprm_nobp_hard(
             "nobp_update_clip": update_clip,
             "spsa_epsilon": spsa_epsilon,
             "nobp_master_dtype": master_dtype,
+            "nobp_feedback_refit_interval": feedback_refit_interval,
+            "nobp_feedback_refit_steps": feedback_refit_steps,
+            "nobp_feedback_refit_ridge": feedback_refit_ridge,
         }
         mismatches = [
             f"{key}: saved={payload.get(key)!r} requested={value!r}"
@@ -894,6 +959,38 @@ def train_pretrain_fprm_nobp_hard(
                 f"flip={last_step_metrics.ternary_flip_rate:.6f}",
                 flush=True,
             )
+        if (
+            feedback_refit_interval > 0
+            and feedback_refit_steps > 0
+            and (step + 1) % feedback_refit_interval == 0
+            and (step + 1) < steps
+        ):
+            if device.type == "cuda":
+                steady_state_peak_bytes = max(
+                    steady_state_peak_bytes, torch.cuda.max_memory_allocated()
+                )
+                torch.cuda.reset_peak_memory_stats()
+            _refit_feedback_matrices(
+                model,
+                batch_fn=batch_fn,
+                feedback_matrices=feedback_matrices,
+                device=device,
+                refit_steps=feedback_refit_steps,
+                train_rule=train_rule,
+                bp_steps=bp_steps,
+                ridge=feedback_refit_ridge,
+                step_offset=step + 1,
+            )
+            if device.type == "cuda":
+                refit_peak_bytes = max(
+                    refit_peak_bytes, torch.cuda.max_memory_allocated()
+                )
+                torch.cuda.reset_peak_memory_stats()
+            print(
+                f"feedback refit at step {step + 1}/{steps}: "
+                f"{len(feedback_matrices)} matrices re-anchored to current weights",
+                flush=True,
+            )
         if checkpoint_path is not None and checkpoint_interval > 0 and (
             (step + 1) % checkpoint_interval == 0 or step + 1 == steps
         ):
@@ -909,6 +1006,9 @@ def train_pretrain_fprm_nobp_hard(
                 update_clip=update_clip,
                 spsa_epsilon=spsa_epsilon,
                 master_dtype=master_dtype,
+                feedback_refit_interval=feedback_refit_interval,
+                feedback_refit_steps=feedback_refit_steps,
+                feedback_refit_ridge=feedback_refit_ridge,
                 feedback_matrices=feedback_matrices,
                 last_loss=last_loss,
                 elapsed_s=elapsed,
@@ -922,12 +1022,18 @@ def train_pretrain_fprm_nobp_hard(
 
     if device.type == "cuda":
         torch.cuda.synchronize()
+        steady_state_peak_bytes = max(
+            steady_state_peak_bytes, torch.cuda.max_memory_allocated()
+        )
     elapsed = elapsed_before + time.perf_counter() - started
     divisor = max(1, steps)
+    overall_peak_bytes = max(steady_state_peak_bytes, refit_peak_bytes)
     return {
         "last_train_loss": last_loss,
         "elapsed_s": elapsed,
-        "peak_vram_mb": torch.cuda.max_memory_allocated() / (1024 * 1024) if device.type == "cuda" else 0.0,
+        "peak_vram_mb": overall_peak_bytes / (1024 * 1024) if device.type == "cuda" else 0.0,
+        "steady_state_peak_vram_mb": steady_state_peak_bytes / (1024 * 1024) if device.type == "cuda" else 0.0,
+        "refit_peak_vram_mb": refit_peak_bytes / (1024 * 1024) if device.type == "cuda" else 0.0,
         "iteration_counts": iteration_counts,
         "halt_rate": halt_rate_sum / divisor,
         "mean_final_residual": residual_sum / divisor,

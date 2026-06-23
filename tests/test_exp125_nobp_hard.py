@@ -500,6 +500,59 @@ def test_bp_warmup_seeds_feedback_without_mutating_weights_or_lingering_grad() -
     assert moved  # at least one body layer updated via the seeded matrices
 
 
+def test_feedback_refit_re_anchors_matrices_and_restores_hard_invariants() -> None:
+    """Arm 3: periodic refit re-fits matrices to the CURRENT (drifted) weights
+    and leaves the model back in hard mode with no lingering grad/autograd state.
+    """
+    nobp = _nobp_module()
+    model = _tiny_fprm()  # tequila/autograd mode for the initial warmup
+    seed = nobp.bp_warmup_seed_feedback(
+        model,
+        batch_fn=lambda _step: _tiny_batch(),
+        device=torch.device("cpu"),
+        warmup_steps=12,
+        train_rule="nobp-dfa-full-hard",
+        bp_steps=1,
+        ridge=1e-3,
+    )
+    matrices = dict(seed)
+    seed_snapshot = {name: matrix.clone() for name, matrix in matrices.items()}
+
+    # Put the model in hard mode (as it is during no-BP training), then simulate
+    # training drift by nudging a body layer's latent master weight.
+    nobp.configure_hard_ternary(model)
+    body_modules = nobp.named_ternary_modules(model)
+    drift_target = body_modules[-1][1]
+    with torch.no_grad():
+        drift_target.weight.add_(0.05)
+
+    nobp._refit_feedback_matrices(
+        model,
+        batch_fn=lambda _step: _tiny_batch(),
+        feedback_matrices=matrices,
+        device=torch.device("cpu"),
+        refit_steps=12,
+        train_rule="nobp-dfa-full-hard",
+        bp_steps=1,
+        ridge=1e-3,
+        step_offset=0,
+    )
+
+    # Refit re-anchored to the drifted model: at least one matrix changed.
+    assert set(matrices) == set(seed_snapshot)
+    assert any(
+        not torch.equal(matrices[name], seed_snapshot[name]) for name in matrices
+    )
+    for matrix in matrices.values():
+        assert torch.isfinite(matrix).all()
+
+    # No-cheating line restored: hard mode, no grad, no requires_grad.
+    assert all(parameter.grad is None for parameter in model.parameters())
+    assert all(parameter.requires_grad is False for parameter in model.parameters())
+    for _name, module in nobp.named_ternary_modules(model):
+        assert module.ternary_ste_mode == "standard"
+
+
 def test_spsa_hard_runs_without_autograd_and_updates_tied_master(monkeypatch) -> None:
     nobp = _nobp_module()
     model = _tiny_fprm()

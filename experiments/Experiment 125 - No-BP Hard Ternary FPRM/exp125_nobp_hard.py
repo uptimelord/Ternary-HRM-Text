@@ -92,6 +92,14 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--nobp-warmup-steps", type=int, default=0)
     parser.add_argument("--nobp-warmup-ridge", type=float, default=1e-3)
+    parser.add_argument(
+        "--nobp-refit-interval",
+        type=int,
+        default=0,
+        help="arm 3: re-fit DFA feedback matrices every K no-BP steps via a bounded BP mini-batch (0 = off)",
+    )
+    parser.add_argument("--nobp-refit-steps", type=int, default=0)
+    parser.add_argument("--nobp-refit-ridge", type=float, default=1e-3)
     parser.add_argument("--dense-top-k", type=int, default=0)
     parser.add_argument("--pretrain-steps", type=int, default=1000)
     parser.add_argument("--export-calibration-steps", type=int, default=0)
@@ -279,6 +287,9 @@ def main() -> int:
             master_dtype=args.nobp_master_dtype,
             spsa_epsilon=args.spsa_epsilon,
             feedback_matrices_seed=feedback_seed,
+            feedback_refit_interval=args.nobp_refit_interval,
+            feedback_refit_steps=args.nobp_refit_steps,
+            feedback_refit_ridge=args.nobp_refit_ridge,
             checkpoint_path=args.output_dir / "pretrain_progress.pt",
             checkpoint_interval=args.checkpoint_interval,
             resume=args.resume,
