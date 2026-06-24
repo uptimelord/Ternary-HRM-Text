@@ -602,7 +602,16 @@ class GraphedNOMAD:
     ) -> tuple[Tensor, list[Tensor], dict[str, Tensor]]:
         self.static_input.copy_(input_ids)
         self.graph.replay()
-        return self.static_hidden, self.static_inter, self.static_acts
+        # Clone outputs: the static_* buffers are OVERWRITTEN on the next replay,
+        # so returning them directly aliases every call's output to the last
+        # call's data. Callers that cache (Phase 1B hidden/memory caches) would
+        # silently corrupt; cloning here makes the graph behave like the eager
+        # path (fresh tensors each call). Cheap vs the replay.
+        return (
+            self.static_hidden.clone(),
+            [t.clone() for t in self.static_inter],
+            {k: v.clone() for k, v in self.static_acts.items()},
+        )
 
 
 # ---------------------------------------------------------------------------

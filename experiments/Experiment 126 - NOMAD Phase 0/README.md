@@ -304,3 +304,61 @@ projection. A faint signal leaks through (exact retrieval: mean rank 7025 →
 frozen core.
 
 See `results_phase1a_memory_probe.md` / `.json`.
+
+## Phase 1B: train memory adapter on frozen 0C core
+
+Scope (per spec): freeze NOMAD core + freeze vocab head (Delta-theta-core=0,
+Delta-theta-head=0), exact retrieval only (compression DISABLED — it hurt in
+1A), train ONLY a small adapter `A` ([D,D] = 65k params) + scalar gate `gamma`.
+
+```
+h   = frozen_core(x)          # 0C hidden (memory-off)
+m   = exact_retrieval(prefix)  # [B, D] mean-pooled top-K chunk emb
+h'  = h + gamma * A @ m        # adapter adds a memory delta
+z'  = W_o @ h'                 # logits via the FROZEN tied head
+target_delta = alpha * W_y     # nudge h toward the correct-token row
+A <- A + eta * ((target_delta - A m) / (||m||^2 + eps)) m^T   (local LMS, no BP)
+```
+
+### Bug fixed during 1B (graph output aliasing)
+
+`GraphedNOMAD.__call__` returned the persistent `static_hidden` buffer
+without cloning — every call aliased the same memory, so caching graph outputs
+across steps silently corrupted (every cached entry became the last call's
+data). Phase 0 was safe (it consumed hidden immediately), but Phase 1B's hidden
+/ memory caches exposed it (`off-trained` appeared to leak when it can't).
+Fixed by cloning in the wrapper; regression test added. This is the kind of
+footgun that would have poisoned every later caching result.
+
+### Results (300 steps, eta=1e-2, alpha=1.0, gamma_init=0.1)
+
+| test | loss | top1 | top5 | top10 | mean_rank | ece |
+|------|------|------|------|-------|-----------|-----|
+| off (adapter init) | 7.9450 | 0.1533 | 0.2949 | 0.3738 | 7025.1 | 0.1136 |
+| off (adapter trained) | 7.9450 | 0.1533 | 0.2949 | 0.3738 | 7025.1 | 0.1136 |
+| on relevant memory | 7.9400 | 0.1533 | 0.2949 | 0.3735 | 7023.1 | 0.1132 |
+| on distractor | 7.9451 | 0.1533 | 0.2954 | 0.3738 | 7025.8 | 0.1136 |
+
+Off-trained == off-init exactly (adapter is a no-op on m=0, confirmed). On-relevant
+vs off: top1/top5 flat (0.0000), mean rank 7025 -> 7023 (-2). New-doc insertion:
+retrieval_hit=True on 4/4, top5 flat, rank -3 to -27. Promote: 1/4 discrimination
+checks + distractor safe.
+
+### Phase 1B verdict (300 steps): not yet promoted, but clean
+
+The adapter trained (|u| decayed 0.0020 -> 0.0003, gamma 0.100 -> 0.1015 —
+converging) and the direction is right (mean rank improved, distractor safe,
+no off-path leak), but the effect is ~10x smaller than 1A's retrieval-only
+rank gain (−2 vs −66). 300 steps is likely undertrained for a 65k-param
+adapter, AND the per-sequence (broadcast) memory read is a weak signal: every
+position gets the same `m`, so the adapter can only apply a constant per-sequence
+nudge. The LMS target `alpha * W_y` is also crude — it pushes toward one token
+row regardless of context.
+
+**Next levers (not yet run):** (a) more steps (1000–2000, the adapter is still
+converging); (b) per-position retrieval instead of per-sequence broadcast; (c) a
+richer target (contrastive: `W_y - mean(negative rows)`) instead of bare `W_y`.
+Phase 1B is not a KILL — it is undertrained with a known weak signal, and the
+mechanics are verified correct (no leak, right direction, distractor-safe).
+
+See `results_phase1b_adapter.md` / `.json`.

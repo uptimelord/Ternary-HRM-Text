@@ -18,6 +18,7 @@ import nomad_model  # noqa: E402
 import nomad_memory  # noqa: E402
 import nomad_learning  # noqa: E402
 import phase1a_memory_probe as phase1a  # noqa: E402
+import phase1b_adapter_train as phase1b  # noqa: E402
 from models.layers import TernaryLinear158Init  # noqa: E402
 
 
@@ -778,6 +779,45 @@ class TestPhase1AProbe:
         correct = full.gather(1, labels.unsqueeze(-1)).squeeze(-1)
         full_rank = (full > correct.unsqueeze(-1)).sum(dim=-1) + 1
         assert abs(m["mean_rank"] - full_rank.float().mean().item()) < 1e-4
+
+    def test_graph_output_not_aliased_across_calls(self):
+        """Graph wrapper must clone outputs -- the static buffer is reused.
+
+        Regression guard for the Phase 1B cache-corruption bug: graph(inp1)
+        and graph(inp2) returned the same data_ptr, so caching the first
+        output silently overwrote it with the second call's data. The wrapper
+        now clones on return.
+        """
+        if not torch.cuda.is_available():
+            pytest.skip("requires CUDA")
+        model = nomad_model.build_nomad_model(TINY_CONFIG, hard=True).to("cuda")
+        inp1 = torch.randint(0, 256, (2, 8), device="cuda")
+        inp2 = torch.randint(0, 256, (2, 8), device="cuda")
+        g = model.get_graph(2, 8, torch.device("cuda"))
+        h1 = g(inp1)[0]
+        h2 = g(inp2)[0]
+        # different inputs -> different hidden (and NOT aliased to same buffer)
+        assert h1.data_ptr() != h2.data_ptr()
+        assert not torch.allclose(h1, h2, atol=1e-6)
+
+    def test_memory_adapter_noop_on_zero_memory(self):
+        """Adapter(h, zeros) == h regardless of A/gamma (Phase 1B contract).
+
+        The off-baseline must be invariant to adapter training: with m=0 the
+        adapter is a no-op, so memory-off eval cannot change as A trains.
+        """
+        adapter = phase1a.MemoryAdapter if hasattr(phase1a, "MemoryAdapter") else None
+        # MemoryAdapter lives in phase1b; import lazily
+        import phase1b_adapter_train as p1b
+        a = p1b.MemoryAdapter(32, gamma=0.1)
+        with torch.no_grad():
+            a.A.add_(torch.randn(32, 32) * 0.5)  # train A arbitrarily
+            a.gamma.add_(0.5)
+        h = torch.randn(5, 32)
+        m = torch.zeros_like(h)
+        with torch.no_grad():
+            h2 = a(h, m)
+        assert torch.allclose(h2, h, atol=1e-6), "adapter leaked into off-path"
 
     def test_build_memory_reads_shape(self):
         """Per-sequence retrieval broadcasts to [B, T, D]."""
