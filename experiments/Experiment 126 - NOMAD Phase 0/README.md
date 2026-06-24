@@ -65,6 +65,24 @@ tokens → embedding → [gated recurrent body] → fixed-point reasoning loop �
 | No activation tape | ✅ | Activations returned directly (no hooks) |
 | Wall-clock | minutes/1k | ~6 min/1k at 0C config (was ~40 min before fixes) |
 
+### VRAM across phases (4 GB envelope)
+
+| Phase | Peak VRAM | What drives it |
+|-------|-----------|----------------|
+| 0A / 0B / 0C training | 448–487 MB | Position loop + fixed-point recurrence + shortlist head update (persistent training state) |
+| 0.5 saturation (0C 10k) | ~490 MB | same as 0C |
+| 1A retrieval probe | ~450 MB | Frozen-core forward + exact retrieval (retrieval is CPU-side) |
+| 1B-logit-bias eval | **2347 MB** | Full-vocab rank/top-k metric (O(N·V) over all 65536 rows) + dense `[N,V]` bias materialized one-at-a-time from the sparse cache (537 MB) |
+
+**Key point:** the 1B 2347 MB peak is an **eval-time diagnostic cost**, not
+persistent training state. Training-state memory stays small throughout (the
+trainable `trust` tensor is 0.3 MB; β is a scalar; the frozen model is 72 MB).
+The expensive part is the full-vocab rank/top-k evaluation that scores against
+all 65536 head rows to produce mean-rank/top-5/top-10 — a measurement choice,
+not a training requirement. The sparse `[N,V]` bias cache lives on CPU and is
+densified one tensor at a time on GPU (max 537 MB live), so caching 500 steps
+of bias does not grow GPU memory. All phases stay well under the 4 GB envelope.
+
 ## Compute fix (why the first design was wall-clock-infeasible)
 
 The original hot path used exact chunked CE over the full vocab (V=65536) every
