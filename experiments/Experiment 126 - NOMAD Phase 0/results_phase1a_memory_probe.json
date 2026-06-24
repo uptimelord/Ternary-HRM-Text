@@ -1,0 +1,163 @@
+{
+  "config": {
+    "hidden_size": 256,
+    "n_layers": 2,
+    "vocab_size": 65536,
+    "max_seq_len": 128,
+    "max_iters": 2,
+    "tau": 0.05,
+    "damping": 0.8,
+    "damping_decay": 0.9,
+    "patience": 2,
+    "min_damping": 0.01,
+    "fast_key_dim": 64,
+    "fast_decay": 0.95,
+    "fast_write_rate": 0.1
+  },
+  "args": {
+    "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_nomad_exp126\\seed1\\pretrain\\checkpoint_fp32.pt",
+    "tokens_path": "C:\\Users\\Dos\\Documents\\GRAM\\data_io\\data_laptop_hrm_slice\\tokens_flat.npy",
+    "tokenizer_path": "C:\\Users\\Dos\\Documents\\GRAM\\data_io\\trained_tokenizers\\bpe\\tokenizer.json",
+    "device": "auto",
+    "seed": 1,
+    "numseqs": 16,
+    "prefix_len": 64,
+    "causal_len": 64,
+    "vocab_size": 65536,
+    "vocab_chunk_size": 8192,
+    "eval_batches": 4,
+    "eval_fraction": 0.2,
+    "memory_top_k": 4,
+    "relevant_chars": 200000,
+    "distractor_chars": 200000,
+    "output": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\experiments\\Experiment 126 - NOMAD Phase 0\\results_phase1a_memory_probe.md"
+  },
+  "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_nomad_exp126\\seed1\\pretrain\\checkpoint_fp32.pt",
+  "tests": {
+    "baseline": {
+      "loss": 7.945024013519287,
+      "top1": 0.1533203125,
+      "top5": 0.294921875,
+      "top10": 0.373779296875,
+      "mean_rank": 7025.0810546875,
+      "median_rank": 35.5,
+      "ece": 0.11364134878942878,
+      "n_valid_total": 4096
+    },
+    "exact": {
+      "loss": 7.935974478721619,
+      "top1": 0.15234375,
+      "top5": 0.291259765625,
+      "top10": 0.374755859375,
+      "mean_rank": 6958.08154296875,
+      "median_rank": 35.5,
+      "ece": 0.11295893144256297,
+      "n_valid_total": 4096
+    },
+    "exact+compression": {
+      "loss": 7.991515874862671,
+      "top1": 0.148681640625,
+      "top5": 0.288818359375,
+      "top10": 0.370849609375,
+      "mean_rank": 7057.46630859375,
+      "median_rank": 34.75,
+      "ece": 0.11194278748837405,
+      "n_valid_total": 4096
+    },
+    "distractor": {
+      "loss": 7.961766242980957,
+      "top1": 0.150390625,
+      "top5": 0.291748046875,
+      "top10": 0.373046875,
+      "mean_rank": 6992.19091796875,
+      "median_rank": 36.0,
+      "ece": 0.11054340858765954,
+      "n_valid_total": 4096
+    }
+  },
+  "new_doc_insertion": [
+    {
+      "retrieval_hit": true,
+      "off_loss": 8.412839889526367,
+      "on_loss": 8.303979873657227,
+      "off_top5": 0.18897637724876404,
+      "on_top5": 0.17322835326194763,
+      "off_rank": 5191.1259765625,
+      "on_rank": 4828.1337890625
+    },
+    {
+      "retrieval_hit": true,
+      "off_loss": 8.836692810058594,
+      "on_loss": 8.830373764038086,
+      "off_top5": 0.11023622006177902,
+      "on_top5": 0.11023622006177902,
+      "off_rank": 8636.0234375,
+      "on_rank": 8591.1259765625
+    },
+    {
+      "retrieval_hit": true,
+      "off_loss": 7.144298553466797,
+      "on_loss": 7.186667442321777,
+      "off_top5": 0.4094488024711609,
+      "on_top5": 0.4173228442668915,
+      "off_rank": 6008.3544921875,
+      "on_rank": 6143.8974609375
+    },
+    {
+      "retrieval_hit": true,
+      "off_loss": 7.525576114654541,
+      "on_loss": 7.5387420654296875,
+      "off_top5": 0.4330708682537079,
+      "on_top5": 0.4173228442668915,
+      "off_rank": 6963.8896484375,
+      "on_rank": 6865.82666015625
+    }
+  ],
+  "promote_checks": {
+    "n_good": 2,
+    "n_total": 8,
+    "distractor_safe": true,
+    "details": [
+      {
+        "check": "exact.top1 up vs base",
+        "delta": -0.0009765625,
+        "good": false
+      },
+      {
+        "check": "exact.top5 up vs base",
+        "delta": -0.003662109375,
+        "good": false
+      },
+      {
+        "check": "exact.top10 up vs base",
+        "delta": 0.0009765625,
+        "good": true
+      },
+      {
+        "check": "exact.mean_rank down vs base",
+        "delta": -66.99951171875,
+        "good": true
+      },
+      {
+        "check": "exact+compression.top1 up vs base",
+        "delta": -0.004638671875,
+        "good": false
+      },
+      {
+        "check": "exact+compression.top5 up vs base",
+        "delta": -0.006103515625,
+        "good": false
+      },
+      {
+        "check": "exact+compression.top10 up vs base",
+        "delta": -0.0029296875,
+        "good": false
+      },
+      {
+        "check": "exact+compression.mean_rank down vs base",
+        "delta": 32.38525390625,
+        "good": false
+      }
+    ]
+  }
+}

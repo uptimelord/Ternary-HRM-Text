@@ -17,6 +17,7 @@ sys.path.insert(0, str(EXP126_DIR))
 import nomad_model  # noqa: E402
 import nomad_memory  # noqa: E402
 import nomad_learning  # noqa: E402
+import phase1a_memory_probe as phase1a  # noqa: E402
 from models.layers import TernaryLinear158Init  # noqa: E402
 
 
@@ -735,3 +736,68 @@ class TestIntegration:
         )
         assert eval_metrics["loss"] > 0
         assert "token_accuracy" in eval_metrics
+
+
+# ---------------------------------------------------------------------------
+# Phase 1A probe tests
+# ---------------------------------------------------------------------------
+
+
+class TestPhase1AProbe:
+    def test_chunked_topk_rank_loss_ece_ranges(self):
+        """Metric returns sane ranges: top-k in [0,1], rank in [1,V], loss ~ log V."""
+        torch.manual_seed(0)
+        N, D, V = 6, 8, 20
+        hidden = torch.randn(N, D)
+        labels = torch.randint(0, V, (N,))
+        labels[1] = -100  # ignored position
+        weight = torch.randn(V, D)
+        m = phase1a.chunked_topk_rank_loss_ece(
+            hidden, labels, weight, chunk_size=5, k=10, n_bins=5
+        )
+        assert m["n_valid"] == 5  # one ignored
+        assert 0.0 <= m["top1"] <= 1.0
+        assert 0.0 <= m["top5"] <= 1.0
+        assert 0.0 <= m["top10"] <= 1.0
+        assert 1.0 <= m["mean_rank"] <= V
+        assert 0.0 <= m["ece"] <= 1.0
+        assert m["loss"] > 0
+
+    def test_chunked_rank_matches_full(self):
+        """Chunked rank == full-vocab rank (correctness of the chunked count)."""
+        torch.manual_seed(1)
+        N, D, V = 5, 8, 30
+        hidden = torch.randn(N, D)
+        labels = torch.randint(0, V, (N,))
+        weight = torch.randn(V, D)
+        m = phase1a.chunked_topk_rank_loss_ece(
+            hidden, labels, weight, chunk_size=7, k=10, n_bins=5
+        )
+        # full-vocab rank for reference
+        full = torch.nn.functional.linear(hidden.float(), weight.float())
+        correct = full.gather(1, labels.unsqueeze(-1)).squeeze(-1)
+        full_rank = (full > correct.unsqueeze(-1)).sum(dim=-1) + 1
+        assert abs(m["mean_rank"] - full_rank.float().mean().item()) < 1e-4
+
+    def test_build_memory_reads_shape(self):
+        """Per-sequence retrieval broadcasts to [B, T, D]."""
+        model = nomad_model.build_nomad_model(TINY_CONFIG, hard=True)
+        from tokenizers import Tokenizer
+        from pathlib import Path
+        tok_path = Path(
+            "C:/Users/Dos/Documents/GRAM/data_io/trained_tokenizers/bpe/tokenizer.json"
+        )
+        if not tok_path.exists():
+            pytest.skip("tokenizer not available")
+        tok = Tokenizer.from_file(str(tok_path))
+        mem = nomad_memory.ExternalMemory(hidden_size=32, lambda_exact=1.0, lambda_gzip=0.0)
+        phase1a.ingest_text_with_tokens(
+            mem, "The capital of France is Paris. It is a city.", tok, chunk_id_prefix="t"
+        )
+        assert len(mem) > 0
+        inp = torch.randint(0, 256, (2, 8))
+        reads = phase1a.build_memory_reads(
+            model, mem, inp, tok, prefix_len=4, top_k=4, device=torch.device("cpu")
+        )
+        assert reads.shape == (2, 8, 32)
+
