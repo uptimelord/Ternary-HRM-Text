@@ -503,4 +503,26 @@ measurably improves (top5 up on 2/4, rank down on 4/4).
 not unstable is warranted; trust range includes a negative (-3.5, a token
 whose bias was learned to be inverted) — legal but watch for instability.
 
-See `results_phase1b_logit_bias.md` / `.json`.
+### 2-seed replication (seed 2, same config, no tuning)
+
+| metric (on-relevant vs off) | seed 1 | seed 2 | mean | spread |
+|------------------------------|--------|--------|------|--------|
+| top1 | +0.0007 | +0.0007 | +0.0007 | 0.0000 |
+| top5 | +0.0151 | +0.0151 | +0.0151 | 0.0000 |
+| top10 | +0.0154 | +0.0156 | +0.0155 | 0.0002 |
+| mean rank | -12.32 | -12.32 | -12.32 | 0.002 |
+| loss | -0.0772 | -0.0783 | -0.0778 | 0.001 |
+
+beta 1.2012 / 1.2023; trust mean 1.0402 / 1.0402, std 0.7468 / 0.7465. Both
+seeds: 5/5 discrimination checks pass, distractor safe, new-doc top5 improved
+2/4. Spread ~0 (far within the 2x noise floor 0.0406) — the +1.5% top5/top10
+gain is real and replicated, not seed luck. `eta_trust=4000` is stable across
+seeds (the aggressive-LR concern is answered: not unstable).
+
+**Phase 1B-logit-bias + trainable b_M: FORMALLY PROMOTED, 2-seed replicated.**
+Two seeds converged to essentially identical beta and trust distributions —
+the strongest replication. Frozen 0C core + frozen head, memory promotes
+retrieved facts, distractor-safe, +1.5% top5/top10.
+
+See `results_phase1b_logit_bias.md` / `.json` (seed 1) and
+`results_phase1b_logit_bias_seed2.md` / `.json`.

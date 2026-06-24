@@ -1,0 +1,131 @@
+{
+  "args": {
+    "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_nomad_exp126\\seed1\\pretrain\\checkpoint_fp32.pt",
+    "tokens_path": "C:\\Users\\Dos\\Documents\\GRAM\\data_io\\data_laptop_hrm_slice\\tokens_flat.npy",
+    "tokenizer_path": "C:\\Users\\Dos\\Documents\\GRAM\\data_io\\trained_tokenizers\\bpe\\tokenizer.json",
+    "device": "auto",
+    "seed": 2,
+    "numseqs": 16,
+    "prefix_len": 64,
+    "causal_len": 64,
+    "vocab_size": 65536,
+    "vocab_chunk_size": 8192,
+    "memory_top_k": 4,
+    "retrieval_mode": "per-position",
+    "query_window": 16,
+    "query_stride": 32,
+    "steps": 500,
+    "eta_beta": 1.0,
+    "beta_init": 0.0,
+    "train_trust": true,
+    "eta_trust": 4000.0,
+    "trust_init": 1.0,
+    "shortlist_size": 2048,
+    "neg_size": 512,
+    "log_interval": 50,
+    "eval_batches": 4,
+    "eval_fraction": 0.2,
+    "relevant_chars": 200000,
+    "distractor_chars": 200000,
+    "output": "experiments\\Experiment 126 - NOMAD Phase 0\\results_phase1b_logit_bias_seed2.md"
+  },
+  "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_nomad_exp126\\seed1\\pretrain\\checkpoint_fp32.pt",
+  "beta_trained": 1.2022757112863474,
+  "trust_stats": {
+    "mean": 1.0401556491851807,
+    "std": 0.7465310096740723,
+    "min": -3.5515198707580566,
+    "max": 44.142452239990234,
+    "n_nonzero": 13347
+  },
+  "results": {
+    "baseline_off": {
+      "loss": 7.945024013519287,
+      "top1": 0.1533203125,
+      "top5": 0.294921875,
+      "top10": 0.373779296875,
+      "mean_rank": 7025.0810546875,
+      "median_rank": 35.5,
+      "ece": 0.11364134878942878,
+      "n_valid_total": 4096
+    },
+    "on_relevant": {
+      "loss": 7.866690754890442,
+      "top1": 0.154052734375,
+      "top5": 0.31005859375,
+      "top10": 0.389404296875,
+      "mean_rank": 7012.7578125,
+      "median_rank": 33.25,
+      "ece": 0.11379031402475448,
+      "n_valid_total": 4096
+    },
+    "on_distractor": {
+      "loss": 7.943562865257263,
+      "top1": 0.1533203125,
+      "top5": 0.294677734375,
+      "top10": 0.37451171875,
+      "mean_rank": 7023.586669921875,
+      "median_rank": 35.5,
+      "ece": 0.11368303667018154,
+      "n_valid_total": 4096
+    },
+    "sanity_on_at_beta0": {
+      "loss": 7.945024013519287,
+      "top1": 0.1533203125,
+      "top5": 0.294921875,
+      "top10": 0.373779296875,
+      "mean_rank": 7025.0810546875,
+      "median_rank": 35.5,
+      "ece": 0.11364134878942878,
+      "n_valid_total": 4096
+    }
+  },
+  "new_doc_insertion": [
+    {
+      "retrieval_hit": true,
+      "ans_token": 50,
+      "off_loss": 8.412839889526367,
+      "on_loss": 8.32531452178955,
+      "off_top5": 0.18897637724876404,
+      "on_top5": 0.21259842813014984,
+      "off_rank": 5191.1259765625,
+      "on_rank": 5104.755859375
+    },
+    {
+      "retrieval_hit": true,
+      "ans_token": 468,
+      "off_loss": 8.836692810058594,
+      "on_loss": 8.573432922363281,
+      "off_top5": 0.11023622006177902,
+      "on_top5": 0.15748031437397003,
+      "off_rank": 8636.0234375,
+      "on_rank": 8226.275390625
+    },
+    {
+      "retrieval_hit": true,
+      "ans_token": 1777,
+      "off_loss": 7.144298553466797,
+      "on_loss": 7.107186794281006,
+      "off_top5": 0.4094488024711609,
+      "on_top5": 0.4094488024711609,
+      "off_rank": 6008.3544921875,
+      "on_rank": 5954.41748046875
+    },
+    {
+      "retrieval_hit": true,
+      "ans_token": 236,
+      "off_loss": 7.525576114654541,
+      "on_loss": 7.490053653717041,
+      "off_top5": 0.4330708682537079,
+      "on_top5": 0.4251968562602997,
+      "off_rank": 6963.8896484375,
+      "on_rank": 6844.44091796875
+    }
+  ],
+  "promote": {
+    "n_good": 5,
+    "n_total": 5,
+    "distractor_safe": true,
+    "new_doc_helped": 2
+  }
+}
