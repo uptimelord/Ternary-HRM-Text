@@ -386,3 +386,58 @@ when `lambda_gzip=0.0` — 2790 gzip calls per query, dominating retrieval cost.
 Fixed to skip when the weight is 0 (6× retrieval speedup; affects 1A too).
 
 See `results_phase1b_adapter.md` / `.json`.
+
+## Phase 1B-logit-bias: memory as a direct logit bias
+
+The linear adapter was KILLed as too weak a lever. This tests the lever the
+KILL pointed at -- add the memory signal DIRECTLY to the logits, bypassing the
+h -> W_o bottleneck:
+
+```
+z' = W_o @ h + beta * b_M          (frozen head + memory logit bias)
+b_M = aggregated token-freq dist over top-K retrieved chunks (decay-weighted,
+       normalized; sparse, vocab-size). Only beta (scalar) trains -- local LMS.
+```
+
+Core + head frozen (Delta-theta-core=0, Delta-theta-head=0). Exact retrieval
+only. Success criterion: memory promotes retrieved facts (new-doc QA) +
+distractor safety.
+
+### Results (500 steps, per-position retrieval stride=32, beta 0.0 -> 1.28)
+
+| test | loss | top1 | top5 | top10 | mean_rank | ece |
+|------|------|------|------|-------|-----------|-----|
+| baseline (off) | 7.9450 | 0.1533 | 0.2949 | 0.3738 | 7025.1 | 0.1136 |
+| on relevant (beta trained) | 7.9314 | 0.1538 | 0.2944 | 0.3743 | 7020.3 | 0.1132 |
+| on distractor (beta trained) | 7.9448 | 0.1533 | 0.2949 | 0.3738 | 7024.4 | 0.1136 |
+
+New-doc insertion (answer chunk in memory, Delta-theta=0 except beta): rank
+improved on 4/4 seqs (off -> on: 5191->5121, 8636->8287, 6008->5979, 6964->6855),
+loss down on 4/4. Sanity: on at beta=0 == off exactly (diff 0.0).
+
+### Phase 1B-logit-bias verdict: stronger than the adapter, distractor-safe,
+helps new-doc rank, but still below the promote bar
+
+- **beta learned a real value (1.28)** -- the gate opened, not stuck at 0.
+- **on-relevant: top1 +0.0005, top10 +0.0005, mean rank -4.8, loss -0.014.**
+  4/5 discrimination checks pass (only top5 slightly negative).
+- **Distractor safe** (loss -0.0002) -- beta correctly learned to ignore garbage.
+- **New-doc rank improved on all 4 seqs** (-29 to -349) where the linear adapter
+  moved nothing. The logit bias promotes the retrieved fact's tokens directly.
+
+Still below the 2% noise floor on top-k: a scalar beta * a FIXED token-freq b_M
+is a weak instance of the logit-bias lever. The mechanism is verified correct
+(no-op at beta=0, distractor-safe, new-doc rank down); the magnitude is the open
+question. Next levers (not run): trainable b_M (per-chunk/per-token weights, not
+just scalar beta), a sharper bias (top-1 of retrieved dist instead of soft freq),
+or position-specific beta.
+
+### Bugs fixed during 1B-logit-bias
+
+- **Shortlist excluded memory's candidate tokens** -> beta got grad 0 and never
+  learned. Fixed: S_t now includes the top-bias tokens (memory's candidates),
+  the analogue of 1A's prev-preds hard negatives for the logit-bias path.
+- **Dense [N,V] bias cache OOM'd** (500 tensors = ~250 GB). Fixed: store sparse
+  COO on CPU, densify one at a time on GPU (max 256 MB live).
+
+See `results_phase1b_logit_bias.md` / `.json`.

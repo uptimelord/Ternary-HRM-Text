@@ -19,6 +19,7 @@ import nomad_memory  # noqa: E402
 import nomad_learning  # noqa: E402
 import phase1a_memory_probe as phase1a  # noqa: E402
 import phase1b_adapter_train as phase1b  # noqa: E402
+import phase1b_logit_bias as phase1b_logit_bias  # noqa: E402
 from models.layers import TernaryLinear158Init  # noqa: E402
 
 
@@ -818,6 +819,47 @@ class TestPhase1AProbe:
         with torch.no_grad():
             h2 = a(h, m)
         assert torch.allclose(h2, h, atol=1e-6), "adapter leaked into off-path"
+
+    def test_logit_bias_metric_noop_at_beta0(self):
+        """biased_metrics at beta=0 (or memory_on=False) == unbiased; beta>0 changes logits."""
+        torch.manual_seed(0)
+        N, D, V = 6, 8, 20
+        h = torch.randn(N, D)
+        labels = torch.randint(0, V, (N,))
+        labels[1] = -100
+        w = torch.randn(V, D)
+        bias = torch.zeros(N, V)
+        bias[0, 3] = 5.0
+        bias[2, 7] = 5.0
+        m_off = phase1b_logit_bias.biased_metrics(
+            h, bias, labels, w, beta=0.0, vocab_chunk_size=5, memory_on=False)
+        m_b0 = phase1b_logit_bias.biased_metrics(
+            h, torch.zeros_like(bias), labels, w, beta=0.0, vocab_chunk_size=5, memory_on=False)
+        assert abs(m_off["loss"] - m_b0["loss"]) < 1e-5  # beta=0 / off is a no-op
+        m_on = phase1b_logit_bias.biased_metrics(
+            h, bias, labels, w, beta=1.0, vocab_chunk_size=5, memory_on=True)
+        assert abs(m_on["loss"] - m_off["loss"]) > 1e-3  # bias changes logits
+
+    def test_beta_update_gets_nonzero_grad_with_bias_tokens(self):
+        """beta_update must include high-bias tokens in the shortlist or grad=0.
+
+        Regression guard for the bug where memory's candidate tokens were
+        absent from S_t (targets + random negs only), so beta received grad 0
+        and never learned. The shortlist now includes top-bias tokens.
+        """
+        torch.manual_seed(0)
+        N, D, V = 6, 8, 20
+        h = torch.randn(N, D)
+        labels = torch.randint(0, V, (N,))
+        labels[1] = -100
+        w = torch.randn(V, D)
+        bias = torch.zeros(N, V)
+        bias[0, 3] = 5.0  # biased token 3 (not a target label)
+        gen = torch.Generator(); gen.manual_seed(0)
+        _, info = phase1b_logit_bias.beta_update(
+            h, bias, labels, w, beta=0.0, eta_beta=1.0,
+            shortlist_size=20, neg_size=4, generator=gen)
+        assert abs(info["grad"]) > 1e-6, "beta got grad 0 (bias tokens not in shortlist)"
 
     def test_build_memory_reads_shape(self):
         """Per-sequence retrieval broadcasts to [B, T, D]."""
