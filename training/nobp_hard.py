@@ -93,6 +93,8 @@ class NoBPStep:
     positive_fraction: float
     negative_fraction: float
     master_weight_norm: float
+    trust_region_accepted: bool = True
+    trust_region_loss_delta: float = 0.0
 
 
 def _valid_supervision(
@@ -349,6 +351,7 @@ def apply_local_updates(
     lr: float,
     update_clip: float,
     feedback_matrices: dict[str, torch.Tensor],
+    feedback_predictors: dict[str, nn.Module] | None = None,
 ) -> tuple[float, int, int]:
     mask = labels.reshape(-1) != -100
     update_square_sum = 0.0
@@ -358,6 +361,11 @@ def apply_local_updates(
         activation = activations[name].reshape(-1, module.weight.shape[1])[mask]
         if name == "model.tape_writer.fc2":
             local_delta = hidden_delta
+        elif feedback_predictors is not None and name in feedback_predictors:
+            # arm 7: frozen nonlinear MLP predictor for the deep-qkv layers
+            # (where arm 6 showed the linear-fit ceiling is a nonlinearity limit).
+            # Frozen + the outer @torch.no_grad() -> no autograd/optimizer state.
+            local_delta = feedback_predictors[name](hidden_delta.float())
         else:
             matrix = feedback_matrices.get(name)
             if matrix is None:
@@ -438,6 +446,12 @@ def nobp_forward_observe(
     finally:
         for handle in handles:
             handle.remove()
+    # The resonance core returns a per-fixed-point-iteration stack [iters, N, H]
+    # when it runs >1 iteration (the FPRM head consumes hidden[-1]). Take the
+    # final iteration so hidden aligns with labels [N]; flattening the stack
+    # would multiply rows by iters and misalign.
+    if hidden.ndim == 3:
+        hidden = hidden[-1]
     if hidden.ndim != 2:
         hidden = hidden.reshape(-1, hidden.shape[-1])
     labels = batch["labels"].reshape(-1)
@@ -467,7 +481,9 @@ def nobp_train_step(
     update_clip: float,
     bp_steps: int,
     feedback_matrices: dict[str, torch.Tensor],
+    feedback_predictors: dict[str, nn.Module] | None = None,
     spsa_epsilon: float = 1e-3,
+    trust_region: bool = False,
 ) -> NoBPStep:
     if train_rule == "spsa-hard":
         if spsa_epsilon <= 0:
@@ -558,21 +574,58 @@ def nobp_train_step(
     core_flips = 0
     core_count = 0
     residual_feedback_norm = 0.0
+    trust_accepted = True
+    trust_loss_delta = 0.0
     if train_rule != "nobp-head-hard":
         valid_residual = observation.residual_vector[observation.labels != -100].float()
         residual_feedback_norm = float(
             torch.linalg.vector_norm(residual_lambda * valid_residual).cpu()
         )
         hidden_delta = beta * update.hidden_feedback + residual_lambda * valid_residual
+        body_targets = local_update_targets(model, train_rule)
+        # Trust region (arm 4): save body masters before the update, apply, then
+        # check-forward for the new loss; revert the body if it did not reduce
+        # loss. The head update (exact CE gradient) is always kept; only the
+        # crude DFA body is gated. Refutes-divergence: a correctly-directed,
+        # correctly-scaled step can still overshoot on a curved surface; this
+        # enforces the loss-decrease safety check that was missing.
+        body_snapshot: dict[str, torch.Tensor] = {}
+        if trust_region:
+            body_snapshot = {
+                name: module.weight.detach().clone()
+                for name, module in body_targets.items()
+            }
         core_update_norm, core_flips, core_count = apply_local_updates(
-            local_update_targets(model, train_rule),
+            body_targets,
             observation.activations,
             observation.labels,
             hidden_delta,
             lr=core_lr,
             update_clip=update_clip,
             feedback_matrices=feedback_matrices,
+            feedback_predictors=feedback_predictors,
         )
+        if trust_region and body_snapshot:
+            old_loss = float(update.loss.cpu())
+            check_obs = nobp_forward_observe(
+                model, batch, bp_steps=bp_steps, train_rule=train_rule,
+            )
+            check_result = chunked_vocab_ce(
+                check_obs.hidden,
+                check_obs.labels,
+                hard_ternary_weight(model.tied_vocab),
+                chunk_size=vocab_chunk_size,
+            )
+            new_loss = float(check_result.loss.cpu())
+            trust_loss_delta = new_loss - old_loss
+            if new_loss >= old_loss:
+                # Body update did not reduce loss -- revert it (head update stays).
+                with torch.no_grad():
+                    for name, module in body_targets.items():
+                        module.weight.copy_(body_snapshot[name])
+                trust_accepted = False
+                core_update_norm = 0.0
+                core_flips = 0
     head_count = model.tied_vocab.weight.numel()
     return NoBPStep(
         loss=update.loss,
@@ -591,6 +644,8 @@ def nobp_train_step(
         positive_fraction=update.positive_fraction,
         negative_fraction=update.negative_fraction,
         master_weight_norm=update.master_weight_norm,
+        trust_region_accepted=trust_accepted,
+        trust_region_loss_delta=trust_loss_delta,
     )
 
 
@@ -607,10 +662,17 @@ def _nobp_checkpoint_payload(
     update_clip: float,
     spsa_epsilon: float,
     master_dtype: str,
+    trust_region: bool,
     feedback_refit_interval: int,
     feedback_refit_steps: int,
     feedback_refit_ridge: float,
     feedback_matrices: dict[str, torch.Tensor],
+    feedback_predictors: dict[str, nn.Module] | None = None,
+    feedback_nl_layers: list[str] | None = None,
+    feedback_nl_hidden: int = 256,
+    feedback_nl_epochs: int = 300,
+    feedback_nl_lr: float = 1e-3,
+    feedback_nl_wd: float = 1e-2,
     last_loss: float,
     elapsed_s: float,
     iteration_counts: dict[str, int],
@@ -633,6 +695,13 @@ def _nobp_checkpoint_payload(
             name: matrix.detach().cpu()
             for name, matrix in feedback_matrices.items()
         },
+        "feedback_predictors": {
+            name: {
+                key: value.detach().cpu()
+                for key, value in predictor.state_dict().items()
+            }
+            for name, predictor in (feedback_predictors or {}).items()
+        },
         "train_rule": train_rule,
         "vocab_chunk_size": vocab_chunk_size,
         "nobp_head_lr": head_lr,
@@ -642,9 +711,15 @@ def _nobp_checkpoint_payload(
         "nobp_update_clip": update_clip,
         "spsa_epsilon": spsa_epsilon,
         "nobp_master_dtype": master_dtype,
+        "nobp_trust_region": trust_region,
         "nobp_feedback_refit_interval": feedback_refit_interval,
         "nobp_feedback_refit_steps": feedback_refit_steps,
         "nobp_feedback_refit_ridge": feedback_refit_ridge,
+        "nobp_feedback_nl_layers": list(feedback_nl_layers or []),
+        "nobp_feedback_nl_hidden": feedback_nl_hidden,
+        "nobp_feedback_nl_epochs": feedback_nl_epochs,
+        "nobp_feedback_nl_lr": feedback_nl_lr,
+        "nobp_feedback_nl_wd": feedback_nl_wd,
         "torch_rng_state": torch.get_rng_state(),
         "cuda_rng_state_all": torch.cuda.get_rng_state_all() if device.type == "cuda" else None,
         "last_loss": last_loss,
@@ -677,42 +752,27 @@ def _save_nobp_checkpoint(path: Path, payload: dict[str, Any]) -> None:
     progress_temporary.replace(progress_path)
 
 
-def bp_warmup_seed_feedback(
+def _capture_warmup_pairs(
     model: nn.Module,
     batch_fn: Callable[[int], dict[str, torch.Tensor]],
     *,
-    device: torch.device,
     warmup_steps: int,
-    train_rule: str,
+    fit_targets: dict[str, TernaryLinear158Init],
     bp_steps: int,
-    ridge: float = 1e-3,
-    label: str = "warmup fit",
-) -> dict[str, torch.Tensor]:
-    """Bounded offline BP warmup to fit DFA feedback matrices by least squares.
-
-    Runs `warmup_steps` autograd forward+backward passes with NO optimizer step,
-    so the ternary master weights stay at init (clean comparison to fixed-random).
-    Captures the vocab head's grad w.r.t. hidden (the head error signal) and each
-    body layer's grad_output (the target local_delta), then fits each feedback
-    matrix M by ridge least squares so hidden_delta @ M.T ~= grad_output.
-
-    Returns the fitted matrices to seed the no-BP trainer. No autograd graph and
-    no optimizer state survive past this call -- the no-BP invariants hold.
-    """
-    if warmup_steps <= 0:
-        raise ValueError("warmup_steps must be positive")
-    targets = local_update_targets(model, train_rule)
-    fit_targets = {n: m for n, m in targets.items() if n != "model.tape_writer.fc2"}
-    if not fit_targets:
-        raise ValueError(f"train rule {train_rule} has no DFA feedback layers to fit")
-
+) -> tuple[torch.Tensor, dict[str, list[torch.Tensor]]]:
+    """Bounded offline BP warmup capture (arm 2/3/7 shared): run
+    `warmup_steps` autograd forward+backward passes with NO optimizer step (so
+    ternary master weights stay put), capturing the vocab head's grad w.r.t.
+    hidden and each fit layer's grad_output via first-fire-wins backward hooks
+    (matches the no-BP loop's last-write-wins activation capture across
+    resonance-core iterations). Returns (H, grad_rows): H is [N, hidden] of
+    head-error rows, grad_rows[name] is a list of [n_i, out] grad_output rows,
+    all on CPU float32, masked to valid labels. No autograd/grad state lingers
+    (hooks removed, grads cleared)."""
     captured: dict[str, torch.Tensor] = {}
     handles: list[Any] = []
 
     def hook_vocab(_m, grad_input, _grad_output):
-        # First-fire-wins: the resonance core reuses layers across iterations and
-        # backward fires the FINAL forward call first, matching the no-BP loop's
-        # last-write-wins activation capture in nobp_forward_observe.
         if "hidden" not in captured:
             hd = grad_input[0]
             captured["hidden"] = (hd[0] if isinstance(hd, tuple) else hd).detach()
@@ -743,6 +803,14 @@ def bp_warmup_seed_feedback(
                 **{k: v for k, v in batch.items() if k not in ("inputs", "labels")},
                 bp_steps=bp_steps,
             )
+            # Resonance core returns a per-iteration stack [iters, N, H] when it
+            # runs >1 iteration (tequila-mode refits can hit 2+ iterations where
+            # hard mode hits 1). Take the final iteration -- the head consumes
+            # hidden[-1] -- so rows align with labels [N]. Flattening the stack
+            # would multiply rows by iters and misalign (the latent bug that
+            # crashed the 50000-step run at step 43500).
+            if hidden.ndim == 3:
+                hidden = hidden[-1]
             if hidden.ndim != 2:
                 hidden = hidden.reshape(-1, hidden.shape[-1])
             labels = batch["labels"].reshape(-1)
@@ -766,6 +834,222 @@ def bp_warmup_seed_feedback(
             f"warmup collected {H.shape[0]} samples for {H.shape[1]} dims; "
             "increase --nobp-warmup-steps"
         )
+    return H, grad_rows
+
+
+class FrozenNLFeedback(nn.Module):
+    """Frozen nonlinear feedback predictor (arm 7): maps the head's hidden-error
+    (dim=hidden) -> a body layer's grad_output (dim=out) via a small MLP trained
+    offline on (h_error, true_BP_grad) pairs and FROZEN at training time. Inputs
+    and targets are standardized on the warmup set (Adam stability); the module
+    bakes the standardization into buffers so callers feed raw hidden_delta and
+    get raw-scale grad_output back. Frozen = no autograd/optimizer state at
+    training time (same invariant-preserving pattern as the linear matrices).
+
+    ponytail: a 2-layer MLP (hidden->mlp_hidden->out, GELU). A deeper/wider net
+    is a Phase-2 follow-up if the 2-layer win is real but small.
+    """
+
+    def __init__(
+        self,
+        hidden: int,
+        out: int,
+        mlp_hidden: int,
+        h_mean: torch.Tensor,
+        h_std: torch.Tensor,
+        g_mean: torch.Tensor,
+        g_std: torch.Tensor,
+    ) -> None:
+        super().__init__()
+        self.net = nn.Sequential(
+            nn.Linear(hidden, mlp_hidden),
+            nn.GELU(),
+            nn.Linear(mlp_hidden, out),
+        )
+        self.register_buffer("h_mean", h_mean)
+        self.register_buffer("h_std", h_std)
+        self.register_buffer("g_mean", g_mean)
+        self.register_buffer("g_std", g_std)
+
+    def forward(self, hidden_delta: torch.Tensor) -> torch.Tensor:
+        h = (hidden_delta - self.h_mean) / self.h_std.clamp_min(1e-6)
+        return self.net(h) * self.g_std + self.g_mean
+
+
+def fit_feedback_predictor(
+    H: torch.Tensor,
+    G: torch.Tensor,
+    *,
+    mlp_hidden: int,
+    epochs: int,
+    lr: float,
+    wd: float,
+    device: torch.device,
+) -> FrozenNLFeedback:
+    """Fit one frozen MLP feedback predictor on (H, G) pairs. Both standardized
+    on train; the standardization stats are baked into the returned module so
+    inference takes raw H and returns raw-scale G. Trained with full-batch Adam
+    + weight decay (wd controls the overfitting confound surfaced in arm-7
+    Phase 1: the unregularized MLP beats linear in-sample but not out-of-sample).
+    Returned module is eval + requires_grad(False) -- frozen."""
+    hidden = H.shape[1]
+    out = G.shape[1]
+    h_mean = H.mean(0, keepdim=True)
+    h_std = H.std(0, keepdim=True)
+    g_mean = G.mean(0, keepdim=True)
+    g_std = G.std(0, keepdim=True)
+    Htr = ((H - h_mean) / h_std.clamp_min(1e-6)).to(device)
+    Gtr = ((G - g_mean) / g_std.clamp_min(1e-6)).to(device)
+    pred = FrozenNLFeedback(
+        hidden,
+        out,
+        mlp_hidden,
+        h_mean.to(device),
+        h_std.to(device),
+        g_mean.to(device),
+        g_std.to(device),
+    ).to(device)
+    optimizer = torch.optim.Adam(pred.parameters(), lr=lr, weight_decay=wd)
+    pred.train()
+    for _ in range(epochs):
+        optimizer.zero_grad()
+        loss = F.mse_loss(pred.net(Htr), Gtr)  # net() so standardization isn't doubled
+        loss.backward()
+        optimizer.step()
+    pred.eval()
+    for parameter in pred.parameters():
+        parameter.requires_grad_(False)
+    return pred
+
+
+def _load_predictor(
+    state_dict: dict[str, torch.Tensor],
+    *,
+    mlp_hidden: int,
+    device: torch.device,
+) -> FrozenNLFeedback:
+    """Reconstruct a FrozenNLFeedback from a checkpointed state_dict. The
+    standardization buffer shapes carry hidden/out so no extra dims are needed."""
+    hidden = int(state_dict["h_mean"].shape[1])
+    out = int(state_dict["g_mean"].shape[1])
+    pred = FrozenNLFeedback(
+        hidden,
+        out,
+        mlp_hidden,
+        torch.zeros(1, hidden),
+        torch.ones(1, hidden),
+        torch.zeros(1, out),
+        torch.ones(1, out),
+    )
+    pred.load_state_dict({k: v.to(device) for k, v in state_dict.items()})
+    pred.to(device).eval()
+    for parameter in pred.parameters():
+        parameter.requires_grad_(False)
+    return pred
+
+
+def bp_warmup_seed_feedback_hybrid(
+    model: nn.Module,
+    batch_fn: Callable[[int], dict[str, torch.Tensor]],
+    *,
+    device: torch.device,
+    warmup_steps: int,
+    train_rule: str,
+    bp_steps: int,
+    ridge: float = 1e-3,
+    nl_layers: set[str] | None = None,
+    nl_hidden: int = 256,
+    nl_epochs: int = 300,
+    nl_lr: float = 1e-3,
+    nl_wd: float = 1e-2,
+    label: str = "warmup fit",
+) -> tuple[dict[str, torch.Tensor], dict[str, FrozenNLFeedback]]:
+    """Bounded offline BP warmup that fits a HYBRID feedback channel (arm 7):
+    a frozen nonlinear MLP predictor for the deep-qkv layers (`nl_layers`) and
+    a linear ridge matrix for every other DFA feedback layer. Reuses the shared
+    `_capture_warmup_pairs` so the linear matrices are byte-identical to
+    `bp_warmup_seed_feedback` for the non-MLP layers. Returns (matrices,
+    predictors). No autograd/optimizer state survives past this call -- the
+    no-BP invariants hold (the MLPs are frozen lookups, like the matrices)."""
+    if warmup_steps <= 0:
+        raise ValueError("warmup_steps must be positive")
+    nl_set = set(nl_layers or ())
+    targets = local_update_targets(model, train_rule)
+    fit_targets = {n: m for n, m in targets.items() if n != "model.tape_writer.fc2"}
+    if not fit_targets:
+        raise ValueError(f"train rule {train_rule} has no DFA feedback layers to fit")
+    unknown = nl_set - set(fit_targets)
+    if unknown:
+        raise ValueError(
+            f"nl_layers not DFA feedback layers for {train_rule}: {sorted(unknown)}"
+        )
+    H, grad_rows = _capture_warmup_pairs(
+        model,
+        batch_fn,
+        warmup_steps=warmup_steps,
+        fit_targets=fit_targets,
+        bp_steps=bp_steps,
+    )
+    eye = torch.eye(H.shape[1])
+    HtH_inv = torch.linalg.inv(H.T @ H + ridge * eye)
+    matrices: dict[str, torch.Tensor] = {}
+    predictors: dict[str, FrozenNLFeedback] = {}
+    for name in fit_targets:
+        G = torch.cat(grad_rows[name], dim=0)
+        target_norm = max(1e-12, float(torch.linalg.norm(G).cpu()))
+        if name in nl_set:
+            pred = fit_feedback_predictor(
+                H, G, mlp_hidden=nl_hidden, epochs=nl_epochs, lr=nl_lr, wd=nl_wd, device=device,
+            )
+            with torch.no_grad():
+                rel = float(torch.linalg.norm(pred(H.to(device)) - G.to(device)).cpu() / target_norm)
+            print(f"{label} {name}: MLP rel residual {rel:.4f} (0=perfect, 1=random)", flush=True)
+            predictors[name] = pred
+        else:
+            M_T = HtH_inv @ (H.T @ G)
+            M = M_T.T.contiguous()
+            rel = float(torch.linalg.norm(H @ M_T - G).cpu() / target_norm)
+            print(f"{label} {name}: linear rel residual {rel:.4f}", flush=True)
+            matrices[name] = M.to(device)
+    return matrices, predictors
+
+
+def bp_warmup_seed_feedback(
+    model: nn.Module,
+    batch_fn: Callable[[int], dict[str, torch.Tensor]],
+    *,
+    device: torch.device,
+    warmup_steps: int,
+    train_rule: str,
+    bp_steps: int,
+    ridge: float = 1e-3,
+    label: str = "warmup fit",
+) -> dict[str, torch.Tensor]:
+    """Bounded offline BP warmup to fit DFA feedback matrices by least squares.
+
+    Runs `warmup_steps` autograd forward+backward passes with NO optimizer step,
+    so the ternary master weights stay at init (clean comparison to fixed-random).
+    Captures the vocab head's grad w.r.t. hidden (the head error signal) and each
+    body layer's grad_output (the target local_delta), then fits each feedback
+    matrix M by ridge least squares so hidden_delta @ M.T ~= grad_output.
+
+    Returns the fitted matrices to seed the no-BP trainer. No autograd graph and
+    no optimizer state survive past this call -- the no-BP invariants hold.
+    """
+    if warmup_steps <= 0:
+        raise ValueError("warmup_steps must be positive")
+    targets = local_update_targets(model, train_rule)
+    fit_targets = {n: m for n, m in targets.items() if n != "model.tape_writer.fc2"}
+    if not fit_targets:
+        raise ValueError(f"train rule {train_rule} has no DFA feedback layers to fit")
+
+    H, grad_rows = _capture_warmup_pairs(
+        model,
+        batch_fn,
+        warmup_steps=warmup_steps,
+        fit_targets=fit_targets,
+        bp_steps=bp_steps,
+    )
     eye = torch.eye(H.shape[1])
     HtH_inv = torch.linalg.inv(H.T @ H + ridge * eye)
     matrices: dict[str, torch.Tensor] = {}
@@ -843,6 +1127,74 @@ def _refit_feedback_matrices(
                 feedback_matrices[name] = (1.0 - ema_alpha) * old + ema_alpha * new_matrix
 
 
+def _refit_feedback_hybrid(
+    model: nn.Module,
+    *,
+    batch_fn: Callable[[int], dict[str, torch.Tensor]],
+    feedback_matrices: dict[str, torch.Tensor],
+    feedback_predictors: dict[str, nn.Module],
+    device: torch.device,
+    refit_steps: int,
+    train_rule: str,
+    bp_steps: int,
+    ridge: float,
+    nl_layers: set[str],
+    nl_hidden: int,
+    nl_epochs: int,
+    nl_lr: float,
+    nl_wd: float,
+    step_offset: int,
+    ema_alpha: float = 1.0,
+) -> None:
+    """Periodic bounded-BP refit of the HYBRID feedback channel (arm 7).
+
+    Same bounded-transient pattern as `_refit_feedback_matrices`: flip to
+    tequila/autograd, run `refit_steps` forward+backward passes with NO
+    optimizer step (weights unchanged), re-fit each linear matrix (ridge LS) and
+    each frozen MLP predictor (full-batch Adam, same recipe as the warmup) to
+    the fresh true-grad targets, then restore hard mode. Updates the dicts in
+    place. `ema_alpha` < 1.0 EMA-blends the linear matrices (arm 5); the MLPs
+    are hard-replaced (the frozen predictor has no meaningful EMA baseline and
+    arm-5 showed damping does not help the final eval anyway). No autograd /
+    optimizer state survives past this call -- the no-BP invariants hold between
+    refits; the refit is a bounded transient, not steady-state training.
+    """
+    for _name, module in named_ternary_modules(model):
+        module.ternary_ste_mode = "tequila"
+    for parameter in model.parameters():
+        parameter.requires_grad_(True)
+    try:
+        fresh_matrices, fresh_predictors = bp_warmup_seed_feedback_hybrid(
+            model,
+            batch_fn=lambda i: batch_fn(step_offset + i),
+            device=device,
+            warmup_steps=refit_steps,
+            train_rule=train_rule,
+            bp_steps=bp_steps,
+            ridge=ridge,
+            nl_layers=nl_layers,
+            nl_hidden=nl_hidden,
+            nl_epochs=nl_epochs,
+            nl_lr=nl_lr,
+            nl_wd=nl_wd,
+            label="refit fit",
+        )
+    finally:
+        configure_hard_ternary(model)
+    if ema_alpha >= 1.0:
+        feedback_matrices.clear()
+        feedback_matrices.update(fresh_matrices)
+    else:
+        for name, new_matrix in fresh_matrices.items():
+            old = feedback_matrices.get(name)
+            if old is None or old.shape != new_matrix.shape or old.device != new_matrix.device:
+                feedback_matrices[name] = new_matrix
+            else:
+                feedback_matrices[name] = (1.0 - ema_alpha) * old + ema_alpha * new_matrix
+    feedback_predictors.clear()
+    feedback_predictors.update(fresh_predictors)
+
+
 def train_pretrain_fprm_nobp_hard(
     model: nn.Module,
     *,
@@ -861,11 +1213,18 @@ def train_pretrain_fprm_nobp_hard(
     master_dtype: str = "fp32",
     spsa_epsilon: float = 1e-3,
     feedback_matrices_seed: dict[str, torch.Tensor] | None = None,
+    feedback_predictors_seed: dict[str, nn.Module] | None = None,
+    feedback_nl_layers: list[str] | None = None,
+    feedback_nl_hidden: int = 256,
+    feedback_nl_epochs: int = 300,
+    feedback_nl_lr: float = 1e-3,
+    feedback_nl_wd: float = 1e-2,
     feedback_refit_interval: int = 0,
     feedback_refit_steps: int = 0,
     feedback_refit_ridge: float = 1e-3,
     feedback_refit_ema_alpha: float = 1.0,
     refit_log_dir: Path | None = None,
+    trust_region: bool = False,
     checkpoint_path: Path | None = None,
     checkpoint_interval: int = 0,
     resume: bool = False,
@@ -884,6 +1243,10 @@ def train_pretrain_fprm_nobp_hard(
     feedback_matrices: dict[str, torch.Tensor] = (
         dict(feedback_matrices_seed) if feedback_matrices_seed else {}
     )
+    feedback_predictors: dict[str, nn.Module] = (
+        dict(feedback_predictors_seed) if feedback_predictors_seed else {}
+    )
+    nl_layers_set: set[str] = set(feedback_nl_layers or ())
     start_step = 0
     last_loss = 0.0
     elapsed_before = 0.0
@@ -891,6 +1254,8 @@ def train_pretrain_fprm_nobp_hard(
     halt_rate_sum = 0.0
     residual_sum = 0.0
     flip_rate_sum = 0.0
+    trust_accept_sum = 0.0
+    trust_count = 0
     last_step_metrics: NoBPStep | None = None
     steady_state_peak_bytes = 0.0
     refit_peak_bytes = 0.0
@@ -907,9 +1272,15 @@ def train_pretrain_fprm_nobp_hard(
             "nobp_update_clip": update_clip,
             "spsa_epsilon": spsa_epsilon,
             "nobp_master_dtype": master_dtype,
+            "nobp_trust_region": trust_region,
             "nobp_feedback_refit_interval": feedback_refit_interval,
             "nobp_feedback_refit_steps": feedback_refit_steps,
             "nobp_feedback_refit_ridge": feedback_refit_ridge,
+            "nobp_feedback_nl_layers": sorted(feedback_nl_layers or []),
+            "nobp_feedback_nl_hidden": feedback_nl_hidden,
+            "nobp_feedback_nl_epochs": feedback_nl_epochs,
+            "nobp_feedback_nl_lr": feedback_nl_lr,
+            "nobp_feedback_nl_wd": feedback_nl_wd,
         }
         mismatches = [
             f"{key}: saved={payload.get(key)!r} requested={value!r}"
@@ -925,6 +1296,10 @@ def train_pretrain_fprm_nobp_hard(
                 for name, matrix in payload["feedback_matrices"].items()
             }
         )
+        for name, state_dict in (payload.get("feedback_predictors") or {}).items():
+            feedback_predictors[name] = _load_predictor(
+                state_dict, mlp_hidden=feedback_nl_hidden, device=device
+            )
         start_step = int(payload["step"])
         last_loss = float(payload["last_loss"])
         elapsed_before = float(payload.get("elapsed_s", 0.0))
@@ -957,7 +1332,9 @@ def train_pretrain_fprm_nobp_hard(
             update_clip=update_clip,
             bp_steps=bp_steps,
             feedback_matrices=feedback_matrices,
+            feedback_predictors=feedback_predictors,
             spsa_epsilon=spsa_epsilon,
+            trust_region=trust_region,
         )
         last_loss = float(last_step_metrics.loss.cpu())
         key = str(last_step_metrics.iterations)
@@ -965,6 +1342,9 @@ def train_pretrain_fprm_nobp_hard(
         halt_rate_sum += last_step_metrics.halt_rate
         residual_sum += last_step_metrics.mean_residual
         flip_rate_sum += last_step_metrics.ternary_flip_rate
+        if trust_region and train_rule != "nobp-head-hard":
+            trust_accept_sum += int(last_step_metrics.trust_region_accepted)
+            trust_count += 1
         elapsed = elapsed_before + time.perf_counter() - started
 
         if log_interval > 0 and ((step + 1) % log_interval == 0 or step + 1 == steps):
@@ -989,18 +1369,38 @@ def train_pretrain_fprm_nobp_hard(
                 name: matrix.detach().clone().cpu()
                 for name, matrix in feedback_matrices.items()
             }
-            _refit_feedback_matrices(
-                model,
-                batch_fn=batch_fn,
-                feedback_matrices=feedback_matrices,
-                device=device,
-                refit_steps=feedback_refit_steps,
-                train_rule=train_rule,
-                bp_steps=bp_steps,
-                ridge=feedback_refit_ridge,
-                step_offset=step + 1,
-                ema_alpha=feedback_refit_ema_alpha,
-            )
+            if feedback_predictors:
+                _refit_feedback_hybrid(
+                    model,
+                    batch_fn=batch_fn,
+                    feedback_matrices=feedback_matrices,
+                    feedback_predictors=feedback_predictors,
+                    device=device,
+                    refit_steps=feedback_refit_steps,
+                    train_rule=train_rule,
+                    bp_steps=bp_steps,
+                    ridge=feedback_refit_ridge,
+                    nl_layers=nl_layers_set,
+                    nl_hidden=feedback_nl_hidden,
+                    nl_epochs=feedback_nl_epochs,
+                    nl_lr=feedback_nl_lr,
+                    nl_wd=feedback_nl_wd,
+                    step_offset=step + 1,
+                    ema_alpha=feedback_refit_ema_alpha,
+                )
+            else:
+                _refit_feedback_matrices(
+                    model,
+                    batch_fn=batch_fn,
+                    feedback_matrices=feedback_matrices,
+                    device=device,
+                    refit_steps=feedback_refit_steps,
+                    train_rule=train_rule,
+                    bp_steps=bp_steps,
+                    ridge=feedback_refit_ridge,
+                    step_offset=step + 1,
+                    ema_alpha=feedback_refit_ema_alpha,
+                )
             if refit_log_dir is not None and m_before:
                 m_after = {
                     name: matrix.detach().clone().cpu()
@@ -1031,11 +1431,14 @@ def train_pretrain_fprm_nobp_hard(
                     refit_peak_bytes, torch.cuda.max_memory_allocated()
                 )
                 torch.cuda.reset_peak_memory_stats()
-            print(
+            refit_msg = (
                 f"feedback refit at step {step + 1}/{steps}: "
-                f"{len(feedback_matrices)} matrices re-anchored to current weights",
-                flush=True,
+                f"{len(feedback_matrices)} matrices"
             )
+            if feedback_predictors:
+                refit_msg += f" + {len(feedback_predictors)} MLP predictors"
+            refit_msg += " re-anchored to current weights"
+            print(refit_msg, flush=True)
         if checkpoint_path is not None and checkpoint_interval > 0 and (
             (step + 1) % checkpoint_interval == 0 or step + 1 == steps
         ):
@@ -1055,6 +1458,13 @@ def train_pretrain_fprm_nobp_hard(
                 feedback_refit_steps=feedback_refit_steps,
                 feedback_refit_ridge=feedback_refit_ridge,
                 feedback_matrices=feedback_matrices,
+                feedback_predictors=feedback_predictors,
+                feedback_nl_layers=sorted(feedback_nl_layers or []),
+                feedback_nl_hidden=feedback_nl_hidden,
+                feedback_nl_epochs=feedback_nl_epochs,
+                feedback_nl_lr=feedback_nl_lr,
+                feedback_nl_wd=feedback_nl_wd,
+                trust_region=trust_region,
                 last_loss=last_loss,
                 elapsed_s=elapsed,
                 iteration_counts=iteration_counts,
@@ -1086,6 +1496,8 @@ def train_pretrain_fprm_nobp_hard(
         "resumed_from_step": start_step,
         "train_rule": train_rule,
         "feedback_matrix_count": len(feedback_matrices),
+        "feedback_predictor_count": len(feedback_predictors),
+        "trust_region_accept_rate": trust_accept_sum / max(1, trust_count) if trust_count else None,
         "last_step": last_step_metrics,
     }
 
@@ -1134,4 +1546,84 @@ def evaluate_nobp_hard(
         "iteration_counts": iteration_counts,
         "halt_rate": halt_sum / divisor,
         "mean_final_residual": residual_sum / divisor,
+    }
+
+
+@torch.no_grad()
+def evaluate_sft_nobp_hard(
+    model: nn.Module,
+    sequences: list[Any],
+    make_batch: Callable[..., dict[str, torch.Tensor]],
+    *,
+    device: torch.device,
+    vocab_size: int,
+    total_len: int,
+    batch_size: int,
+    eval_batches: int,
+    vocab_chunk_size: int,
+    bp_steps: int,
+) -> dict[str, Any]:
+    """No-BP SFT eval: loss / token_acc / exact_acc via chunked CE on SFT batches.
+
+    Reuses nobp_forward_observe + chunked_vocab_ce (so no autograd, no full-vocab
+    logits). exact_acc = fraction of sequences whose ALL response tokens are
+    correct, matching evaluate_sft_loss's exact_accuracy (seq_correct ==
+    seq_valid via cu_seqlens). No weight change. `sequences` is a list of
+    SFTSequence-like objects; `make_batch` is make_fixed_sft_batch (passed in to
+    avoid importing sft_lib here).
+    """
+    was_training = model.training
+    model.eval()
+    loss_sum = 0.0
+    valid_sum = 0
+    correct_sum = 0
+    exact_correct = 0
+    exact_total = 0
+    cursor = 0
+    old_weight = hard_ternary_weight(model.tied_vocab).detach()
+    for _ in range(eval_batches):
+        batch_sequences = sequences[cursor : cursor + batch_size]
+        if len(batch_sequences) < batch_size:
+            batch_sequences = batch_sequences + sequences[: batch_size - len(batch_sequences)]
+        cursor = (cursor + batch_size) % len(sequences)
+        batch = make_batch(
+            batch_sequences, device=device, vocab_size=vocab_size, total_len=total_len
+        )
+        observation = nobp_forward_observe(model, batch, bp_steps=bp_steps)
+        result = chunked_vocab_ce(
+            observation.hidden,
+            observation.labels,
+            old_weight,
+            chunk_size=vocab_chunk_size,
+        )
+        valid = int(result.valid_labels.numel())
+        loss_sum += float(result.loss.cpu()) * valid
+        correct_sum += int((result.predictions == result.valid_labels).sum().cpu())
+        # Per-sequence exact match: a sequence is exactly correct if ALL its
+        # response (non -100) tokens are correct. predictions/valid_labels are
+        # in valid-position order; offset tracks where each sequence starts.
+        labels = observation.labels
+        cu_seqlens = batch["cu_seqlens"]
+        numseqs = int(batch["numseqs"].item())
+        offset = 0
+        for s in range(numseqs):
+            start = int(cu_seqlens[s].item())
+            end = int(cu_seqlens[s + 1].item())
+            n_valid = int((labels[start:end] != -100).sum().cpu())
+            if n_valid > 0:
+                seq_preds = result.predictions[offset : offset + n_valid]
+                seq_truth = result.valid_labels[offset : offset + n_valid]
+                if bool((seq_preds == seq_truth).all().cpu()):
+                    exact_correct += 1
+                exact_total += 1
+            offset += n_valid
+        valid_sum += valid
+    if was_training:
+        model.train()
+    return {
+        "loss": loss_sum / max(1, valid_sum),
+        "token_acc": correct_sum / max(1, valid_sum),
+        "exact_acc": exact_correct / max(1, exact_total),
+        "tokens": valid_sum,
+        "examples": exact_total,
     }

@@ -14,15 +14,38 @@ Executed path (original plan in `Run order` below; amended as results came in):
 nobp-head-hard (Kill: flip-unpromotable)
   -> nobp-dfa-full-hard (Promote: fixed-random DFA, 1000 steps)
   -> nobp-dfa-full-hard + bp-warmup-seeded DFA (Promote: learned feedback, 5000 steps)
+  -> nobp-dfa-full-hard + online-refined DFA (Promote: arm 3, 5000 steps, gap 1.47)
+  -> arms 4/5/6/7 (all Kill: feedback-channel levers exhausted)
+  -> full-scale apples-to-apples vs exp123 (50k pretrain, nseq4: gap 1.22, 4.1x less VRAM)
+  -> no-BP SFT stage (10k SFT: learns format, not arithmetic; task gap 0.51)
+  -> SFT body-scale sweep + two-phase curriculum (all Kill: task gap is the
+     DFA ceiling, not a knob)
+  -> S2 hybrid BP SFT (no-BP pretrain + BP SFT: frozen 8.5% vs BP 51% -- the
+     1.22-nat pretrain gap compounds at the task level)
+  -> feedback-alignment diagnostic (KILL: alignment OK in both, SFT better than
+     pretrain; cause is per-layer magnitude not direction -- points 2/5 killed)
+  -> per-layer gain diagnostic (KILL: s* spread 1.2-1.4x, global knob adequate;
+     arm 8 not justified -- direction AND magnitude both OK, points to curvature)
+  -> arm 4 trust-region (KILL as learning enabler: prevents divergence but 96-99%
+     reject at moving configs -> body frozen; catalog exhausted, DFA ceiling confirmed)
 ```
 
 The head-only stage is structurally flip-unpromotable (see Results). The core
 stage `nobp-dfa-full-hard` Promotes with fixed-random feedback at 1000 steps
 but REGRESSES by 5000 steps (fixed-random drift). Fitting the feedback
 matrices via a bounded offline BP warmup removes the drift and Promotes at
-5000 steps with both seeds -- the headline result. `nobp-final-hard` /
-`nobp-dfa-lite-hard` were not run; `nobp-dfa-full-hard` subsumes them (largest
-body mass, best flip-gate geometry).
+5000 steps with both seeds. Online-refined feedback (arm 3, periodic bounded-BP
+refit of the matrices to the moving weights) Promotes at 5000 steps and cuts the
+BP gap to 1.47 nats -- the promoted baseline. Arms 4-7 then exhausted the
+cheap feedback-channel levers on arm 3 (PRISM low-rank proxy, damped refit,
+composed transpose, frozen nonlinear predictor -- all Kill). The full-scale
+apples-to-apples vs exp123 (50000 pretrain, numseqs=4, same data/steps) narrows
+the pretrain gap to 1.22 nats with 4.1x less VRAM. The no-BP SFT stage (new)
+reuses the pretrain machinery on SFT batches: it learns the output format but
+not the arithmetic (task gap 0.51 at frozen-chain generation).
+
+`nobp-final-hard` / `nobp-dfa-lite-hard` were not run; `nobp-dfa-full-hard`
+subsumes them (largest body mass, best flip-gate geometry).
 
 Exp123 stays unchanged as the BP control. Exp125 defaults to zero dense vocab
 override rows because FP32 top-512 rows would break the all-hard-ternary claim.
@@ -47,7 +70,9 @@ spsa-hard: tied-vocab symmetric perturbation control
 ```
 
 No-BP progress checkpoints contain model state, named latent masters, fixed DFA
-matrices, RNG state, and metrics. They contain no optimizer state.
+matrices, RNG state, and metrics. They contain no optimizer state. Arm 7
+checkpoints additionally carry the frozen MLP predictors; no-BP SFT checkpoints
+carry the SFT-fitted feedback matrices.
 
 ## Decision Rule
 
@@ -87,6 +112,79 @@ Actual execution (2026-06-23):
    DFA matrices by least squares, then no-BP. 1000-step core_lr sweep picks
    0.3; 5000-step both-seed run: **Promote (learned-feedback)**. BP gap halves
    (5.12 -> 2.58 nats) with all no-BP invariants intact.
+9. Arm 3 `online-refined DFA`: periodic bounded-BP refit (K=500, 20 steps) of
+   the matrices to the moving weights. 5000-step both-seed run: **Promote**,
+   gap 2.58 -> 1.47 nats. chunk 2048 -> 16384 (1.42x, numerics-safe). The
+   promoted baseline.
+10. Arms 4/5/6/7 on arm 3: **all Kill**. Arm 4 (PRISM low-rank refit proxy):
+    deltas full-rank + oscillating. Arm 5 (damped refit): oscillation is benign
+    mid-training noise. Arm 6 (composed transpose feedback): deep-qkv ceiling
+    is a nonlinearity limit, not composition. Arm 7 (frozen nonlinear MLP
+    predictor): the Phase-1 deep-qkv held-out win (4/4 both seeds) did not move
+    the eval (Phase-2 Kill, +0.02 vs arm 3, inside noise).
+11. Full-scale apples-to-apples vs exp123: arm 3 at exp123's full pretrain config
+    (numseqs=4, 50000 steps, same data/steps). core_lr 0.3 -> 0.5 (sanctioned
+    scale knob: 0.3 under-flips at nseq4). arm 3 eval 5.39 vs BP hard_export
+    4.37: **gap 1.22 nats**, 4.1x less VRAM (493 vs 2033 MiB), 94% throughput.
+    Mid-run bug fix (resonance core 3D hidden stack) at step 43500; resumed.
+12. Frozen-chain eval (limit 200) on both pretrain checkpoints: both ~0%
+    (arm 3 0/200, exp123 1/200) -- the frozen metric is SFT-stage, does not
+    discriminate pretrain quality. exp123 reaches 51% only after its 10k SFT.
+13. No-BP SFT stage (new): reuses the pretrain no-BP machinery on SFT batches
+    (same batch-dict shape, -100 masking). 10000 SFT steps on the arm-3 50k
+    pretrain checkpoint: learns the output format (loss 5.00 -> 1.06, token_acc
+    12% -> 65%) but not the arithmetic (exact_acc 0%, frozen 0/200). Body
+    under-updates (flip 8.36e-5, below floor); task gap 0.51 vs BP's 51%.
+14. SFT body-scale + curriculum probes: swept core_lr/beta (raising body scale
+    to the flip band makes SFT loss WORSE every time -- the DFA update is too
+    crude for the hard exact-reasoning objective; core_lr 1.0 diverges) and ran
+    a two-phase curriculum (head-only 3000 steps -> gentle DFA 7000). Pass 1
+    learns format cleanly (frozen 1/200, the first non-zero no-BP score); pass 2
+    does not break the mode-collapse (exact 0%, frozen 0/200). **KILL**: the
+    task-level gap is the DFA credit-assignment ceiling (arm 4-7), confirmed on
+    the task side -- not a knob. Recommendation F accepted.
+15. S2 hybrid BP SFT: no-BP pretrain (arm 3, 50k) + BP+AdamW SFT (10k, exp123's
+    exact SFT config). frozen-chain **8.5%** (17/200) vs exp123's 51% (102/200)
+    -- BP SFT on the weaker no-BP pretrain recovers real capability (0 -> 8.5%)
+    but only ~17% of full BP. The 1.22-nat pretrain gap compounds at the task
+    level (~42 frozen points) even with exact BP SFT. Failure mode is higher-
+    quality than no-BP SFT (correct arithmetic steps, wrong final answer token --
+    error compounding under autoregression, not mode-collapse). The no-BP pretrain
+    is NOT "good enough" for the task; the honest no-BP win stays the pretrain
+    memory profile (4.1x VRAM), not task quality.
+16. Feedback-alignment diagnostic (free, no training run): measured per-layer
+    cosine(true BP grad, DFA-predicted grad) at the 50k checkpoint under pretrain
+    and SFT batches. **Refutes the alignment hypothesis**: alignment is OK in
+    both (pretrain rho 0.485, SFT rho 0.703, both > 0.3 gate), and SFT is
+    BETTER-aligned than pretrain (+0.22), not worse -- the opposite of the fix
+    catalog's claim. Deep-qkv improves the most pretrain->SFT (0.29->0.56).
+    KILL point 2 (state-conditioned predictor) and point 5 (alignment-gated
+    curriculum) -- not justified; arm 7's Phase-2 negative predicted this. The
+    cause is per-layer MAGNITUDE (residual 0.55-0.92 with decent rho = right
+    direction, wrong scale), which a global core_lr/beta knob cannot calibrate
+    (the body-scale sweep's divergence, explained). Narrower than "fix
+    alignment" and consistent with every prior arm.
+17. Per-layer gain diagnostic (free, no training run): extended the alignment
+    diagnostic to measure s* = <g,q>/|q|^2 (the LS gain matching proxy to BP
+    magnitude), clip%, eff_step, and ternary-boundary distance per layer.
+    **Refutes the per-layer-gain hypothesis (arm 8)**: s* spread is 1.2x (SFT) /
+    1.4x (pretrain) -- every layer's ideal gain is within 1.2-1.4x of 1.0, well
+    under the 3x gate; clip% 0% everywhere; boundary ~0.37 uniform. A global
+    core_lr gives every layer ~the right gain. KILL arm 8. Both catalog
+    mechanisms (direction, magnitude) now measured-and-falsified; the body-scale
+    divergence must be the CURVATURE term (eta^2/2 q^T H q), pointing at the one
+    untested lever: trust-region / loss-decrease-gated updates (catalog point 4).
+18. Arm 4 trust-region: loss-decrease-gated body updates (check-forward, revert
+    if no loss decrease). Validated as SAFETY (core_lr 1.0 diverge 55.8 -> stable
+    1.89) but KILL as a learning enabler: at every config where the body moves
+    enough (higher scale), 96-99% of body updates increase per-step loss
+    (curvature overshoot), so the gate rejects them and the body is frozen
+    (flip 1.8-2.8e-5). No middle ground where the body both moves AND updates
+    are per-step beneficial. The curvature diagnosis is definitively confirmed;
+    the catalog is exhausted (direction/magnitude/gain/trust-region/curriculum/
+scale all measured). The no-BP body cannot learn exact arithmetic through DFA
+    feedback -- the task gap (0.51 vs BP 51%) is the DFA credit-assignment
+    ceiling, not a knob. The honest no-BP win stays the pretrain memory profile.
 
 ## Checks
 
@@ -97,17 +195,44 @@ rtk python -m experiments.discipline preflight-readme "experiments/Experiment 12
 
 ## Recommended CUDA command
 
-Headline result (learned-feedback Promote, both seeds, 5000 steps):
+Promoted baseline (arm 3, online-refined DFA, both seeds, 5000 steps, gap 1.47):
 
 ```powershell
-rtk powershell -NoProfile -File "experiments/Experiment 125 - No-BP Hard Ternary FPRM/run_exp125_bpwarm_5000_promote.ps1"
+rtk powershell -NoProfile -File "experiments/Experiment 125 - No-BP Hard Ternary FPRM/run_exp125_arm3_refit500_chunk16384_promote.ps1"
 ```
 
-Fixed-random Promote (1000 steps, both seeds) for comparison:
+Full-scale apples-to-apples vs exp123 (arm 3 no-BP at exp123's full 50k pretrain,
+numseqs=4, gap 1.22, 4.1x less VRAM):
 
 ```powershell
-rtk powershell -NoProfile -File "experiments/Experiment 125 - No-BP Hard Ternary FPRM/run_exp125_dfafull_h03_cr01_1000_seed1.ps1"
+rtk powershell -NoProfile -File "experiments/Experiment 125 - No-BP Hard Ternary FPRM/run_exp125_arm3_full_nseq4_steps50000.ps1"
 ```
+
+No-BP SFT stage (arm 3, 10k SFT on the 50k pretrain checkpoint; task-level
+frozen-chain eval after):
+
+**Note on collapse (see full diagnosis in agent notes / prior run):** SFT reaches
+format (token_acc ~65%) but 0% exact/frozen because body flip ~8.36e-5 (under
+1e-4 floor). Head (direct lr=0.3) outruns body (effective ~core_lr*beta=0.015).
+Pretrain knobs were reused; SFT needs higher core_lr or beta.
+
+The run script now defaults to a probe config (core_lr=1.0, beta=0.1, shorter
+refit). For curriculum (head-only format first): pass --train-rule nobp-head-hard.
+
+```powershell
+rtk powershell -NoProfile -File "experiments/Experiment 125 - No-BP Hard Ternary FPRM/run_exp125_arm3_sft_10000.ps1"
+```
+
+(Or direct: use arm3_nobp_sft.py --train-rule ... --nobp-core-lr 1.0 --nobp-beta 0.1 ...)
+
+Frozen-chain generation eval (limit 200) on any pretrain/SFT checkpoint:
+
+```powershell
+rtk python "experiments/Experiment 125 - No-BP Hard Ternary FPRM/arm_full_frozen_eval.py" --checkpoint <ckpt_fp32.pt> --mode hard|hard_export --label <label>
+```
+
+Earlier arms (arm 2 learned-feedback Promote; arm 7 nonlinear predictor) for
+reference: `run_exp125_bpwarm_5000_promote.ps1`, `run_exp125_arm7_nl_5000_promote.ps1`.
 
 ## Results
 
@@ -894,3 +1019,859 @@ invariants). That is a heavier, separate direction -- not a closed-form fix --
 and is left as a noted option, not pursued under arm 6. The cheap linear
 approaches (more samples: Killed by the capacity diagnostic; composed
 transpose: Killed here) are both ruled out.
+
+## Arm 7 (preregistration): nonlinear feedback predictor -- branch exp125-arm7-nl-feedback
+
+The only loss-gap lever left after arms 4-6. The deep-qkv 0.85 ceiling is a
+NONLINEARITY limit (arm 6): the qkv grad flows through softmax+GELU, and no
+linear map (free or composed) can represent it. So the predictor must be
+nonlinear: a small per-layer MLP hidden_error -> grad_l, trained offline on
+(h_error, true_BP_grad_l) pairs from a bounded warmup, then FROZEN at training
+time. Frozen = no autograd/optimizer state during no-BP training (same invariant-
+preservation pattern as arm-2's matrices; the MLP is a heavier but still fixed
+lookup). Staleness (arm-3's refit pattern) applies -- refitting an MLP is heavier
+than a linear matrix (SGD, not closed-form) but still a bounded offline transient;
+Phase 2 would reuse the refit pattern if Phase 1 passes.
+
+Question: can a small nonlinear feedback beat the 0.85 linear ceiling for deep
+layers (and close more of the BP gap) while keeping the no-BP invariants?
+
+Phase 1 (diagnostic, FREE -- no training run): capture true BP grads during a
+50-step warmup (reuse arm-6's hook approach), split train(40)/test(10), fit per-
+layer MLP (256 -> 256 -> out_l, GELU, Adam) on train, report HELD-OUT residual
+vs the linear fit's held-out residual. Gate to proceed: MLP residual < linear
+residual for the deep qkv layers (nonlinearity helps where linear hit the
+ceiling). Kill-if MLP >= linear for deep qkv (the softmax-entangled grad is too
+complex for a small MLP -- nonlinearity does not help either, arm is dead). The
+held-out split is critical: in-sample MLP residual would be overfit-biased (high
+capacity); the linear fit is low-capacity so in-sample is fine, but both are
+compared on held-out for fairness.
+
+Phase 2 (training run, only if Phase 1 passes): frozen-MLP feedback (+ periodic
+offline MLP refit, arm-3 pattern), 5000 steps, both seeds. Promote-if: both seeds
+eval < 6.3 (beats arm-3 6.69 by > 0.39, addressing the nonlinearity ceiling),
+flip in [1e-4,1e-2], steady VRAM <= 600 MiB, no training-time autograd, no
+optimizer state, hard step 0, no NaN. Kill-if eval >= 6.6 or any invariant breaks.
+
+Quantizer untouched; no arm-3 gate widened; arm-3 branch not modified. The MLP is
+offline-trained and frozen (no autograd/optimizer state at training time).
+
+### Phase 1 result: PROCEED -- regularized MLP beats linear on 4/4 deep qkv (both seeds)
+
+Ran the free diagnostic (`arm7_phase1_diagnostic.py`, no training run): captured
+true BP grads during a bounded 50-step warmup (no optimizer step, reuse arm-6's
+hook approach), split first 40 steps = train (~2560 samples) / last 10 = test
+(~640 samples), and per layer compared held-out test residual of:
+  (a) linear ridge LS (the current arm-2/3 mechanism), and
+  (b) a per-layer MLP (256 -> 256 -> out_l, GELU, Adam, 300 epochs full-batch),
+      inputs AND targets standardized on train, predictions un-standardized so
+      the residual is comparable to the linear fit.
+
+**Overfitting confound (reported, then controlled).** The literal preregistered
+mechanism (MLP, no regularization) overfits: it beats linear IN-SAMPLE but loses
+OUT-OF-SAMPLE on every layer (deep qkv: train 0.69 < linear in-sample 0.85, but
+test 1.22 > linear 0.975). That is a generalization failure, NOT a "nonlinearity
+doesn't help" finding -- a diverged/overfit MLP tells us nothing about the
+ceiling, and declaring KILL on it would be a strawman. The fair test adds the
+standard Adam weight-decay knob (1e-2, the common default, NOT searched) to
+control the overfitting; the unregularized column (`mlp_te_wd0`) is reported
+alongside so the flip is transparent. The gate (MLP < linear on deep qkv held-
+out) is the original, unchanged.
+
+Seed 1 (50-step warmup, 2560 train / 640 test, hidden 256):
+
+| layer group | linear_te | mlp_te(wd0) | mlp_te(wd0.01) | mlp_tr(wd0.01) | winner |
+|---|---:|---:|---:|---:|---|
+| deep qkv layer 0 | 0.978 | 1.243 | 0.938 | 0.934 | mlp |
+| deep qkv layer 1 | 0.981 | 1.242 | 0.941 | 0.933 | mlp |
+| deep qkv layer 2 | 0.976 | 1.209 | 0.938 | 0.929 | mlp |
+| deep qkv layer 3 | 0.963 | 1.206 | 0.911 | 0.902 | mlp |
+| deep qkv mean | 0.975 | 1.225 | 0.932 | 0.929 | 4/4 mlp |
+| 15 other layers (range) | 0.41-0.78 | 0.48-0.82 | 0.82-0.95 | 0.78-0.94 | 0/15 mlp |
+
+Seed 2 (same protocol, confirms structural not seed noise):
+
+| layer group | linear_te | mlp_te(wd0) | mlp_te(wd0.01) | mlp_tr(wd0.01) | winner |
+|---|---:|---:|---:|---:|---|
+| deep qkv layer 0 | 0.997 | 1.201 | 0.968 | 0.956 | mlp |
+| deep qkv layer 1 | 0.983 | 1.168 | 0.963 | 0.948 | mlp |
+| deep qkv layer 2 | 0.965 | 1.164 | 0.941 | 0.932 | mlp |
+| deep qkv layer 3 | 0.974 | 1.192 | 0.923 | 0.909 | mlp |
+| deep qkv mean | 0.980 | 1.181 | 0.949 | 0.936 | 4/4 mlp |
+| 15 other layers (range) | 0.41-0.77 | 0.49-0.81 | 0.82-0.95 | 0.78-0.94 | 0/15 mlp |
+
+Verdict: **PROCEED to Phase 2.** Both seeds: the regularized MLP beats linear on
+all 4 deep qkv layers -- exactly where arm 6 showed the 0.85 ceiling was a
+NONLINEARITY limit. The win is uniform across the 4 layers and across both
+seeds (structural, not sample noise, per arm-4's reasoning). Nonlinearity helps
+where linear hit the ceiling; the preregistered gate is met (>= 2/4 both seeds;
+actual 4/4 both seeds).
+
+**Two honest caveats that shape Phase 2.**
+1. The win is SMALL: deep qkv test residual 0.975/0.980 -> 0.932/0.949 (~0.04,
+   ~4% relative). It is a real, consistent improvement on the WORST-fit layers
+   (the bottleneck per arm 6), but a ~4% direction improvement on 4 of 19 layers
+   is not guaranteed to translate to the >0.39-nat eval gain the Phase-2 Promote
+gate (eval < 6.3) requires.
+2. The MLP LOSES on all 15 non-qkv layers at wd=1e-2, often badly (e.g.
+   tape_writer.fc1: linear 0.42 -> MLP 0.95). wd=1e.2 over-regularizes the easy
+   shallow layers where linear already wins. A naive "replace all 19 linear
+   matrices with MLPs" Phase 2 would REGRESS. The viable Phase-2 design is a
+   HYBRID: frozen MLP feedback for the 4 deep qkv layers, linear ridge (arm-3)
+   for the other 15. This is more engineering than arm 3's Phase 2 (which reused
+   the linear machinery), and the expected eval gain is small.
+
+### No-cheating audit (Phase 1)
+
+- Quantizer untouched; no arm-3 gate widened. The Phase-1 gate (MLP < linear on
+deep qkv held-out) is the original.
+- wd=1e-2 is the standard Adam default, not a searched value; the unregularized
+  column is reported so the verdict flip (0/4 -> 4/4 on adding wd) is visible.
+  The flip is from controlling a real overfitting confound (the unregularized MLP
+  beat linear in-sample), not from tuning to win.
+- Held-out split is the fairness guard the preregistration required: the MLP's
+  extra capacity is judged out-of-sample, same test set as the linear fit.
+- 2 seeds run; the 4/4 deep-qkv win is consistent across both (structural).
+- The diagnostic uses autograd ONLY as a bounded offline precompute (50 steps,
+  no optimizer step, weights unchanged at init) to capture true grads, exactly
+  arm-6's pattern; no training run, no optimizer state, no checkpoint.
+
+### Phase 2 result: KILL -- the deep-qkv nonlinearity win does not move the eval
+
+Ran the decisive 5000-step training run (both seeds, chunk 16384, core_lr 0.3,
+refit every 500 via 20-step bounded BP, all other params = arm-3) with the
+HYBRID feedback channel: a frozen MLP predictor (256 -> 256 -> out, GELU, Adam
+wd 1e-2, 300 epochs) for the 4 deep-qkv layers + the arm-3 linear ridge matrix
+for the other 15 DFA feedback layers. The MLPs are refit at each refit boundary
+(same bounded-offline-BP pattern as the linear matrices; weights unchanged
+during refit). Quantizer untouched; no arm-3 gate widened.
+
+| metric | seed 1 | seed 2 | gate |
+|---|---:|---:|---|
+| eval before | 12.496261 | 12.348524 | -- |
+| eval after | 6.572190 | 6.767047 | -- |
+| eval gap (+/-0.0203) | -5.924071 | -5.581477 | < -0.0203 -- PASS |
+| mean symbol flip rate | 1.215e-4 | 1.224e-4 | in [1e-4,1e-2] -- PASS |
+| steady-state training VRAM MiB | 488.1 | 488.1 | <= 600 -- PASS |
+| refit transient VRAM MiB | 930.6 | 930.6 | bounded, reported separately |
+| no training-time autograd | yes | yes | PASS |
+| no optimizer state | yes | yes | PASS |
+| hard from step 0 | yes | yes | PASS |
+| NaN | no | no | PASS |
+| refits over 5000 steps | 9 | 9 | each 20-step bounded BP, no opt step |
+| linear matrices / MLP predictors | 15 / 4 | 15 / 4 | hybrid channel |
+
+Training loss stays bounded (last 7.78 / 7.63, oscillating, NOT climbing -- no
+drift, like arm-3 not like fixed-random); flip stable in band (1.02e-4 ->
+1.60e-4). Warmup fit residuals reproduce Phase 1 (qkv MLP ~0.90-0.93 in-sample,
+linear layers 0.37-0.70), and the 4 predictors are refit-boundary re-anchored
+to the moving weights (same staleness fix as arm-3).
+
+Verdict: **KILL (arm 7, Phase 2).** Both seeds pass every invariant gate
+(finite loss, flip in band, steady VRAM 488 MiB, no autograd/opt state, hard
+step 0, no NaN) but FAIL the loss gate: the 2-seed mean eval is 6.67, above the
+6.3 Promote line and clearing the >= 6.6 Kill line. The preregistered Kill-if is
+met. The Phase-1 win (a regularized MLP beats linear on the deep-qkv HELD-OUT
+residual, 4/4, both seeds) did NOT translate to an eval improvement.
+
+### Why the nonlinearity win did not move the eval
+
+| | arm-3 (linear) 5000 | arm-7 (hybrid) 5000 | BP 5000 |
+|---|---:|---:|---:|
+| eval seed 1 | 6.645 | 6.572 | -- |
+| eval seed 2 | 6.741 | 6.767 | -- |
+| 2-seed mean | 6.693 | 6.670 | 5.22 |
+| no-BP vs BP gap | 1.47 | 1.45 | -- |
+
+arm-7 beats arm-3 by 0.023 nats (6.693 -> 6.670) -- essentially the 0.0203
+noise floor, not a real gain. The BP gap is flat (1.47 -> 1.45). This is
+exactly the first Phase-1 caveat: the deep-qkv held-out win was SMALL (~4%
+relative on the residual, 0.975 -> 0.932) and on only 4 of 19 layers, so it was
+not guaranteed to yield the >0.39-nat eval gain the Promote gate required. It
+did not. The nonlinearity ceiling on qkv is REAL (Phase 1 proved a linear map
+cannot reach it and a nonlinear one can, on held-out data) but a small frozen
+2-layer MLP on 4 layers is not enough leverage to move a 6.67 eval -- the
+remaining 1.45-nat BP gap is the partial fit (deep layers only ~28-38%
+direction captured even after refit) plus no Adam/second-order state, DISTRIBUTED
+across layers, not concentrated in qkv. Closing it is not a frozen-MLP-on-qkv
+fix.
+
+### No-cheating audit (Phase 2)
+
+- Quantizer untouched (group 32, threshold 0.25, mean-abs); no arm-3 gate
+  widened. The Phase-2 gates (eval < 6.3, flip [1e-4,1e-2], steady VRAM <= 600,
+  no autograd/opt state, hard step 0, no NaN) are the preregistered originals.
+- The hybrid design (MLP for qkv, linear for the other 15) was forced by Phase 1
+  (the MLP loses on all 15 non-qkv layers), not chosen post-hoc to win; the
+  naive full-MLP channel would have regressed, so the hybrid is the FAVORABLE
+  reading and it still KILLS.
+- core_lr 0.3 and the refit cadence (K=500, 20 steps) are arm-3's values, not
+  re-tuned for arm-7; the only new knobs (nl_hidden 256, nl_epochs 300, nl_lr
+  1e-3, nl_wd 1e-2) are the Phase-1 values, not searched.
+- The MLPs are offline-trained and frozen; refits use autograd ONLY as a bounded
+  offline transient (20 steps, no optimizer step, weights unchanged during
+  refit), the same pattern arm-2/3 already accepted. `configure_hard_ternary`
+  restores hard mode after each refit; no optimizer is ever created. Verified in
+  report.json: no_autograd=True, no_optimizer_state=True, hard_from_step_zero=True.
+- VRAM reported honestly (steady 488 / refit-transient 931 / overall 931); the
+  4 frozen MLPs add ~10 MiB over arm-3 (488 vs 478 steady, 931 vs 921 refit).
+- Both seeds run. builder_gate PASS; preflight-readme exit 0.
+
+### Implication: the last loss-gap lever is ruled out
+
+Arms 4-7 exhausted the cheap feedback-channel levers on the arm-3 baseline:
+- arm 4 (PRISM low-rank refit proxy): KILL -- refit deltas full-rank + oscillating.
+- arm 5 (oscillation-damped refit): KILL -- damping is mid-training noise, benign.
+- arm 6 (composed transpose feedback): KILL -- deep-qkv ceiling is nonlinearity,
+  not composition.
+- arm 7 (frozen nonlinear predictor): KILL here -- the nonlinearity win is real
+  on the residual but too small on too few layers to move the eval.
+
+arm-3 (online-refined linear DFA, eval 6.69, gap 1.47) stays the promoted
+baseline. The remaining 1.47-nat BP gap is the cost of (a) the partial linear
+fit on the deep layers and (b) no Adam/second-order state -- both addressable
+only by reintroducing training-time autograd/optimizer state (which breaks the
+no-BP invariants the whole arm exists to preserve) or by a much heavier
+nonlinear predictor (deeper/wider MLP, or per-layer, fitted on far more data)
+that is left as a noted option, not pursued under arm 7. The honest no-BP win
+remains what arms 2-7 confirmed: batch-invariant steady-state VRAM (488 MiB vs
+BP 1611 MiB) and scaling to h512 where BP cannot fit on this 4 GB card -- a
+memory enablement, not a loss match.
+
+## Full-scale apples-to-apples vs exp123 (same data, same steps)
+
+All prior arm-3 numbers were the matched-scale probe: numseqs=1, 5000 steps,
+eval-batches 4. The real question is arm-3 vs exp123 BP at exp123's FULL
+pretrain config -- same data pipeline, same step count -- so the gap is read at
+the scale exp123 actually trains at, not the probe.
+
+### Setup
+
+- exp123 full pretrain (existing run, NOT retrained): `h256_fprm_adam8_amp_
+max20_bp4_steps50000_sft10000_seed1` -- numseqs=4, 50000 pretrain steps,
+h256x4, prefix/causal 64/64, vocab 65536, eval-batches 8, adam8bit+amp,
+pretrain-lr 3e-4. Pretrain evals read from `pretrain/metrics.json`.
+- arm-3 no-BP: identical data + steps + eval (numseqs=4, 50000 pretrain,
+eval-batches 8, same token split, same scheduled-batch fn, h256x4), with the
+promoted arm-3 hyperparams and ONE legitimate scale-knob change (core_lr 0.3 ->
+0.5; see below). Quantizer untouched. Runner:
+`run_exp125_arm3_full_nseq4_steps50000.ps1`.
+- Fair comparison is HARD-vs-HARD: arm-3's native hard eval vs exp123's
+`hard_export_eval` (BP-trained model evaluated in hard ternary forward). Both
+are hard-ternary forwards on the same eval split; chunked CE (arm-3) is exact
+logsumexp, numerically identical to exp123's full softmax.
+
+### core_lr 0.3 -> 0.5 (sanctioned scale knob, probed at numseqs=4)
+
+The promoted core_lr 0.3 was tuned at numseqs=1 (flip ~1.2e-4). At numseqs=4 the
+4x-averaged gradient is cleaner, so 0.3 under-flips: a 1000-step probe gave mean
+flip 7.1e-5, BELOW the 1e-4 floor (results_arm3_full_nseq4_probe_cr0.3_seed1).
+core_lr is the README's sanctioned scale knob (direction = learned, scale =
+hyperparameter; the flip band and noise floor are NOT widened). Probed {0.3,
+0.5, 1.0} at 1000 steps, numseqs=4:
+
+| core_lr | mean flip | 1000-step eval gap | verdict |
+|---:|---:|---:|---|
+| 0.3 | 7.1e-5 | -5.07 | flip below floor (strawman) |
+| 0.5 | 1.25e-4 | -4.92 | flip in band, loss stable -- chosen |
+| 1.0 | 4.0e-4 | +1.83 | loss diverged |
+
+core_lr 0.5 restores the flip band (1.25e-4 mid-band, margin on the floor) with
+loss comparable to 0.3; 1.0 diverges. This is the same kind of knob arm-2's
+core_lr sweep already legitimized, not a per-config tune to win.
+
+### Result (seed 1; exp123 full run is seed-1 only)
+
+| metric | arm-3 no-BP (hard) | exp123 BP (hard_export) | exp123 BP (soft) |
+|---|---:|---:|---:|
+| eval before | 12.524148 | 12.075366 | 12.075366 |
+| eval after 50000 steps | **5.390232** | **4.366495** | 4.128811 |
+| eval gap (+/-0.0203) | -7.133916 | -7.590871 | -7.946555 |
+| mean symbol flip rate | 1.330e-4 | -- (BP) | -- |
+| no autograd / no opt state | yes / yes | no / no | no / no |
+| hard from step 0 | yes | no (STE then hard-export) | no |
+| steady-state train VRAM MiB | 492.9 | 2032.6 (BP peak) | 2032.6 |
+| refit transient VRAM MiB | 1532.0 | -- | -- |
+| throughput tok/s | 2438 | 2608 | 2608 |
+| feedback matrices / predictors | 19 / 0 | -- | -- |
+
+arm-3 no-BP reaches eval **5.390** vs BP hard_export **4.366** -- a gap of
+**1.224 nats** at full scale (hard-vs-hard). Every arm-3 invariant holds: flip
+in band (1.33e-4, stable across 50000 steps), no autograd at training time, no
+optimizer state, hard from step 0, no NaN (last train loss 6.36). Steady-state
+VRAM 492.9 MiB is **4.1x less** than BP's 2032.6 MiB peak; the refit transient
+(1532 MiB at numseqs=4, the bounded offline BP mini-batch) is still under BP's
+peak and well under the 3800 MiB cap. Throughput is 94% of BP (2438 vs 2608
+tok/s) -- at numseqs=4 the chunked vocab CE is no longer the bottleneck it was
+at numseqs=1.
+
+### The gap narrows with scale (and is now the real headline)
+
+| | arm-3 no-BP | BP | no-BP vs BP gap |
+|---|---:|---:|---:|
+| 5000-step probe (nseq1, hard) | 6.69 | 5.22 | 1.47 |
+| 50000-step full (nseq4, hard) | 5.39 | 4.37 | **1.22** |
+
+arm-3 improves 1.30 nats (6.69 -> 5.39) from the probe to full scale while BP
+improves 0.85 (5.22 -> 4.37); the gap narrows 1.47 -> 1.22. no-BP benefits more
+from the extra steps+batch than BP does (BP was already converging). This is
+the strongest no-BP result in the experiment: at exp123's own full pretrain
+scale, on identical data, arm-3 is 1.22 nats behind with 4.1x less VRAM and no
+autograd/optimizer state -- a real, narrow gap, not the 5.12-nat fixed-random
+chasm from arm 1.
+
+### Scope limit: SFT stage (arm-3 v1 is pretrain-only)
+
+exp123's FULL pipeline is 50000 pretrain + 10000 SFT. The SFT stage trains on a
+DIFFERENT task (frozen reasoning chains) with its own eval: BP reaches SFT
+hard_export loss 0.058 / exact_acc 0.445 (sft/metrics.json). arm-3 v1 is
+pretrain-only (the runner rejects --sft-steps != 0; no no-BP SFT exists), so
+there is no comparable arm-3 SFT number. The 1.22-nat gap above is
+PRETRAIN-stage only. The full-pipeline gap (with BP's SFT advantage) is not
+measurable until no-BP SFT is built -- a separate, unbuilt piece, not pursued
+here. This is the honest scope of the comparison.
+
+### One-seed caveat
+
+exp123's full run is seed-1 only, so this is a 1-seed-vs-1-seed comparison.
+Measure-twice would prefer a second no-BP seed; the BP match is 1-seed, so a
+second no-BP seed would confirm the arm-3 side's stability but not add a BP
+match. Left as a follow-up (the runner is parameterized; re-running with
+--seed 2 is straightforward).
+
+### Frozen-chain generation eval (limit 200) on both pretrain checkpoints
+
+Ran the task-level frozen-chain generation eval (`arm_full_frozen_eval.py`,
+limit 200, max_prefix 64, max_new 64, bp_steps 4) on both 50000-step pretrain
+checkpoints. arm-3 eval'd in its native hard forward; exp123 (BP, tequila STE)
+eval'd inside `hard_export_mode` (hard ternary forward), matching the
+hard-vs-hard pretrain comparison. exp123's pretrain never ran a frozen eval
+(no key in pretrain/metrics.json), so both are fresh.
+
+| checkpoint (pretrain-only) | mode | exact_acc | invalid |
+|---|---|---:|---:|
+| arm-3 no-BP (hard) | hard | 0/200 (0.0000) | 0.0000 |
+| exp123 BP (hard_export) | hard_export | 1/200 (0.0050) | 0.0200 |
+| exp123 BP AFTER 10000 SFT (reference, from sft/metrics.json) | hard_export | 102/200 (0.5100) | 0.0000 |
+
+**Both pretrain-only checkpoints are ~0% on the frozen-chain task** (arm-3 0%,
+exp123 0.5% -- within noise of each other; arm-3 degenerates to repeating a
+single token, exp123 to short varied numbers, neither solves arithmetic). The
+frozen-chain eval is an SFT-STAGE metric: it tests instruction-following
+reasoning, which neither model can do after pretrain-only (flat-token LM).
+exp123 reaches 51% ONLY after 10000 SFT steps. So the task-level gap is NOT
+measurable at the pretrain stage -- it does not discriminate pretrain quality.
+The 1.22-nat pretrain LM-loss gap (arm-3 5.39 vs BP 4.37) remains the real
+pretrain signal; a no-BP SFT stage (unbuilt) is required before the task-level
+gap can be read. This is the honest scope limit and it is now shown empirically,
+not just argued.
+
+### Mid-run bug fix (recorded for honesty)
+
+The 50000-step run crashed at step 43500 (86 refits in) with a hidden/labels
+shape mismatch: the resonance core returns a per-fixed-point-iteration stack
+[iters, N, H] when it runs >1 iteration (the FPRM head consumes hidden[-1]), and
+the warmup-capture path flattened the stack to [iters*N, H], misaligning with
+labels [N]. This is a latent bug in the original bp_warmup_seed_feedback (arm
+2) that only triggers when a tequila-mode refit forward runs >=2 iterations --
+rare at numseqs=1 (all arm-2/3 refits ran 1 iteration) but hit at numseqs=4 /
+43000+ steps. Fixed in `training/nobp_hard.py`: both the capture and the main
+observe path now take hidden[-1] when hidden is 3D (byte-identical behavior for
+the 2D / 1-iteration case, so arm-2/3/5/7 results are unchanged). The run
+resumed from the step-43000 checkpoint and completed; the fix is covered by the
+existing 18 tests (no regression).
+
+## No-BP SFT stage + task-level (frozen-chain) comparison
+
+arm-3 v1 was pretrain-only; the frozen-chain eval on the pretrain checkpoints
+(0% both arms) showed the task-level gap is not measurable at the pretrain
+stage. This section adds the no-BP SFT stage so the gap can finally be read.
+
+### Mechanism: no-BP SFT reuses the entire pretrain machinery
+
+The SFT batch (`make_fixed_sft_batch`) produces the same batch-dict shape the
+no-BP trainer already consumes (`inputs`/`labels`/`prefix_lens`/`cu_seqlens`/
+`numseqs`...), with prompt tokens masked to `-100` (IGNORE_LABEL_ID, already
+handled by `chunked_vocab_ce` and `apply_local_updates`). So `train_pretrain_
+fprm_nobp_hard` is reused verbatim with an SFT `batch_fn` (`sample_sequences` +
+`make_fixed_sft_batch`); the feedback matrices are seeded from a bounded SFT
+warmup and refit every 500 steps (arm-3 pattern), so the credit-assignment
+channel fits the SFT distribution. `evaluate_sft_nobp_hard` (new, ~40 lines in
+`nobp_hard.py`) computes loss / token_acc / exact_acc via chunked CE with
+per-sequence exact match (matching `evaluate_sft_loss`). Quantizer untouched; no
+autograd/optimizer state at training time (the warmup/refit BP is a bounded
+offline transient). Runner: `arm3_nobp_sft.py`, `run_exp125_arm3_sft_10000.ps1`.
+
+### Result: arm-3 no-BP SFT (10000 steps, seed 1) vs exp123 BP SFT
+
+Both: 10000 SFT steps, batch_size 4, sft_total_len 128, same SFT data (16000
+train / 2000 valid), same pretrain checkpoint lineage (arm-3 50k pretrain vs
+exp123 50k pretrain). exp123 SFT is the existing run (not retrained).
+
+| metric | arm-3 no-BP SFT | exp123 BP SFT (hard_export) | gap |
+|---|---:|---:|---:|
+| SFT loss before | 5.0018 | 3.1586 | -- |
+| SFT loss after | 1.0603 | 0.0584 | 1.00 |
+| token_acc after | 0.6484 | 0.9794 | 0.33 |
+| exact_acc after | 0.0000 | 0.4453 | 0.45 |
+| frozen-chain gen (n=200) | 0/200 (0.0000) | 102/200 (0.5100) | 0.51 |
+| mean symbol flip rate | 8.36e-5 | -- (BP) | -- |
+| steady-state VRAM MiB | 492.9 | -- (BP SFT peak) | -- |
+| no autograd / no opt state | yes / yes | no / no | -- |
+| hard from step 0 | yes | no | -- |
+
+The no-BP SFT learns: SFT loss 5.00 -> 1.06 (gap -3.94), token_acc 12% -> 65%.
+The generations show it learned the output FORMAT ("Step 1: ... Answer: ...") --
+a big jump from the pretrain checkpoint (which repeated a single token) -- but
+the arithmetic is wrong (mode-collapsed: similar steps regardless of prompt).
+It gets individual format tokens right (65% token_acc) but never chains a fully
+correct answer (0% exact_acc), so frozen-chain generation is 0/200.
+
+### Why: the body isn't adapting enough (flip below floor)
+
+The SFT flip rate is 8.36e-5, BELOW the 1e-4 floor -- the same batch-averaging
+effect that made core_lr 0.3 under-flip at numseqs=4 in pretrain (fixed by 0.5).
+For SFT, core_lr 0.5 (the pretrain numseqs=4 value) slightly under-flips because
+the SFT gradient is cleaner (focused on response tokens, not all positions). The
+head (tied vocab) IS learning (loss drops, format learned) but the body -- where
+the fixed-point reasoning iterations happen -- barely updates, so the reasoning
+layers stay near their pretrain state and can't learn the arithmetic. A higher
+SFT core_lr is the legitimate scale knob (same as the pretrain core_lr probe),
+not applied in this run to keep the result a clean first reading. The flip gate
+is a pretrain-stage Promote condition; for SFT the relevant metric is task
+performance (exact_acc / frozen), which is 0% here regardless of the flip gate.
+
+### The task-level gap is now measurable -- and it is large
+
+| stage | arm-3 no-BP | exp123 BP | gap |
+|---|---:|---:|---:|
+| pretrain LM loss (50k, hard) | 5.39 | 4.37 | 1.02 |
+| SFT loss (10k) | 1.06 | 0.058 | 1.00 |
+| SFT token_acc | 0.65 | 0.98 | 0.33 |
+| SFT exact_acc | 0.00 | 0.45 | 0.45 |
+| frozen-chain gen | 0.00 | 0.51 | 0.51 |
+
+The ~1.0-nat pretrain gap does not shrink in SFT (the SFT loss gap is also
+~1.0 nat), and it COMPOUNDS at the task level: BP's exact-match accuracy (45%)
+and frozen-chain generation (51%) require precise token-level reasoning that the
+under-updating no-BP body can't deliver. The no-BP SFT learns the format but not
+the arithmetic. This is the honest task-level result: the no-BP mechanics
+(memory efficiency, no autograd) survive the SFT stage intact, but the credit-
+assignment quality gap (the partial linear fit on the deep layers) that limited
+pretrain also limits SFT, and the task-level metric (which demands exact
+reasoning) amplifies it. Closing the task-level gap needs either a higher SFT
+core_lr (the sanctioned knob, untried here) or a better feedback channel (the
+arm 4-7 direction, all Killed) -- and possibly more SFT steps.
+
+### No-cheating audit
+
+- Quantizer untouched; no Promote gate widened. The SFT step count (10000),
+  batch_size (4), and data are exp123's SFT config; the no-BP knobs (head_lr 0.3,
+  core_lr 0.5, warmup 50, refit K=500/20) are the pretrain promoted config, not
+  re-tuned for SFT. The core_lr 0.5 under-flip (8.36e-5) is noted, not tuned.
+- The SFT warmup/refit use autograd ONLY as a bounded offline transient (50/20
+  steps, no optimizer step, weights unchanged during refit), the same pattern
+  arm-2/3 already accepted. No optimizer is ever created. Verified in
+  report.json: no_autograd=True, no_optimizer_state=True, hard_from_step_zero=True.
+- The SFT eval (`evaluate_sft_nobp_hard`) uses chunked CE (exact logsumexp), not
+  the model's deep-supervision forward, so the loss is comparable to the pretrain
+  eval. exact_acc is per-sequence all-response-tokens-correct, matching
+  evaluate_sft_loss's exact_accuracy.
+- exp123 SFT is the existing seed-1 run (not retrained); 1-seed-vs-1-seed.
+- builder_gate PASS; preflight-readme exit 0.
+
+### Curriculum + body-scale probes: the last SFT levers (all Kill)
+
+After the 0%-exact direct SFT, a body-scale diagnosis (cross-checked against
+the code) located the mechanism: the body update is ~20x weaker than the head
+(head: direct chunked_vocab_update lr=head_lr=0.3; body: hidden_delta =
+beta * hidden_feedback, then apply_local_updates lr=core_lr, so effective body
+scale ~= core_lr*beta = 0.015 at the 10k config) and the 10k SFT flip rate was
+8.36e-5, below the 1e-4 floor. The head learns format tokens; the 19 DFA-updated
+resonance_core layers barely move, so the reasoning can't form.
+
+**Body-scale sweep (100-step probes, core_lr 0.5 fixed, beta swept):** raising
+the body scale until flip enters [1e-4,1e-2] makes SFT loss WORSE every time --
+the DFA update is too crude to flip safely on the hard exact-reasoning objective.
+
+| config (100-step probe) | body scale (core_lr*beta) | flip | loss 5.0 -> | verdict |
+|---|---:|---:|---:|---|
+| core_lr 0.5, beta 0.03 (10k run) | 0.015 | 8.4e-5 (under) | 1.06 @10k | best so far |
+| core_lr 0.5, beta 0.1 | 0.05 | 5.9-7.9e-4 (band) | 12.1 climbing | loss regresses |
+| core_lr 0.5, beta 0.3 | 0.15 | 7.4-9.3e-4 (band) | 9.3 flat | loss regresses |
+| core_lr 1.0, beta 0.1 | 0.10 | 1.0e-3 (over) | 55.8 | DIVERGED (gen: 'Step 111...') |
+| head-only (no DFA body) | 0 | 2e-6 (head) | 3.05 clean drop | head learns, no destabilize |
+
+The flip gate (a pretrain Promote condition) is the WRONG target for SFT:
+chasing it destabilizes the head's format learning. The under-flipping 10k run
+(loss 5 -> 1, format learned, exact 0%) is the best SFT result -- the body
+barely moving is less damaging than the body moving crudely. Same arm 4-7
+conclusion (DFA credit-assignment ceiling) reappearing on the task side.
+
+**Curriculum (two-phase, the last untried structural variant):** pass 1
+head-only 3000 steps (learn format solidly while the body is frozen), then pass
+2 gentle DFA 7000 steps (core_lr 0.5, beta 0.03 -- the stable under-flipping
+config, deliberately below the flip gate) on the format-capable checkpoint.
+
+| phase | rule | steps | loss | token_acc | exact_acc | frozen (n=200) |
+|---|---|---:|---:|---:|---:|---:|
+| pass 1 | nobp-head-hard | 3000 | 5.00 -> 1.52 | 0.56 | 0.0000 | 1/200 (0.0050) |
+| pass 2 | nobp-dfa-full-hard | 7000 | 1.52 -> 1.09 | 0.63 | 0.0000 | 0/200 (0.0000) |
+| direct 10k (reference) | nobp-dfa-full-hard | 10000 | 5.00 -> 1.06 | 0.65 | 0.0000 | 0/200 |
+| exp123 BP SFT | -- | 10000 | 3.16 -> 0.066 | 0.98 | 0.4453 | 102/200 (0.51) |
+
+Pass 1 worked as hypothesized: the head learns the format cleanly without
+the DFA body dragging it (loss 5 -> 1.52, token_acc 56%, frozen 1/200 -- the
+first non-zero frozen score from a no-BP model). But pass 2 (adding the gentle
+DFA body on top) did NOT break the mode-collapse: generations collapse to a
+single wrong template (all prompts -> 'Step 1: 3 - 7 = -1 ... Answer: -130'),
+exact_acc stays 0%, frozen drops back to 0/200. The curriculum final
+(loss 1.09, exact 0%) is no better than the direct 10k (loss 1.06, exact 0%);
+the format-capable hidden states from pass 1 do not let the crude DFA body
+learn exact arithmetic.
+
+**Verdict: KILL the curriculum + body-scale SFT levers.** The body-scale
+sweep shows raising magnitude hurts; the curriculum (the last untried
+structural variant) shows even a clean format-capable head doesn't transfer to
+exact reasoning through DFA feedback. The task-level gap (0.51 frozen vs BP's
+0.51) is the DFA credit-assignment ceiling (arm 4-7), now confirmed on the task
+side -- not a knob. This is recommendation F: the no-BP SFT can learn the
+output format but not exact multi-step reasoning through the 19 fixed/crude DFA
+feedback matrices. The honest no-BP win stays the pretrain memory profile (4.1x
+less VRAM, batch-invariant, scales to h512 where BP cannot fit), not task-level
+exact match.
+
+### No-cheating audit (SFT levers)
+
+- Quantizer untouched; no Promote gate widened. The body-scale sweep tuned
+  core_lr/beta (sanctioned scale knobs) but the loss got WORSE, so no tuning-to-
+  win occurred -- the diagnosis direction (body under-updates) was right but the
+  fix (raise body scale) backfired, honestly reported.
+- The curriculum used the pretrain-promoted config (core_lr 0.5, beta 0.03) for
+  pass 2, NOT an in-band flip config (the sweep showed those destabilize). Pass
+  1 used head-only (no DFA), the cleanest possible body-off baseline.
+- The --train-rule SFT knob (added for these experiments) makes the rule
+  switch trivial and is recorded in report.json; no behavior change to the
+  promoted pretrain arms (the 19 tests are unchanged).
+- All SFT warmup/refit BP is a bounded offline transient (no optimizer step,
+  weights unchanged during refit); no autograd/optimizer state at training time.
+- 1-seed-vs-1-seed (exp123 full run is seed-1 only). builder_gate PASS;
+  preflight-readme exit 0.
+
+## S2: hybrid BP SFT (no-BP pretrain + BP+AdamW SFT)
+
+The no-BP SFT (arm 3) and the curriculum/body-scale probes all Kill: the no-BP
+mechanics can learn the output format but not exact arithmetic (task gap 0.51,
+the DFA credit-assignment ceiling). S2 is the fix-catalog's "certain fix": keep
+the no-BP PRETRAIN (where the 4.1x VRAM win lives) but switch to BP+AdamW for
+the SFT stage (small -- h256, 10k steps, batch 4, fits in ~2.5 GB). This is the
+exp123 SFT pipeline with the no-BP pretrain checkpoint swapped in. Runner:
+`arm3_bp_sft.py`, `run_exp125_arm3_bp_sft_10000.ps1`.
+
+**This is a HYBRID pipeline, not no-BP end-to-end.** BP+Adam at SFT time breaks
+the strict no-BP claim for the SFT stage. The no-BP invariants hold for pretrain
+(where the VRAM advantage matters); SFT is small enough that BP fits, so the
+trade is pretrain-memory-efficiency for SFT-credit-accuracy. Recorded honestly
+in report.json: `no_autograd_at_pretrain=True`, `no_autograd_at_sft=False`.
+
+### Result (10000 SFT steps, seed 1; exp123 SFT is the existing seed-1 run)
+
+| metric | S2 hybrid (no-BP pretrain + BP SFT) | exp123 (BP pretrain + BP SFT) | arm-3 no-BP SFT |
+|---|---:|---:|---:|
+| SFT loss before | 4.8962 | 3.1586 | 5.0018 |
+| SFT loss after | 0.1087 | 0.0651 | 1.0603 |
+| token_acc after | 0.9615 | 0.9785 | 0.6484 |
+| exact_acc after (teacher-forced) | 0.2656 | 0.4453 | 0.0000 |
+| frozen-chain gen (n=200) | **17/200 (0.0850)** | **102/200 (0.5100)** | 0/200 (0.0000) |
+| SFT peak VRAM MiB | 2510.7 | -- (BP SFT) | 492.9 (no-BP) |
+| no autograd at pretrain / SFT | yes / no | no / no | yes / yes |
+
+The hybrid reaches frozen-chain **8.5%** -- well below the fix-catalog's 35-45%
+estimate, but dramatically above no-BP SFT's 0%. The 1.22-nat no-BP pretrain
+gap COMPOUNDS at the task level: BP SFT on the weaker pretrain recovers real
+capability (17 problems vs 0 for no-BP SFT) but only ~17% of full BP (17 vs 102).
+
+### Failure mode: correct arithmetic, wrong final answer (not mode-collapse)
+
+The no-BP SFT mode-collapsed (every prompt -> the same wrong template, e.g.
+"Answer: -130"). The hybrid does NOT -- each generation is prompt-specific and
+the arithmetic steps are often correct:
+
+```text
+truth=38  gen='Step 1: 4 + 4 = 8\nStep 2: 20 + 10 = 30\nStep 3: 30 + 8 = 38\nAnswer: 388'  -> 388 (wrong, steps right)
+truth=89  gen='Step 1: 45 + 47 = 96\nStep 2: 96 - 3 = 96\nAnswer: 96'  -> 96 (wrong, step 1 right)
+```
+
+The model learns the reasoning (steps compute the right intermediate values)
+but fails the final answer token -- "Answer: 388" when the steps produced 38.
+This is a higher-quality failure than mode-collapse: the weaker pretrain left
+the token-level output formatting less robust, which compounds under
+autoregressive generation (a single wrong token derails the extracted answer).
+Consistent with this: teacher-forced exact_acc (26.6%) is ~3x the generated
+frozen-chain (8.5%) -- the generation gap is wider than the teacher-forced gap,
+the signature of error compounding under autoregression.
+
+### What this proves
+
+| pipeline | frozen-chain | what it shows |
+|---|---:|---|
+| no-BP pretrain + no-BP SFT (arm 3) | 0% | DFA ceiling: can't do exact arithmetic at all |
+| no-BP pretrain + BP SFT (S2 hybrid) | 8.5% | BP SFT recovers real capability, but the weaker pretrain compounds |
+| BP pretrain + BP SFT (exp123) | 51% | full BP baseline |
+
+The 1.22-nat no-BP pretrain gap is NOT "free" at the task level -- it costs
+~42 frozen-chain points (8.5 vs 51) even when SFT uses exact BP. The no-BP
+pretrain is not "good enough" for the task; it provides a weaker LM foundation
+that BP SFT can partially overcome (0 -> 8.5%) but not close (8.5 vs 51). The
+honest no-BP win remains the pretrain memory profile (4.1x less VRAM, scales to
+h512 where BP cannot fit), not task-level quality -- and S2 shows the task cost
+of that memory win is large at the task level even with BP SFT recovery.
+
+### No-cheating audit
+
+- Quantizer untouched; no gate widened. The SFT config (10000 steps, batch 4,
+  lr 1e-4, AdamW) is exp123's exact SFT config; no per-config tuning.
+- The pretrain checkpoint is the arm-3 no-BP 50k run (the promoted pretrain
+  baseline); no BP pretrain mixed in. dense_top_rows=0 (pure hard ternary).
+- exp123 SFT is the existing seed-1 run (not retrained); 1-seed-vs-1-seed.
+- The hybrid is labeled honestly (BP at SFT, no-BP at pretrain); it is NOT
+  claimed as a no-BP end-to-end result.
+- builder_gate PASS; preflight-readme exit 0.
+
+## Feedback-alignment diagnostic (refutes the alignment hypothesis)
+
+A fix catalog proposed that the no-BP task failure is a feedback-ALIGNMENT
+problem: "SFT alignment is worse than pretrain, especially in the deep reasoning
+layers," so the next arm should be a state-conditioned feedback predictor
+(point 2) + alignment-gated curriculum (point 5). Arm 7's Phase-2 negative (a
+nonlinear-predictor residual win did not move eval) was a flag that alignment
+might not be the bottleneck, so this diagnostic measures it before building.
+
+`arm_alignment_diagnostic.py` (FREE -- no training run, ~10 min GPU): loads the
+arm-3 50k pretrain checkpoint in tequila mode, runs a 50-step bounded warmup
+under TWO batch distributions -- (1) pretrain LM batches, (2) SFT batches --
+captures the true BP grad_output per body layer + the head hidden_error (reuses
+`_capture_warmup_pairs`), fits the linear feedback matrix M by ridge LS exactly
+as `bp_warmup_seed_feedback` does, then reports per-layer
+`rho = cosine(true_BP_grad, M @ hidden_error)` -- the alignment the update
+actually uses -- grouped shallow / deep-qkv / other-body.
+
+### Result: alignment is OK in both, and SFT is BETTER-aligned than pretrain
+
+| layer group | pretrain rho | SFT rho | delta (SFT - pretrain) |
+|---|---:|---:|---:|
+| shallow (tape_reader/writer) | 0.771 | 0.864 | +0.09 |
+| deep qkv (4 layers) | 0.292 | 0.557 | +0.27 |
+| other body (attn.out/mlp) | 0.477 | 0.712 | +0.24 |
+| ALL BODY (19 layers) | 0.485 | 0.703 | +0.218 |
+
+Every group clears the 0.3 alignment gate in both arms. The catalog's central
+claim -- that SFT alignment is WORSE, especially in deep qkv -- is backwards:
+SFT alignment is +0.22 better overall, and the deep-qkv layers improve the MOST
+pretrain -> SFT (0.29 -> 0.56). The SFT exact-reasoning objective does not
+misalign the feedback; it aligns it better (the response-token-focused gradient
+is a cleaner target for the linear fit than the all-positions pretrain gradient).
+
+### Verdict: KILL the alignment hypothesis (points 2 and 5 of the catalog)
+
+- Point 2 (state-conditioned feedback predictor for better alignment): KILL,
+  not justified. Alignment is already decent (rho > 0.3 both arms). This is
+  exactly what arm 7's Phase-2 negative predicted -- a residual win did not move
+  eval because alignment was not the bottleneck. A heavier predictor would
+  repeat arm 7 at higher cost; measure-twice saved 1-2 weeks.
+- Point 5 (alignment-gated curriculum): KILL, not justified. The rho > 0.3 gate
+  passes in every layer group; there is nothing to gate.
+- The pretrain 1.22-nat gap is NOT an alignment problem either (pretrain rho
+  0.485, direction OK); it is a residual/magnitude problem (residual 0.55-0.92
+  even with rho ~ 0.5) plus the partial fit. "Fix pretrain alignment" is the
+  wrong lever for the pretrain gap.
+
+### What the data says the cause actually is
+
+Decent rho (0.49 / 0.70) + high residual (0.55-0.92) = RIGHT DIRECTION, WRONG
+MAGNITUDE. The DFA prediction M @ d points the right way but its norm/scale is
+off, layer-by-layer. The body-scale sweep then makes sense: raising the GLOBAL
+core_lr/beta cannot fix a PER-LAYER magnitude mismatch -- it overshoots some
+layers (divergence, the eta^2/2 g~^T H g~ term) while under-driving others. The
+no-BP failure is not misalignment (the catalog's framing); it is per-layer
+scale calibration that a single global knob cannot reach, on a curved landscape
+where overshoot diverges. This is a narrower, different problem than "build a
+better-aligned predictor" -- and it is consistent with every prior result: arm
+7 (better predictor did not help), arm 4 (refit deltas full-rank + oscillating),
+the body-scale sweep (global scale diverges), the curriculum (format-capable
+head does not rescue a crudely-scaled body).
+
+### No-cheating audit
+
+- No training run; no weights changed; no optimizer; no checkpoint. The
+  warmup uses autograd ONLY as a bounded offline measurement (50 steps, no
+  optimizer step, weights unchanged), the same pattern as arm 6/7 diagnostics.
+- The fitted M is the same ridge-LS fit the trainer uses (not a re-tuned fit),
+  so rho measures the alignment the actual no-BP update experiences.
+- The 0.3 gate is a pre-registered threshold ("useful" per arm 4's cosine
+  framing); not adjusted post-hoc.
+- builder_gate PASS; preflight-readme exit 0.
+
+## Per-layer gain diagnostic (refutes the per-layer-gain hypothesis, arm 8)
+
+The alignment refutation reframed the bottleneck as per-layer MAGNITUDE (right
+direction, wrong scale), motivating a proposed arm 8: one scalar gain per layer
+(`s_l = <g,q>/|q|^2`), fit from the warmup/refit probes, to calibrate what a
+global core_lr/beta cannot. Before building it, the same diagnostic was extended
+(`arm_alignment_diagnostic.py` `_fit_and_audit`) to measure, per layer:
+  - s* = <g,q>/|q|^2 = the LS gain matching the proxy to the true BP magnitude
+    (1.0 = proxy already correctly scaled; the gain a global core_lr applies)
+  - clip% = fraction of samples whose |q| exceeds update_clip (does clipping
+    distort per-layer ratios?)
+  - eff_step = mean applied |core_lr * min(|q|, update_clip)| (actual update mag)
+  - boundary = median |w - hard_w|/scale (distance to ternary flip, per layer)
+
+### Result: per-layer gain is already near-correct with a global knob
+
+SFT (core_lr 0.5, the 10k-SFT config):
+
+| layer group | rho | s* | clip% | boundary |
+|---|---:|---:|---:|---:|
+| shallow | 0.864 | 1.024 | 0.0% | 0.384 |
+| deep qkv | 0.557 | 1.044 | 0.0% | 0.369 |
+| other body | 0.712 | 0.982 | 0.0% | 0.370 |
+| ALL BODY | 0.703 | 1.001 | 0.0% | 0.372 |
+
+Pretrain (core_lr 0.5):
+
+| layer group | rho | s* | clip% | boundary |
+|---|---:|---:|---:|---:|
+| shallow | 0.771 | 1.029 | 0.0% | 0.384 |
+| deep qkv | 0.292 | 0.794 | 0.0% | 0.369 |
+| other body | 0.477 | 0.904 | 0.0% | 0.370 |
+| ALL_BODY | 0.485 | 0.901 | 0.0% | 0.372 |
+
+**s* spread: 1.2x (SFT) / 1.4x (pretrain)** -- every layer's ideal gain is
+within 1.2-1.4x of 1.0. A global core_lr gives every layer approximately the
+right gain. clip% is 0% everywhere (clipping is not distorting ratios). boundary
+distance is ~0.37 uniform (layers are similarly flip-prone; none is unusually
+starved or oversaturated). eff_step varies 70x across layers (0.0000 qkv ->
+0.0069 shallow), but that is BECAUSE |q| differs -- qkv gets small updates
+because its true BP grad is small, which is exactly what s* ~= 1 says is correct.
+
+### Verdict: KILL arm 8 (per-layer scalar gains) -- not justified
+
+The per-layer-gain hypothesis ("global core_lr cannot calibrate 19 layers with
+incompatible gains") is false: the layers do NOT need incompatible gains. s* is
+within 1.2-1.4x of 1.0 everywhere, well under the 3x gate that would mean a
+global knob is provably inadequate. Arm 8 would add machinery (per-layer scalars,
+fit/EMA/clamp) to fix a problem the measurement says is not there -- same
+discipline as arms 4/6/7/16: free diagnostic before the build, KILL if the gate
+fails. This one failed.
+
+### What this rules out, and what remains
+
+Two mechanisms from the fix catalog are now MEASURED-AND-FALSIFIED:
+  - direction (alignment): rho 0.49/0.70, OK in both, SFT better than pretrain.
+  - magnitude (per-layer gain): s* spread 1.2-1.4x, global knob is adequate.
+
+The body-scale sweep's divergence (core_lr 1.0 -> loss 55.8) is NOT explained by
+per-layer gain mismatch (s* ~ 1 everywhere) -- so it must be the curvature term
+(eta^2/2 q^T H q) blowing up, i.e. the update direction is right and the scale
+is right per-layer, but the LOSS SURFACE is curved enough that even a
+correctly-scaled step in a correctly-directed proxy overshoots. That points at
+the remaining untested lever: TRUST-REGION / curvature-aware updates (catalog
+point 4) -- forward-only loss checks that shrink eta when L(theta - eta*q) >
+L(theta). This is the one catalog lever not yet measured, and the two
+refutations (direction OK, gain OK) make it the live hypothesis: the no-BP
+update fails not because the direction or scale is wrong, but because a single
+scalar step on a curved surface is unsafe, and the safety check (loss decrease)
+was never enforced.
+
+### No-cheating audit
+
+- No training run; no weights changed; no optimizer. Same bounded-offline-BP
+  measurement pattern as the alignment diagnostic (50 warmup steps, no opt step).
+- s* is computed from the SAME ridge-LS fit the trainer uses (not re-tuned), so
+  it measures the gain the actual no-BP update would need.
+- The 3x gate is pre-registered ("a global knob provably can't calibrate beyond
+  this"); not adjusted post-hoc.
+- A mid-build bug (duplicate _audit_report definition, a huge |q|/|g| display
+  column) was fixed before the run; the s* numbers are unaffected (verified by
+  inline replication: rho 0.49 and s* ~1 reproduce exactly).
+- builder_gate PASS; preflight-readme exit 0.
+
+## Arm 4 (trust-region): loss-decrease-gated body updates -- works as safety, freezes the body
+
+The two refutations (direction OK, gain OK) pointed at the last catalog lever:
+trust-region / loss-decrease-gated updates (catalog point 4). The hypothesis:
+the body update is correctly directed and per-layer scaled but overshoots on a
+curved surface, so gate it -- before committing the body update, check-forward
+for the new loss; revert the body if it did not reduce loss. The head update
+(exact CE gradient) is always kept; only the crude DFA body is gated.
+
+`trust_region` flag in `nobp_train_step` (and the trainer/CLI): saves body
+masters before `apply_local_updates`, applies the body, runs a check-forward
+(`nobp_forward_observe` + `chunked_vocab_ce`) for the new loss, reverts the body
+if `new_loss >= old_loss`. Cost: 1 extra forward per step (~2x step time). No
+autograd in the check (forward-only loss compare); no-BP invariants intact.
+
+### Result: the gate prevents divergence but freezes the body (100-step probes)
+
+| config | gate | accept% | flip | loss 5.0 -> | body outcome |
+|---|---|---:|---:|---:|---|
+| core_lr 0.5, beta 0.03 (gentle) | off | -- | 1.4e-4 (band) | 1.48 | moves a little (mode-collapse) |
+| core_lr 0.5, beta 0.03 (gentle) | on | 100% | 1.4e-4 | 1.48 | same (gate accepts all) |
+| core_lr 0.5, beta 0.1 (in-band) | off | -- | 6e-4 | 12.1 | moves, loss regresses |
+| core_lr 0.5, beta 0.1 (in-band) | on | 4% | 2.8e-5 | 1.79 | FROZEN (96% rejected) |
+| core_lr 1.0, beta 0.1 (diverging) | off | -- | 1.0e-3 | 55.8 | diverges |
+| core_lr 1.0, beta 0.1 (diverging) | on | 1% | 1.8e-5 | 1.89 | FROZEN (99% rejected) |
+
+The trust region WORKS as a safety net: core_lr 1.0 + beta 0.1 goes from
+DIVERGE (loss 55.8 / eval 97.3) to STABLE (loss 1.89) -- the gate catches the
+harmful updates. But at every config where the body would move enough to learn
+(higher scale), 96-99% of body updates INCREASE per-step loss (curvature
+overshoot), so the gate rejects them and the body is effectively frozen (flip
+1.8-2.8e-5, well below the 1e-4 floor). The only config the gate accepts
+(gentle, 100%) is the one where the body barely moves anyway. There is NO
+middle ground where the body both moves AND the updates are per-step beneficial.
+
+### Verdict: KILL arm 4 as a learning enabler (validated as safety only)
+
+The trust region is a validated SAFETY MECHANISM (prevents divergence) but it
+does NOT unlock arithmetic. The body updates that move the body enough for
+exact reasoning are the same ones that increase per-step loss (overshoot on
+curvature), so the gate blocks them, freezing the body. This is the definitive
+confirmation of the curvature diagnosis: the no-BP body cannot learn exact
+arithmetic through DFA feedback because the per-step-beneficial updates do not
+move it enough, and the updates that move it enough are per-step harmful. Every
+gating mechanism (trust region, gentle scale) either blocks them (freezing the
+body) or lets them through (mode-collapse/divergence).
+
+### The catalog is now exhausted -- every lever measured
+
+| catalog lever | measurement | verdict |
+|---|---|---|
+| direction (alignment, point 2) | rho 0.49/0.70, SFT better than pretrain | OK -- KILL |
+| per-layer gain (arm 8) | s* spread 1.2-1.4x, global knob adequate | OK -- KILL |
+| trust region (point 4) | prevents divergence but 96-99% reject at moving configs | safety only -- KILL as learning enabler |
+| body-scale sweep (S3) | in-band configs regress/diverge | KILL |
+| two-phase curriculum (S1) | pass 1 format, pass 2 collapse | KILL |
+| hybrid BP SFT (S2) | 8.5% vs BP 51% -- pretrain gap compounds | quantified, not a no-BP fix |
+
+The no-BP body cannot learn exact multi-step arithmetic through the 19 crude
+DFA feedback matrices, confirmed from every angle: direction, magnitude,
+per-layer gain, trust-region gating, curriculum, and scale. The honest no-BP
+win stays the PRETRAIN memory profile (4.1x less VRAM, batch-invariant, scales
+to h512 where BP cannot fit on this 4 GB card), with a 1.22-nat pretrain LM gap
+that compounds to a ~42-point task gap (8.5% vs 51%) even with BP SFT recovery.
+The task-level gap is the DFA credit-assignment ceiling -- not a knob, not a
+gate, not a curriculum. Closing it needs a fundamentally better feedback
+channel (training-time autograd/Adam, or a heavier nonlinear predictor with
+per-step curvature awareness), both of which break the no-BP invariants the
+experiment exists to preserve.
+
+### No-cheating audit
+
+- Quantizer untouched; no Promote gate widened. The trust region is a pure
+  forward-only loss check (no autograd, no optimizer); the no-BP invariants
+  hold (verified: the gate reverts body masters, head update always kept).
+- The accept-rate metric is reported honestly (1-100% across configs); the
+  negative result (gate freezes the body) is reported, not hidden.
+- 21 tests pass (19 + 2 trust-region: reject harmful, accept beneficial).
+- builder_gate PASS; preflight-readme exit 0.

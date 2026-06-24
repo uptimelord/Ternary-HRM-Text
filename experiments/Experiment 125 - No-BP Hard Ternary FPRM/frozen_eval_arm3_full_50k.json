@@ -1,0 +1,171 @@
+{
+  "acc": 0.0,
+  "checkpoint": "artifacts\\phase0_fprm_exp125\\arm3_full_nseq4_steps50000_seed1\\pretrain\\checkpoint_fp32.pt",
+  "examples": [
+    {
+      "extracted": "200",
+      "generation": "  1}{2 + \\ \\left(1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P = \\2, the same of the $200",
+      "id": "arith_0001",
+      "passed": false,
+      "prompt": "Compute 24 + 14.",
+      "truth": "38"
+    },
+    {
+      "extracted": "200",
+      "generation": "I181 = \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0002",
+      "passed": false,
+      "prompt": "Compute 31 - 25.",
+      "truth": "6"
+    },
+    {
+      "extracted": "200",
+      "generation": "I1}{2 + \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0003",
+      "passed": false,
+      "prompt": "Compute 36 * 17.",
+      "truth": "612"
+    },
+    {
+      "extracted": "2000000",
+      "generation": "\\end{align*}(x)$ is 18 $g(x)$ is $\\(2. t^2-10,1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $2000000",
+      "id": "arith_0004",
+      "passed": false,
+      "prompt": "Compute (45 + 47) - 3.",
+      "truth": "89"
+    },
+    {
+      "extracted": "200",
+      "generation": "  1}{2 + \\ \\left(1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P = \\2, the same of the $200",
+      "id": "arith_0005",
+      "passed": false,
+      "prompt": "Compute 52 + 11.",
+      "truth": "63"
+    },
+    {
+      "extracted": "200",
+      "generation": "  1}{2 + \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0006",
+      "passed": false,
+      "prompt": "Compute 59 - 22.",
+      "truth": "37"
+    },
+    {
+      "extracted": "200",
+      "generation": "I181 = \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0007",
+      "passed": false,
+      "prompt": "Compute 33 * 18.",
+      "truth": "594"
+    },
+    {
+      "extracted": "2",
+      "generation": "\\end{align*}(x)$ be  If $g(x)$ is a^2. the same of a_3} \\1}{221 $g(x)$ is $P-- of $2}P_2 = \\frac{1}{2} \\frac{1}{2",
+      "id": "arith_0008",
+      "passed": false,
+      "prompt": "Compute (73 + 44) - 4.",
+      "truth": "113"
+    },
+    {
+      "extracted": "20",
+      "generation": " a1}{2 + \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P = \\2, the same of the $20",
+      "id": "arith_0009",
+      "passed": false,
+      "prompt": "Compute 80 + 8.",
+      "truth": "88"
+    },
+    {
+      "extracted": "200",
+      "generation": "I181 = \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0010",
+      "passed": false,
+      "prompt": "Compute 87 - 19.",
+      "truth": "68"
+    },
+    {
+      "extracted": "200",
+      "generation": "I181 = \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0011",
+      "passed": false,
+      "prompt": "Compute 30 * 19.",
+      "truth": "570"
+    },
+    {
+      "extracted": "2",
+      "generation": "\\end{align*}(x)$ be  If $g(x)$ is a time is  of $2} \\\\\n\\end{align*}1 \\frac{1}{221 $g(x)$ is $P-- of $2}P_2 = \\frac{1}{2} \\frac{1}{2",
+      "id": "arith_0012",
+      "passed": false,
+      "prompt": "Compute (18 + 41) - 5.",
+      "truth": "54"
+    },
+    {
+      "extracted": "20",
+      "generation": " a1}{2 + \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $20",
+      "id": "arith_0013",
+      "passed": false,
+      "prompt": "Compute 25 + 5.",
+      "truth": "30"
+    },
+    {
+      "extracted": "200",
+      "generation": "I181 = \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0014",
+      "passed": false,
+      "prompt": "Compute 32 - 16.",
+      "truth": "16"
+    },
+    {
+      "extracted": "200",
+      "generation": "I1}{2 + \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0015",
+      "passed": false,
+      "prompt": "Compute 27 * 20.",
+      "truth": "540"
+    },
+    {
+      "extracted": "2000000",
+      "generation": "\\end{align*}(x)$ is 18, 21}{x^2} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $2000000",
+      "id": "arith_0016",
+      "passed": false,
+      "prompt": "Compute (46 + 38) - 6.",
+      "truth": "78"
+    },
+    {
+      "extracted": "200",
+      "generation": "  1}{2 + \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0017",
+      "passed": false,
+      "prompt": "Compute 53 + 49.",
+      "truth": "102"
+    },
+    {
+      "extracted": "200",
+      "generation": "I181 = \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P--cycle3, the same of the $200",
+      "id": "arith_0018",
+      "passed": false,
+      "prompt": "Compute 60 - 13.",
+      "truth": "47"
+    },
+    {
+      "extracted": "20",
+      "generation": " 1881 = \\ \\1,1$ be   $AB 1}{12} = \\cos \\left[ \\frac1 \\frac{1}{221 $g(x)$ is $P = \\2, the same of the $20",
+      "id": "arith_0019",
+      "passed": false,
+      "prompt": "Compute 24 * 2.",
+      "truth": "48"
+    },
+    {
+      "extracted": "2",
+      "generation": "\\end{align*}(x)$ be  If $g(x)$ is a time is  of $2} \\\\\n\\end{align*}1 \\frac{1}{221 $g(x)$ is $P-- of $2}P_2 = \\frac{1}{2} \\frac{1}{2",
+      "id": "arith_0020",
+      "passed": false,
+      "prompt": "Compute (74 + 35) - 7.",
+      "truth": "102"
+    }
+  ],
+  "invalid": 0.0,
+  "label": "arm3_full_50k",
+  "limit": 200,
+  "mode": "hard",
+  "n": 200
+}

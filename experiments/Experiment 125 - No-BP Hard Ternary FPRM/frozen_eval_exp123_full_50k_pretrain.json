@@ -1,0 +1,171 @@
+{
+  "acc": 0.005,
+  "checkpoint": "artifacts\\phase0_fprm_exp123\\h256_fprm_adam8_amp_max20_bp4_steps50000_sft10000_seed1\\pretrain\\checkpoint_fp32.pt",
+  "examples": [
+    {
+      "extracted": "2",
+      "generation": "\\] the two sides of $2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2^{2",
+      "id": "arith_0001",
+      "passed": false,
+      "prompt": "Compute 24 + 14.",
+      "truth": "38"
+    },
+    {
+      "extracted": "27",
+      "generation": "\\](1.7}{27} \\frac{1}{27} \\frac{1}{27} \\frac{1}{27} \\frac{1}{27} \\frac{1}{27} \\frac{1}{27} \\frac{1}{27",
+      "id": "arith_0002",
+      "passed": false,
+      "prompt": "Compute 31 - 25.",
+      "truth": "6"
+    },
+    {
+      "extracted": "2",
+      "generation": "\\](1.3}{2} < 8.3}{2} < 8.3}{2} < 8.3}{2} < 8.3}{2} < 8.3}{2} < 8.3}{2) < 8.3}{2}",
+      "id": "arith_0003",
+      "passed": false,
+      "prompt": "Compute 36 * 17.",
+      "truth": "612"
+    },
+    {
+      "extracted": "-25",
+      "generation": "$$ that the least positive integers from $25-25-25-25-25-25-25-25-25-25-25-25-25-25-25-25-25-25",
+      "id": "arith_0004",
+      "passed": false,
+      "prompt": "Compute (45 + 47) - 3.",
+      "truth": "89"
+    },
+    {
+      "extracted": "8",
+      "generation": "\\]({ cmlabel positive integersO, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, ",
+      "id": "arith_0005",
+      "passed": false,
+      "prompt": "Compute 52 + 11.",
+      "truth": "63"
+    },
+    {
+      "extracted": "2",
+      "generation": "\\]({ know}{x}\\left(2814, 2814, 2814, 2814, 2814, 2814, 2814, 2814, 2814, 2",
+      "id": "arith_0006",
+      "passed": false,
+      "prompt": "Compute 59 - 22.",
+      "truth": "37"
+    },
+    {
+      "extracted": "8",
+      "generation": "I want to work a 2, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, ",
+      "id": "arith_0007",
+      "passed": false,
+      "prompt": "Compute 33 * 18.",
+      "truth": "594"
+    },
+    {
+      "extracted": "80",
+      "generation": "$$ find the least points by 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80",
+      "id": "arith_0008",
+      "passed": false,
+      "prompt": "Compute (73 + 44) - 4.",
+      "truth": "113"
+    },
+    {
+      "extracted": "-2024",
+      "generation": "It does not still get the answer:\n\na. 2024-2024-2024-2024-2024-2024-2024-2024-2024-2024-",
+      "id": "arith_0009",
+      "passed": false,
+      "prompt": "Compute 80 + 8.",
+      "truth": "88"
+    },
+    {
+      "extracted": "8",
+      "generation": "\\] the average of $P$ is 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8",
+      "id": "arith_0010",
+      "passed": false,
+      "prompt": "Compute 87 - 19.",
+      "truth": "68"
+    },
+    {
+      "extracted": "202",
+      "generation": "I am a few values is  to see that they now. itten that we can also#'s not't.\nI want to work a two other two different\\left(0.76, 2024, 2024, 2024, 202",
+      "id": "arith_0011",
+      "passed": false,
+      "prompt": "Compute 30 * 19.",
+      "truth": "570"
+    },
+    {
+      "extracted": "80",
+      "generation": "$$ find the least points by 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80, 80",
+      "id": "arith_0012",
+      "passed": false,
+      "prompt": "Compute (18 + 41) - 5.",
+      "truth": "54"
+    },
+    {
+      "extracted": "20",
+      "generation": "It does not still get the answer value, the answer is 8, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20, 20",
+      "id": "arith_0013",
+      "passed": false,
+      "prompt": "Compute 25 + 5.",
+      "truth": "30"
+    },
+    {
+      "extracted": "8",
+      "generation": "\\](1.7}{2} - 8 \\frac{x3}{2} - 8 \\frac{x^2}{x^2}{2} - 8 \\frac{x^2}{x^2} - 8 \\frac{x^2}{2} - 8 \\frac{x^",
+      "id": "arith_0014",
+      "passed": false,
+      "prompt": "Compute 32 - 16.",
+      "truth": "16"
+    },
+    {
+      "extracted": "-2",
+      "generation": "\\] 20.  If the total of numbers between 20.  If $\\frac{x^2}{x^2} - 2x-2x-2x-2x-2x-2x-2x-2x-2x-2x-2",
+      "id": "arith_0015",
+      "passed": false,
+      "prompt": "Compute 27 * 20.",
+      "truth": "540"
+    },
+    {
+      "extracted": "16",
+      "generation": "$$ find the least positive integers from two points as the least positive.  If $\\sqrt{\\frac{x}{2}\\left(28x+16} \\right) - 28x+16) \\left(28x+16) \\right)",
+      "id": "arith_0016",
+      "passed": false,
+      "prompt": "Compute (46 + 38) - 6.",
+      "truth": "78"
+    },
+    {
+      "extracted": "20",
+      "generation": "\\] 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 200, 20",
+      "id": "arith_0017",
+      "passed": false,
+      "prompt": "Compute 53 + 49.",
+      "truth": "102"
+    },
+    {
+      "extracted": "2",
+      "generation": "\\](100, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 27, 2",
+      "id": "arith_0018",
+      "passed": false,
+      "prompt": "Compute 60 - 13.",
+      "truth": "47"
+    },
+    {
+      "extracted": "8",
+      "generation": "It does not be a real 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,",
+      "id": "arith_0019",
+      "passed": false,
+      "prompt": "Compute 24 * 2.",
+      "truth": "48"
+    },
+    {
+      "extracted": "8",
+      "generation": "$$ find the least points by 7.  If $\\frac{x}{x}$ is half 80^\\circ - 7 \\text{ cm}\n\nD = 8.32, 8.32, 8.32, 8.32, 8.",
+      "id": "arith_0020",
+      "passed": false,
+      "prompt": "Compute (74 + 35) - 7.",
+      "truth": "102"
+    }
+  ],
+  "invalid": 0.02,
+  "label": "exp123_full_50k_pretrain",
+  "limit": 200,
+  "mode": "hard_export",
+  "n": 200
+}

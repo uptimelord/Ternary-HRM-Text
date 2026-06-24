@@ -11,6 +11,7 @@ import sys
 from typing import Any
 
 import torch
+from torch import nn
 from tokenizers import Tokenizer
 
 
@@ -86,12 +87,30 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--spsa-epsilon", type=float, default=1e-3)
     parser.add_argument(
         "--nobp-feedback-mode",
-        choices=["random", "bp-warmup"],
+        choices=["random", "bp-warmup", "bp-warmup-nl"],
         default="random",
-        help="DFA feedback matrix source: random (fixed) or bp-warmup (offline BP least-squares fit)",
+        help=(
+            "DFA feedback source: random (fixed), bp-warmup (offline BP linear "
+            "least-squares fit), or bp-warmup-nl (arm 7: frozen MLP predictors "
+            "for the deep-qkv layers + linear for the other 15)"
+        ),
     )
     parser.add_argument("--nobp-warmup-steps", type=int, default=0)
     parser.add_argument("--nobp-warmup-ridge", type=float, default=1e-3)
+    parser.add_argument(
+        "--nobp-nl-layers",
+        type=str,
+        default="",
+        help=(
+            "arm 7: comma-separated body layer names whose feedback is a frozen "
+            "MLP predictor instead of a linear matrix (e.g. the 4 deep qkv). "
+            "Only used with --nobp-feedback-mode bp-warmup-nl."
+        ),
+    )
+    parser.add_argument("--nobp-nl-hidden", type=int, default=256)
+    parser.add_argument("--nobp-nl-epochs", type=int, default=300)
+    parser.add_argument("--nobp-nl-lr", type=float, default=1e-3)
+    parser.add_argument("--nobp-nl-wd", type=float, default=1e-2)
     parser.add_argument(
         "--nobp-refit-interval",
         type=int,
@@ -205,11 +224,16 @@ def main() -> int:
         "vocab_size": args.vocab_size,
     }
     hard = args.train_rule != "bp"
-    warmup = args.nobp_feedback_mode == "bp-warmup"
+    warmup = args.nobp_feedback_mode in ("bp-warmup", "bp-warmup-nl")
     if warmup and not hard:
         raise ValueError("bp-warmup feedback requires a no-BP core train rule (got bp)")
     if warmup and args.nobp_warmup_steps <= 0:
         raise ValueError("bp-warmup feedback requires --nobp-warmup-steps > 0")
+    nl_layer_names = [s.strip() for s in args.nobp_nl_layers.split(",") if s.strip()]
+    if nl_layer_names and args.nobp_feedback_mode != "bp-warmup-nl":
+        raise ValueError("--nobp-nl-layers requires --nobp-feedback-mode bp-warmup-nl")
+    if args.nobp_feedback_mode == "bp-warmup-nl" and not nl_layer_names:
+        raise ValueError("bp-warmup-nl requires --nobp-nl-layers (the deep-qkv layer names)")
     # Build tequila (autograd) for warmup so backward populates body gradients;
     # the no-BP trainer flips the model to hard mode via configure_hard_ternary.
     build_hard = hard and not warmup
@@ -245,29 +269,52 @@ def main() -> int:
     )
 
     feedback_seed: dict[str, torch.Tensor] | None = None
+    predictor_seed: dict[str, nn.Module] | None = None
     if warmup:
         print(
-            f"feedback mode=bp-warmup warmup_steps={args.nobp_warmup_steps} "
+            f"feedback mode={args.nobp_feedback_mode} warmup_steps={args.nobp_warmup_steps} "
             f"ridge={args.nobp_warmup_ridge}",
             flush=True,
         )
-        feedback_seed = NOBP.bp_warmup_seed_feedback(
-            model,
-            batch_fn=lambda step: scheduled(train_tokens, step),
-            device=device,
-            warmup_steps=args.nobp_warmup_steps,
-            train_rule=args.train_rule,
-            bp_steps=args.bp_steps,
-            ridge=args.nobp_warmup_ridge,
-        )
+        if args.nobp_feedback_mode == "bp-warmup-nl":
+            print(
+                f"nl layers ({len(nl_layer_names)}): {nl_layer_names} "
+                f"hidden={args.nobp_nl_hidden} epochs={args.nobp_nl_epochs} "
+                f"lr={args.nobp_nl_lr} wd={args.nobp_nl_wd}",
+                flush=True,
+            )
+            feedback_seed, predictor_seed = NOBP.bp_warmup_seed_feedback_hybrid(
+                model,
+                batch_fn=lambda step: scheduled(train_tokens, step),
+                device=device,
+                warmup_steps=args.nobp_warmup_steps,
+                train_rule=args.train_rule,
+                bp_steps=args.bp_steps,
+                ridge=args.nobp_warmup_ridge,
+                nl_layers=set(nl_layer_names),
+                nl_hidden=args.nobp_nl_hidden,
+                nl_epochs=args.nobp_nl_epochs,
+                nl_lr=args.nobp_nl_lr,
+                nl_wd=args.nobp_nl_wd,
+            )
+        else:
+            feedback_seed = NOBP.bp_warmup_seed_feedback(
+                model,
+                batch_fn=lambda step: scheduled(train_tokens, step),
+                device=device,
+                warmup_steps=args.nobp_warmup_steps,
+                train_rule=args.train_rule,
+                bp_steps=args.bp_steps,
+                ridge=args.nobp_warmup_ridge,
+            )
         NOBP.configure_hard_ternary(model)
         if args.nobp_master_dtype == "fp16":
             model.half()
-        print(
-            f"bp-warmup seeded {len(feedback_seed)} feedback matrices; "
-            "no autograd / no optimizer state retained",
-            flush=True,
-        )
+        seeded_msg = f"bp-warmup seeded {len(feedback_seed)} feedback matrices"
+        if predictor_seed:
+            seeded_msg += f" + {len(predictor_seed)} frozen MLP predictors"
+        seeded_msg += "; no autograd / no optimizer state retained"
+        print(seeded_msg, flush=True)
 
     if hard:
         first_eval = NOBP.evaluate_nobp_hard(
@@ -299,6 +346,12 @@ def main() -> int:
             master_dtype=args.nobp_master_dtype,
             spsa_epsilon=args.spsa_epsilon,
             feedback_matrices_seed=feedback_seed,
+            feedback_predictors_seed=predictor_seed,
+            feedback_nl_layers=nl_layer_names,
+            feedback_nl_hidden=args.nobp_nl_hidden,
+            feedback_nl_epochs=args.nobp_nl_epochs,
+            feedback_nl_lr=args.nobp_nl_lr,
+            feedback_nl_wd=args.nobp_nl_wd,
             feedback_refit_interval=args.nobp_refit_interval,
             feedback_refit_steps=args.nobp_refit_steps,
             feedback_refit_ridge=args.nobp_refit_ridge,

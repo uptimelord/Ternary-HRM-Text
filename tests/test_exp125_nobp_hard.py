@@ -114,11 +114,17 @@ def test_cli_defaults_match_no_bp_hard_contract() -> None:
     assert set(parser._option_string_actions["--nobp-feedback-mode"].choices) == {
         "random",
         "bp-warmup",
+        "bp-warmup-nl",
     }
     assert args.export_calibration_steps == 0
     assert args.sft_steps == 0
     assert args.dense_top_k == 0
     assert args.frozen_limit == 0
+    assert args.nobp_nl_hidden == 256
+    assert args.nobp_nl_epochs == 300
+    assert args.nobp_nl_lr == pytest.approx(1e-3)
+    assert args.nobp_nl_wd == pytest.approx(1e-2)
+    assert args.nobp_nl_layers == ""
 
 
 def test_exp125_model_is_pure_hard_ternary_with_plan_quantizer() -> None:
@@ -634,3 +640,341 @@ def test_spsa_hard_runs_without_autograd_and_updates_tied_master(monkeypatch) ->
     assert torch.isfinite(result.loss)
     assert not torch.equal(model.tied_vocab.weight, before)
     assert all(parameter.grad is None for parameter in model.parameters())
+
+
+def test_bp_warmup_hybrid_seeds_predictor_for_named_layers_and_linear_elsewhere() -> None:
+    """Arm 7 Phase 2: the hybrid warmup fits a frozen MLP predictor for the
+    named (deep-qkv) layers and a linear matrix for the other DFA feedback
+    layers, with no weight mutation and no lingering grad/autograd state.
+    """
+    nobp = _nobp_module()
+    model = _tiny_fprm()  # tequila/autograd mode for the warmup
+    targets = nobp.local_update_targets(model, "nobp-dfa-full-hard")
+    fit_layers = {n for n in targets if n != "model.tape_writer.fc2"}
+    nl_layer = "model.resonance_core.layers.0.attn.qkv"
+    assert nl_layer in fit_layers
+    master_before = {
+        name: module.weight.detach().clone()
+        for name, module in nobp.named_ternary_modules(model)
+    }
+
+    matrices, predictors = nobp.bp_warmup_seed_feedback_hybrid(
+        model,
+        batch_fn=lambda _step: _tiny_batch(),
+        device=torch.device("cpu"),
+        warmup_steps=12,
+        train_rule="nobp-dfa-full-hard",
+        bp_steps=1,
+        ridge=1e-3,
+        nl_layers={nl_layer},
+        nl_hidden=16,
+        nl_epochs=20,
+        nl_lr=1e-2,
+        nl_wd=1e-2,
+    )
+
+    # Exactly the named layer gets an MLP predictor; every other fit layer gets
+    # a linear matrix. The partition covers all fit layers, disjoint.
+    assert set(predictors) == {nl_layer}
+    assert set(matrices) == fit_layers - {nl_layer}
+    pred = predictors[nl_layer]
+    assert isinstance(pred, nobp.FrozenNLFeedback)
+    # Frozen: no requires_grad, eval mode, parameters detached.
+    assert all(not p.requires_grad for p in pred.parameters())
+    assert not pred.training
+    out = targets[nl_layer].weight.shape[0]
+    assert pred.h_mean.shape == (1, model.tied_vocab.weight.shape[1])
+    assert pred.g_mean.shape == (1, out)
+    for m in matrices.values():
+        assert torch.isfinite(m).all()
+
+    # No-cheating line: warmup did not step an optimizer -- ternary masters are
+    # byte-identical to before, and no grad/autograd state lingers.
+    for name, module in nobp.named_ternary_modules(model):
+        torch.testing.assert_close(module.weight, master_before[name], rtol=0, atol=0)
+    assert all(parameter.grad is None for parameter in model.parameters())
+
+
+def test_hybrid_step_uses_predictor_path_without_autograd(monkeypatch) -> None:
+    """Arm 7 Phase 2: a dfa-full step with the seeded hybrid channel consumes the
+    frozen MLP predictor for the named layer (no autograd) and the linear matrix
+    for the rest, and moves the body. Patches backward/grad to raise so any
+    stray autograd would fail loudly.
+    """
+    nobp = _nobp_module()
+    model = _tiny_fprm()  # tequila for warmup
+    nl_layer = "model.resonance_core.layers.0.attn.qkv"
+    matrices, predictors = nobp.bp_warmup_seed_feedback_hybrid(
+        model,
+        batch_fn=lambda _step: _tiny_batch(),
+        device=torch.device("cpu"),
+        warmup_steps=12,
+        train_rule="nobp-dfa-full-hard",
+        bp_steps=1,
+        ridge=1e-3,
+        nl_layers={nl_layer},
+        nl_hidden=16,
+        nl_epochs=20,
+        nl_lr=1e-2,
+        nl_wd=1e-2,
+    )
+    nobp.configure_hard_ternary(model)
+    targets = nobp.local_update_targets(model, "nobp-dfa-full-hard")
+    body_before = {
+        name: module.weight.detach().clone() for name, module in targets.items()
+    }
+
+    def reject(*_args, **_kwargs):
+        raise AssertionError("hybrid no-BP path called autograd")
+
+    monkeypatch.setattr(torch.Tensor, "backward", reject)
+    monkeypatch.setattr(torch.autograd, "grad", reject)
+    result = nobp.nobp_train_step(
+        model,
+        _tiny_batch(),
+        train_rule="nobp-dfa-full-hard",
+        vocab_chunk_size=8,
+        head_lr=0.0,
+        core_lr=0.05,
+        beta=1.0,
+        residual_lambda=0.0,
+        update_clip=1.0,
+        bp_steps=1,
+        feedback_matrices=matrices,
+        feedback_predictors=predictors,
+    )
+
+    assert result.core_update_norm > 0.0
+    assert all(parameter.grad is None for parameter in model.parameters())
+    moved = {
+        name
+        for name, module in targets.items()
+        if not torch.equal(module.weight, body_before[name])
+    }
+    # The predictor-backed layer and at least one matrix-backed layer both moved.
+    assert nl_layer in moved
+    assert len(moved) >= 2
+
+
+def test_hybrid_checkpoint_round_trips_predictor_and_resume_is_exact(tmp_path: Path) -> None:
+    """Arm 7 Phase 2: the checkpoint carries the frozen MLP predictors and the
+    resume-mismatch check rejects changed nl hyperparameters; a resumed run is
+    byte-identical to an uninterrupted run (predictors included).
+    """
+    nobp = _nobp_module()
+    nl_layer = "model.resonance_core.layers.0.attn.qkv"
+    checkpoint_path = tmp_path / "hybrid_progress.pt"
+    kwargs = {
+        "batch_fn": lambda _step: _tiny_batch(),
+        "device": torch.device("cpu"),
+        "train_rule": "nobp-dfa-full-hard",
+        "vocab_chunk_size": 8,
+        "head_lr": 0.01,
+        "core_lr": 0.01,
+        "beta": 0.03,
+        "residual_lambda": 0.003,
+        "update_clip": 1.0,
+        "bp_steps": 1,
+        "log_interval": 0,
+        "feedback_nl_layers": [nl_layer],
+        "feedback_nl_hidden": 16,
+        "feedback_nl_epochs": 20,
+        "feedback_nl_lr": 1e-2,
+        "feedback_nl_wd": 1e-2,
+    }
+
+    def seed(model):
+        return nobp.bp_warmup_seed_feedback_hybrid(
+            model,
+            batch_fn=lambda _step: _tiny_batch(),
+            device=torch.device("cpu"),
+            warmup_steps=12,
+            train_rule="nobp-dfa-full-hard",
+            bp_steps=1,
+            ridge=1e-3,
+            nl_layers={nl_layer},
+            nl_hidden=16,
+            nl_epochs=20,
+            nl_lr=1e-2,
+            nl_wd=1e-2,
+        )
+
+    torch.manual_seed(127)
+    uninterrupted = _tiny_fprm()
+    matrices_u, predictors_u = seed(uninterrupted)
+    nobp.configure_hard_ternary(uninterrupted)
+    nobp.train_pretrain_fprm_nobp_hard(
+        uninterrupted, steps=4,
+        feedback_matrices_seed=matrices_u,
+        feedback_predictors_seed=predictors_u,
+        **kwargs,
+    )
+
+    torch.manual_seed(127)
+    partial = _tiny_fprm()
+    matrices_p, predictors_p = seed(partial)
+    nobp.configure_hard_ternary(partial)
+    nobp.train_pretrain_fprm_nobp_hard(
+        partial, steps=2,
+        feedback_matrices_seed=matrices_p,
+        feedback_predictors_seed=predictors_p,
+        checkpoint_path=checkpoint_path,
+        checkpoint_interval=1,
+        **kwargs,
+    )
+    payload = torch.load(checkpoint_path, map_location="cpu", weights_only=False)
+    assert payload["step"] == 2
+    assert nl_layer in payload["feedback_predictors"]
+    assert payload["nobp_feedback_nl_layers"] == [nl_layer]
+    assert "optimizer_state_dict" not in payload
+
+    torch.manual_seed(999)
+    resumed = _tiny_fprm()
+    nobp.configure_hard_ternary(resumed)
+    metrics = nobp.train_pretrain_fprm_nobp_hard(
+        resumed, steps=4,
+        checkpoint_path=checkpoint_path,
+        checkpoint_interval=1,
+        resume=True,
+        **kwargs,
+    )
+    assert metrics["resumed_from_step"] == 2
+    assert metrics["feedback_predictor_count"] == 1
+    for name, expected in uninterrupted.state_dict().items():
+        torch.testing.assert_close(resumed.state_dict()[name], expected, rtol=0, atol=0)
+
+    # Resume mismatch: changing the nl hyperparameters must be rejected.
+    torch.manual_seed(999)
+    bad = _tiny_fprm()
+    nobp.configure_hard_ternary(bad)
+    with pytest.raises(ValueError, match="no-BP resume mismatch"):
+        nobp.train_pretrain_fprm_nobp_hard(
+            bad, steps=4,
+            checkpoint_path=checkpoint_path,
+            checkpoint_interval=1,
+            resume=True,
+            **{**kwargs, "feedback_nl_hidden": 32},
+        )
+
+
+def test_evaluate_sft_nobp_hard_is_finite_and_update_free() -> None:
+    """arm-3 SFT eval: loss/token_acc/exact_acc are finite and in range, and the
+    model weights do not change (eval is no-grad, no update).
+    """
+    nobp = _nobp_module()
+    model = _tiny_fprm()
+    nobp.configure_hard_ternary(model)
+    before = {name: value.detach().clone() for name, value in model.state_dict().items()}
+
+    # make_batch ignores the sequences arg and returns the tiny batch (1 seq,
+    # 2 valid response tokens at positions 1,2). sequences just needs to be
+    # indexable; dummies are fine since make_batch ignores them.
+    def make_batch(_seqs, device, vocab_size, total_len):
+        return _tiny_batch()
+
+    metrics = nobp.evaluate_sft_nobp_hard(
+        model,
+        sequences=[None] * 10,
+        make_batch=make_batch,
+        device=torch.device("cpu"),
+        vocab_size=32,
+        total_len=4,
+        batch_size=1,
+        eval_batches=2,
+        vocab_chunk_size=8,
+        bp_steps=1,
+    )
+
+    assert metrics["loss"] > 0
+    assert 0.0 <= metrics["token_acc"] <= 1.0
+    assert 0.0 <= metrics["exact_acc"] <= 1.0
+    assert metrics["tokens"] > 0
+    assert metrics["examples"] > 0
+    for name, expected in before.items():
+        torch.testing.assert_close(model.state_dict()[name], expected, rtol=0, atol=0)
+
+
+def test_trust_region_reverts_body_when_loss_does_not_decrease() -> None:
+    """arm 4: with trust_region on, a body update that does not reduce loss is
+    reverted (body weights unchanged); the head update (exact CE gradient) is
+    kept. Uses a huge core_lr so the crude body update hurts -- the gate must
+    catch it. No autograd in the check (it's a forward-only loss compare).
+    """
+    nobp = _nobp_module()
+    model = _tiny_fprm()
+    nobp.configure_hard_ternary(model)
+    targets = nobp.local_update_targets(model, "nobp-dfa-full-hard")
+    body_before = {name: module.weight.detach().clone() for name, module in targets.items()}
+    head_before = model.tied_vocab.weight.detach().clone()
+
+    # Seed a feedback matrix so the body path runs (not the random fallback).
+    matrices = {name: torch.randn(module.weight.shape[0], model.tied_vocab.weight.shape[1])
+                for name, module in targets.items() if name != "model.tape_writer.fc2"}
+
+    result = nobp.nobp_train_step(
+        model,
+        _tiny_batch(),
+        train_rule="nobp-dfa-full-hard",
+        vocab_chunk_size=8,
+        head_lr=0.0,          # head does not move -> isolates the body gate
+        core_lr=100.0,        # huge -> body update overshoots, loss increases
+        beta=1.0,
+        residual_lambda=0.0,
+        update_clip=1.0,
+        bp_steps=1,
+        feedback_matrices=matrices,
+        trust_region=True,
+    )
+
+    # The body update was proposed (core_update_norm > 0 before the gate) but
+    # the gate reverted it: body weights are byte-identical to before.
+    assert result.trust_region_accepted is False
+    assert result.trust_region_loss_delta > 0.0  # loss went up -> rejected
+    for name, module in targets.items():
+        torch.testing.assert_close(module.weight, body_before[name], rtol=0, atol=0)
+    # Head was not updated (head_lr=0), so it's unchanged too.
+    torch.testing.assert_close(model.tied_vocab.weight, head_before, rtol=0, atol=0)
+    assert all(parameter.grad is None for parameter in model.parameters())
+
+
+def test_trust_region_accepts_body_when_loss_decreases() -> None:
+    """arm 4: with trust_region on, a gentle body update that reduces loss is
+    accepted (body weights change). Uses a warmup-FITTED matrix (good direction)
+    so a gentle update actually reduces loss -- the realistic accept path.
+    """
+    nobp = _nobp_module()
+    model = _tiny_fprm()  # tequila for the warmup fit
+    matrices = nobp.bp_warmup_seed_feedback(
+        model,
+        batch_fn=lambda _step: _tiny_batch(),
+        device=torch.device("cpu"),
+        warmup_steps=12,
+        train_rule="nobp-dfa-full-hard",
+        bp_steps=1,
+        ridge=1e-3,
+    )
+    nobp.configure_hard_ternary(model)
+    targets = nobp.local_update_targets(model, "nobp-dfa-full-hard")
+    body_before = {name: module.weight.detach().clone() for name, module in targets.items()}
+
+    result = nobp.nobp_train_step(
+        model,
+        _tiny_batch(),
+        train_rule="nobp-dfa-full-hard",
+        vocab_chunk_size=8,
+        head_lr=0.0,
+        core_lr=0.05,      # gentle, fitted direction -> reduces loss
+        beta=1.0,
+        residual_lambda=0.0,
+        update_clip=1.0,
+        bp_steps=1,
+        feedback_matrices=matrices,
+        trust_region=True,
+    )
+
+    # Gentle fitted update: the gate accepts (loss decreased), body weights changed.
+    assert result.trust_region_accepted is True
+    assert result.trust_region_loss_delta <= 0.0
+    moved = {name for name, module in targets.items()
+             if not torch.equal(module.weight, body_before[name])}
+    assert moved  # at least one body layer moved on an accepted step
