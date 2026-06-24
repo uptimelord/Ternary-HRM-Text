@@ -184,11 +184,13 @@ def biased_metrics(
     vocab_chunk_size: int,
     memory_on: bool,
     k: int = 10,
+    trust: Tensor | None = None,  # [V] per-token trust scale (None = ones)
 ) -> dict[str, float]:
-    """Chunked top-k/rank/loss/ECE with z' = W_o h + beta * b_M.
+    """Chunked top-k/rank/loss/ECE with z' = W_o h + beta * (trust * b_M).
 
-    Reuses p1a.chunked_topk_rank_loss_ece by injecting the bias into each
-    chunk's logits. O(N * V * D) like the unbiased version.
+    `trust` (R^V, init 1.0) is a per-vocab-token scale on the memory bias --
+    the trainable b_M. Reuses p1a.chunked_topk_rank_loss_ece by injecting the
+    bias into each chunk's logits. O(N * V * D) like the unbiased version.
     """
     mask = labels != -100
     vh = h[mask].float()
@@ -197,7 +199,10 @@ def biased_metrics(
     N = vh.shape[0]
     V = int(weight.shape[0])
     wf = weight.float()
-    bias_term = beta * vb  # [N, V]
+    if trust is None:
+        bias_term = beta * vb  # [N, V] (scalar beta, trust=1)
+    else:
+        bias_term = beta * (trust.to(vb.device).float().unsqueeze(0) * vb)  # [N, V]
 
     # Pass 1: logsumexp + correct logit (with bias added)
     logsumexp = torch.full((N,), float("-inf"), device=vh.device)
@@ -272,12 +277,16 @@ def beta_update(
     shortlist_size: int = 2048,
     neg_size: int = 512,
     generator: torch.Generator | None = None,
+    trust: Tensor | None = None,   # [V] trainable per-token scale (mutated in place)
+    eta_trust: float = 0.0,        # 0 = freeze trust (scalar-beta-only path)
 ) -> tuple[float, dict[str, float]]:
-    """Scalar LMS on beta via a shortlist CE.
+    """Local LMS on beta (and trust) via a shortlist CE. No backprop, no Adam.
 
-    Sample a shortlist S_t (targets + negatives), compute p = softmax(W_o h + beta b_M
-    over S_t), error e = p - 1[y in S_t], and update beta by the gradient of the
-    shortlist CE w.r.t. beta: dL/dbeta = mean( e . b_M_S ). Local, no backprop.
+    z' = W_o h + beta * (trust * b_M). With trust=1 (frozen) this reduces to the
+    scalar-beta path. Gradients (shortlist CE, error e = p - 1[y]):
+        dL/dbeta      = mean_n sum_j e[n,j] * (trust_j * b_M[n,j])
+        dL/dtrust_j   = beta * mean_n e[n,j] * b_M[n,j]
+    Only shortlist rows of trust are touched (sparse update, ~|S| rows/step).
     """
     mask = labels != -100
     if not bool(mask.any()):
@@ -310,18 +319,29 @@ def beta_update(
     S = S.to(vh.device)
     Sv = int(S.shape[0])
 
-    logits_S = F.linear(vh, wf.index_select(0, S)) + beta * vb.index_select(1, S)  # [N, Sv]
+    # Apply trust to the bias before computing logits (so the shortlist CE
+    # reflects the trained trust, and the beta gradient accounts for it).
+    trust_S = trust.index_select(0, S).float() if trust is not None else torch.ones(Sv, device=vh.device)
+    bM_S = vb.index_select(1, S)                                  # [N, Sv] raw bias
+    logits_S = F.linear(vh, wf.index_select(0, S)) + beta * (trust_S.unsqueeze(0) * bM_S)  # [N, Sv]
     logsumexp_S = torch.logsumexp(logits_S, dim=-1)
-    p_S = torch.exp(logits_S - logsumexp_S.unsqueeze(-1))  # [N, Sv]
+    p_S = torch.exp(logits_S - logsumexp_S.unsqueeze(-1))          # [N, Sv]
     local_tgt = torch.searchsorted(S, vl)
     p_S.scatter_(1, local_tgt.unsqueeze(-1), p_S.gather(1, local_tgt.unsqueeze(-1)) - 1.0)
-    error = p_S  # [N, Sv] = p - 1[y]
+    error = p_S                                                   # [N, Sv] = p - 1[y]
 
-    # dL/dbeta = mean_n sum_j error[n,j] * b_M[n, S[j]]
-    bM_S = vb.index_select(1, S)  # [N, Sv]
-    grad = float((error * bM_S).sum().cpu()) / max(1, N)
-    new_beta = beta - eta_beta * grad
-    return new_beta, {"grad": grad, "n_valid": int(N), "S_size": Sv}
+    # dL/dbeta = mean_n sum_j e[n,j] * (trust_j * b_M[n,j])
+    grad_beta = float((error * (trust_S.unsqueeze(0) * bM_S)).sum().cpu()) / max(1, N)
+    new_beta = beta - eta_beta * grad_beta
+
+    info = {"grad": grad_beta, "n_valid": int(N), "S_size": Sv, "trust_update_norm": 0.0}
+    # dL/dtrust_j = beta * mean_n e[n,j] * b_M[n,j]  (only shortlist rows j)
+    if trust is not None and eta_trust > 0.0:
+        grad_trust_S = beta * (error * bM_S).mean(dim=0)           # [Sv]
+        # in-place sparse update on the shortlist rows of trust
+        trust.index_add_(0, S, (-eta_trust * grad_trust_S).to(trust.dtype))
+        info["trust_update_norm"] = float((eta_trust * grad_trust_S).abs().sum().cpu())
+    return new_beta, info
 
 
 # ---------------------------------------------------------------------------
@@ -348,6 +368,12 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--steps", type=int, default=500)
     p.add_argument("--eta-beta", type=float, default=1.0, help="beta LMS LR")
     p.add_argument("--beta-init", type=float, default=0.0)
+    # trainable b_M: per-token trust scale (the 1B-logit-bias push)
+    p.add_argument("--train-trust", action=argparse.BooleanOptionalAction, default=True,
+                   help="train a per-vocab-token trust scale on b_M (trainable b_M). "
+                        "Off = scalar-beta-only path (the v1 run).")
+    p.add_argument("--eta-trust", type=float, default=1e-2, help="trust LMS LR (per-token)")
+    p.add_argument("--trust-init", type=float, default=1.0, help="trust init value (1.0 = identity)")
     p.add_argument("--shortlist-size", type=int, default=2048)
     p.add_argument("--neg-size", type=int, default=512)
     p.add_argument("--log-interval", type=int, default=50)
@@ -416,7 +442,11 @@ def main() -> int:
 
     head_weight = hard_ternary_weight(model.tied_vocab).detach()
     beta = args.beta_init
-    print(f"logit bias: beta_init={beta}, eta_beta={args.eta_beta}", flush=True)
+    trust = (torch.full((args.vocab_size,), args.trust_init, device=device)
+             if args.train_trust else None)
+    print(f"logit bias: beta_init={beta}, eta_beta={args.eta_beta}; "
+          f"trust={'trainable' if trust is not None else 'frozen(1.0)'}, "
+          f"eta_trust={args.eta_trust}, trust_init={args.trust_init}", flush=True)
 
     # ---- Build caches: frozen hidden + memory logit bias (off=0, relevant, distractor) ----
     def build_bias_cache(memory, n_batches, src):
@@ -459,14 +489,15 @@ def main() -> int:
                                       lab, head_weight, beta=0.0, vocab_chunk_size=args.vocab_chunk_size, memory_on=False))
         return _avg(res)
 
-    def eval_on(bias_cache, beta_val):
+    def eval_on(bias_cache, beta_val, trust_val=None):
         res = []
         for step in range(args.eval_batches):
             b = scheduled(eval_tokens, step)
             lab = b["labels"].reshape(-1)
             bias_dense = _to_dense_flat(bias_cache[step], eval_h[step].shape[0], args.vocab_size, device)
             res.append(biased_metrics(eval_h[step], bias_dense, lab, head_weight,
-                                      beta=beta_val, vocab_chunk_size=args.vocab_chunk_size, memory_on=True))
+                                      beta=beta_val, vocab_chunk_size=args.vocab_chunk_size,
+                                      memory_on=True, trust=trust_val))
             del bias_dense
             if device.type == "cuda":
                 torch.cuda.empty_cache()
@@ -502,16 +533,19 @@ def main() -> int:
         bias_dense = _to_dense_flat(train_bias[step], train_h[step].shape[0], args.vocab_size, device)
         beta, info = beta_update(train_h[step], bias_dense, lab, head_weight, beta,
                                  eta_beta=args.eta_beta, shortlist_size=args.shortlist_size,
-                                 neg_size=args.neg_size, generator=gen_beta)
+                                 neg_size=args.neg_size, generator=gen_beta,
+                                 trust=trust, eta_trust=(args.eta_trust if args.train_trust else 0.0))
         del bias_dense
         if (step + 1) % args.log_interval == 0:
+            trust_norm = float(trust.float().abs().mean().cpu()) if trust is not None else 1.0
             print(f"  step {step+1}/{args.steps}: beta={beta:.4f} grad={info['grad']:.6f} "
-                  f"S_size={info.get('S_size',0)}", flush=True)
+                  f"S_size={info.get('S_size',0)} trust|mean|={trust_norm:.4f} "
+                  f"trust|u|={info.get('trust_update_norm',0.0):.6f}", flush=True)
 
     # ---- Final eval ----
     final_off = eval_off()
-    final_on = eval_on(eval_bias_rel, beta)
-    final_dist = eval_on(eval_bias_dist, beta)
+    final_on = eval_on(eval_bias_rel, beta, trust)
+    final_dist = eval_on(eval_bias_dist, beta, trust)
 
     # ---- New-doc insertion (the real test: answer in memory) ----
     insertion = []
@@ -536,7 +570,7 @@ def main() -> int:
                                     query_window=args.query_window, query_stride=args.query_stride,
                                     top_k=args.memory_top_k, device=device).reshape(-1, args.vocab_size).to(device)
         on = biased_metrics(h, bias_new, lab.reshape(-1), head_weight, beta=beta,
-                            vocab_chunk_size=args.vocab_chunk_size, memory_on=True)
+                            vocab_chunk_size=args.vocab_chunk_size, memory_on=True, trust=trust)
         del bias_new
         # also: does the answer token's rank improve specifically?
         ans = full[args.prefix_len].item()
@@ -553,7 +587,9 @@ def main() -> int:
              "",
              f"checkpoint: `{args.checkpoint}` (frozen, Delta-theta-core=0, Delta-theta-head=0)",
              f"bias: z' = W_o h + beta * b_M ; b_M = retrieved chunks' token-freq dist (decay-weighted)",
-             f"trained: beta only ({args.steps} steps, eta_beta={args.eta_beta}), beta_init={args.beta_init} -> {beta:.4f}",
+             f"trained: beta + {'trust (per-token)' if args.train_trust else 'trust frozen'} "
+             f"({args.steps} steps, eta_beta={args.eta_beta}, eta_trust={args.eta_trust}), "
+             f"beta_init={args.beta_init} -> {beta:.4f}",
              f"retrieval: {args.retrieval_mode}, exact only, top_k={args.memory_top_k}, stride={args.query_stride}",
              "",
              "## Results (averaged over eval batches)",
@@ -594,6 +630,13 @@ def main() -> int:
         "args": {k: (str(v) if isinstance(v, Path) else v) for k, v in vars(args).items()},
         "checkpoint": str(args.checkpoint),
         "beta_trained": float(beta),
+        "trust_stats": ({
+            "mean": float(trust.float().mean().cpu()),
+            "std": float(trust.float().std().cpu()),
+            "min": float(trust.float().min().cpu()),
+            "max": float(trust.float().max().cpu()),
+            "n_nonzero": int((trust.float() != 1.0).sum().cpu()),
+        } if trust is not None else None),
         "results": {"baseline_off": base, "on_relevant": final_on, "on_distractor": final_dist,
                     "sanity_on_at_beta0": base_on0},
         "new_doc_insertion": insertion,

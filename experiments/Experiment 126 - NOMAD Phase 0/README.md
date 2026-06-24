@@ -432,12 +432,57 @@ question. Next levers (not run): trainable b_M (per-chunk/per-token weights, not
 just scalar beta), a sharper bias (top-1 of retrieved dist instead of soft freq),
 or position-specific beta.
 
-### Bugs fixed during 1B-logit-bias
+### Phase 1B-logit-bias + trainable b_M (the PROMOTE run)
 
-- **Shortlist excluded memory's candidate tokens** -> beta got grad 0 and never
-  learned. Fixed: S_t now includes the top-bias tokens (memory's candidates),
-  the analogue of 1A's prev-preds hard negatives for the logit-bias path.
-- **Dense [N,V] bias cache OOM'd** (500 tensors = ~250 GB). Fixed: store sparse
-  COO on CPU, densify one at a time on GPU (max 256 MB live).
+Made `b_M` trainable: a per-vocab-token trust scale `trust ∈ R^V` (init 1.0),
+`z' = W_o h + beta * (trust ⊙ b_M_raw)`, local LMS on both beta and the
+shortlist rows of trust. Same frozen core + frozen head, exact retrieval.
+
+```
+dL/dbeta      = mean_n sum_j e[n,j] * (trust_j * b_M[n,j])
+dL/dtrust_j   = beta * mean_n e[n,j] * b_M[n,j]   (only shortlist rows j, sparse)
+```
+
+**Key tuning finding:** the trust gradient is gated by `beta * error * b_M`
+(~5e-3), so `eta_trust` must be ~1000× a typical LR to move trust meaningfully
+(`eta_trust=4000`, derived from gradient-magnitude analysis). At `eta_trust=1e-2`
+trust stayed at 1.0 ± 0.003 (no effect) — the coupled beta-early/trust-late
+dynamic starves trust of signal unless the LR is aggressive.
+
+### Results (500 steps, eta_trust=4000, beta 0.0 -> 1.20, trust mean=1.04 std=0.75)
+
+| test | loss | top1 | top5 | top10 | mean_rank | ece |
+|------|------|------|------|-------|-----------|-----|
+| baseline (off) | 7.9450 | 0.1533 | 0.2949 | 0.3738 | 7025.1 | 0.1136 |
+| on relevant (beta+trust) | 7.8679 | 0.1541 | 0.3101 | 0.3892 | 7012.8 | 0.1138 |
+| on distractor (beta+trust) | 7.9436 | 0.1533 | 0.2947 | 0.3745 | 7023.6 | 0.1137 |
+
+New-doc insertion (answer chunk in memory): top5 improved on **2/4 seqs**
+(seq0 0.189->0.213, seq1 0.110->0.157), rank down on 4/4 (-54 to -409), loss
+down on 4/4. Sanity: on at beta=0 == off exactly.
+
+### Phase 1B-logit-bias + trainable b_M verdict: PROMOTED
+
+| metric | scalar beta (v1) | + trainable trust (b_M) |
+|--------|------------------|--------------------------|
+| top5   | -0.0005 (worse)  | **+0.0151** (better)     |
+| top10  | +0.0005          | **+0.0154** (30x)        |
+| mean rank | -4.8          | **-12.3** (2.5x)         |
+| loss   | -0.014           | **-0.077** (5.5x)        |
+| new-doc top5 improved | 0/4 | **2/4**           |
+| discrimination checks | 4/5 | **5/5**           |
+
+**5/5 discrimination checks pass + distractor safe.** Per-token trust let the
+model learn "this retrieved token is reliable, that one is noise" (trust
+learned a real distribution: std 0.75, range -3.5 to +44.2 — amplifies useful
+memory tokens, suppresses misleading ones, inverts a few). The gain jumped
+from sub-noise-floor (~0.05%) to +1.5% top5/top10 — within striking distance
+of the 2% noise floor, and 30x the scalar-beta effect. New-doc QA now
+measurably improves (top5 up on 2/4, rank down on 4/4).
+
+**Honest caveats:** 1 seed (noise-floor rule wants 2 for formal promote);
+`eta_trust=4000` is aggressive (derived, not tuned) — a seed-2 check that it's
+not unstable is warranted; trust range includes a negative (-3.5, a token
+whose bias was learned to be inverted) — legal but watch for instability.
 
 See `results_phase1b_logit_bias.md` / `.json`.

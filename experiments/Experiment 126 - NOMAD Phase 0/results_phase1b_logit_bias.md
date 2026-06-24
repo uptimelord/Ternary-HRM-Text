@@ -2,7 +2,7 @@
 
 checkpoint: `C:\Users\Dos\Documents\GRAM\BitNet-HRM\artifacts\phase0_nomad_exp126\seed1\pretrain\checkpoint_fp32.pt` (frozen, Delta-theta-core=0, Delta-theta-head=0)
 bias: z' = W_o h + beta * b_M ; b_M = retrieved chunks' token-freq dist (decay-weighted)
-trained: beta only (500 steps, eta_beta=1.0), beta_init=0.0 -> 1.2811
+trained: beta + trust (per-token) (500 steps, eta_beta=1.0, eta_trust=4000.0), beta_init=0.0 -> 1.2012
 retrieval: per-position, exact only, top_k=4, stride=32
 
 ## Results (averaged over eval batches)
@@ -10,12 +10,12 @@ retrieval: per-position, exact only, top_k=4, stride=32
 | test | loss | top1 | top5 | top10 | mean_rank | ece |
 |------|------|------|------|-------|-----------|-----|
 | baseline (off) | 7.9450 | 0.1533 | 0.2949 | 0.3738 | 7025.1 | 0.1136 |
-| on relevant (beta trained) | 7.9314 | 0.1538 | 0.2944 | 0.3743 | 7020.3 | 0.1132 |
-| on distractor (beta trained) | 7.9448 | 0.1533 | 0.2949 | 0.3738 | 7024.4 | 0.1136 |
+| on relevant (beta trained) | 7.8679 | 0.1541 | 0.3101 | 0.3892 | 7012.8 | 0.1138 |
+| on distractor (beta trained) | 7.9436 | 0.1533 | 0.2947 | 0.3745 | 7023.6 | 0.1137 |
 
 ## New-doc insertion (answer chunk in memory, Delta-theta=0 except beta)
 
-- seq0: retrieval_hit=True ans_tok=50 loss 8.413->8.397 top5 0.189->0.189 rank 5191->5121
-- seq1: retrieval_hit=True ans_tok=468 loss 8.837->8.810 top5 0.110->0.110 rank 8636->8287
-- seq2: retrieval_hit=True ans_tok=1777 loss 7.144->7.125 top5 0.409->0.409 rank 6008->5979
-- seq3: retrieval_hit=True ans_tok=236 loss 7.526->7.493 top5 0.433->0.433 rank 6964->6855
+- seq0: retrieval_hit=True ans_tok=50 loss 8.413->8.326 top5 0.189->0.213 rank 5191->5105
+- seq1: retrieval_hit=True ans_tok=468 loss 8.837->8.573 top5 0.110->0.157 rank 8636->8227
+- seq2: retrieval_hit=True ans_tok=1777 loss 7.144->7.109 top5 0.409->0.409 rank 6008->5954
+- seq3: retrieval_hit=True ans_tok=236 loss 7.526->7.493 top5 0.433->0.425 rank 6964->6845

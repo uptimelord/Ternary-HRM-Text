@@ -861,6 +861,42 @@ class TestPhase1AProbe:
             shortlist_size=20, neg_size=4, generator=gen)
         assert abs(info["grad"]) > 1e-6, "beta got grad 0 (bias tokens not in shortlist)"
 
+    def test_biased_metrics_trust_equals_scalar_when_one(self):
+        """trust=ones reproduces the scalar-beta path; trust!=1 changes logits."""
+        torch.manual_seed(0)
+        N, D, V = 6, 8, 20
+        h = torch.randn(N, D); labels = torch.randint(0, V, (N,)); labels[1] = -100
+        w = torch.randn(V, D)
+        bias = torch.zeros(N, V); bias[0, 3] = 5.0
+        m_scalar = phase1b_logit_bias.biased_metrics(
+            h, bias, labels, w, beta=1.0, vocab_chunk_size=5, memory_on=True)
+        m_trust1 = phase1b_logit_bias.biased_metrics(
+            h, bias, labels, w, beta=1.0, vocab_chunk_size=5, memory_on=True,
+            trust=torch.ones(V))
+        assert abs(m_scalar["loss"] - m_trust1["loss"]) < 1e-5  # trust=1 == scalar
+        # trust that down-weights token 3 should change the loss (pos 0 was biased at 3)
+        trust_down = torch.ones(V); trust_down[3] = 0.1
+        m_trust_down = phase1b_logit_bias.biased_metrics(
+            h, bias, labels, w, beta=1.0, vocab_chunk_size=5, memory_on=True, trust=trust_down)
+        assert abs(m_trust_down["loss"] - m_scalar["loss"]) > 1e-3
+
+    def test_beta_update_trust_moves_on_shortlist(self):
+        """trust update changes only shortlist rows and reduces the bias error."""
+        torch.manual_seed(0)
+        N, D, V = 6, 8, 20
+        h = torch.randn(N, D); labels = torch.randint(0, V, (N,)); labels[1] = -100
+        w = torch.randn(V, D)
+        bias = torch.zeros(N, V); bias[0, 3] = 5.0  # token 3 over-promoted (not a target)
+        trust = torch.ones(V)
+        gen = torch.Generator(); gen.manual_seed(0)
+        _, info = phase1b_logit_bias.beta_update(
+            h, bias, labels, w, beta=1.0, eta_beta=0.0,  # freeze beta to isolate trust
+            shortlist_size=20, neg_size=4, generator=gen,
+            trust=trust, eta_trust=1.0)
+        assert info["trust_update_norm"] > 0  # trust moved
+        # token 3 was over-promoted (high bias, not a target) -> trust[3] should drop
+        assert trust[3].item() < 1.0, f"trust[3]={trust[3].item()} should decrease"
+
     def test_build_memory_reads_shape(self):
         """Per-sequence retrieval broadcasts to [B, T, D]."""
         model = nomad_model.build_nomad_model(TINY_CONFIG, hard=True)
