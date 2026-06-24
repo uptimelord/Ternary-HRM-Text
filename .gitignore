@@ -4,6 +4,12 @@
 # scratch
 /input.txt
 /experiments/convgpt2.png
+# runtime / agent session state (pi terminal logs, scratch json, generated plans, large pdf cards)
+/terminals/
+/arxiv_search.json
+/seed2.1_model_card.pdf
+*.pdf
+/docs/superpowers/plans/
 # large regenerable experiment data (keep small frozen/heldout splits only)
 /experiments/Experiment 70 - Comparative Logic Corpus/train_100k.jsonl
 /experiments/Experiment 70 - Comparative Logic Corpus/train_30k_sft.jsonl
