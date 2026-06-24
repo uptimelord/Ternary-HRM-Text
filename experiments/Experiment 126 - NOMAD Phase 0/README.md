@@ -239,3 +239,68 @@ More token exposure was.
 
 See `results_phase0_seed1.md` and `artifacts/phase0_nomad_exp126/seed1/report.json`
 after a run.
+
+## Phase 0.5 saturation probe (0C 10k, seed 1)
+
+Single saturation probe, config unchanged from 0C, resumable 5k→7.5k→10k:
+
+| steps | eval gap | eval acc | train acc |
+|-------|----------|----------|-----------|
+| 1k | −2.161 | 0.070 | 0.064 |
+| 3k | −2.766 | 0.160 | 0.142 |
+| 5k | −2.937 | 0.155 | 0.146 |
+| 7.5k | −3.070 | 0.167 | 0.150 |
+| 10k | **−3.199** | **0.169** | 0.156 |
+
+**Loss: monotonic decrease, no plateau** (still falling at 10k). **Accuracy:
+plateaued in the 0.16–0.17 band.** The big jump was 1k→3k (the recovery);
+from 5k onward accuracy rises only +0.014 over 5k steps (~10× slower).
+Outcome #2 of the decision rule: **acc plateaus ~0.17 but loss falls → the next
+problem is discrimination/calibration, not raw learning.** Raw learning (the
+Phase 0 question) is saturated. Eval acc > train acc throughout → still
+generalizing, not overfitting. This is Phase 0.5 / scaling-curve work, not
+promotion.
+
+## Phase 1A: retrieval-only memory probe (frozen 0C/10k, Δθ=0)
+
+Goal: test whether exact / exact+compression memory improves evaluation
+discrimination over the promoted 0C checkpoint **without retraining the core.**
+Frozen 10k checkpoint, no weight updates anywhere, retrieval + rerank only.
+
+| test | loss | top1 | top5 | top10 | mean rank | ECE |
+|------|------|------|------|-------|-----------|-----|
+| baseline (off) | 7.945 | 0.153 | 0.295 | 0.374 | 7025 | 0.114 |
+| exact | 7.936 | 0.152 | 0.291 | 0.375 | 6958 | 0.113 |
+| exact+compression | 7.992 | 0.149 | 0.289 | 0.371 | 7058 | 0.112 |
+| distractor (garbage) | 7.962 | 0.150 | 0.292 | 0.373 | 6992 | 0.111 |
+
+New-doc insertion (answer chunk in empty memory, Δθ=0): retrieval surfaces the
+fact on all 4 sequences (`retrieval_hit=True`), but top5/rank do not improve
+(flat-to-worse). Promote check: 2/8 discrimination checks pass; distractor safe.
+
+### Phase 1A verdict: KILL as capability path, PASS as diagnostic
+
+```
+PASS (diagnostic):
+  retrieval hits relevant chunks
+  new-doc insertion retrieval_hit=True
+  distractor does not hijack
+
+KILL (capability path):
+  memory-on does not improve top1/top5/mean-rank enough
+  compression rerank hurts (worse across the board)
+  untrained memory projection is ineffective
+```
+
+**Correct interpretation:** untrained memory *injection* failed. Retrieval
+*succeeded*. The notebook finds the page; the goblin cannot read it yet. Phase 0
+trained with `m_t = 0` always, so `memory_proj` + the `m_t` residual into the
+recurrent block never learned — retrieval now injects signal through a random
+projection. A faint signal leaks through (exact retrieval: mean rank 7025 →
+6958, ~1%) but not enough to move top1/top5.
+
+**This points exactly to Phase 1B:** the bottleneck is not retrieval, it is the
+**memory-to-model interface.** Phase 1B trains only that interface on the
+frozen core.
+
+See `results_phase1a_memory_probe.md` / `.json`.
