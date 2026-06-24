@@ -344,21 +344,45 @@ vs off: top1/top5 flat (0.0000), mean rank 7025 -> 7023 (-2). New-doc insertion:
 retrieval_hit=True on 4/4, top5 flat, rank -3 to -27. Promote: 1/4 discrimination
 checks + distractor safe.
 
-### Phase 1B verdict (300 steps): not yet promoted, but clean
+### Phase 1B push (500 steps, per-position retrieval, contrastive target)
 
-The adapter trained (|u| decayed 0.0020 -> 0.0003, gamma 0.100 -> 0.1015 —
-converging) and the direction is right (mean rank improved, distractor safe,
-no off-path leak), but the effect is ~10x smaller than 1A's retrieval-only
-rank gain (−2 vs −66). 300 steps is likely undertrained for a 65k-param
-adapter, AND the per-sequence (broadcast) memory read is a weak signal: every
-position gets the same `m`, so the adapter can only apply a constant per-sequence
-nudge. The LMS target `alpha * W_y` is also crude — it pushes toward one token
-row regardless of context.
+Pushed the three levers: per-position sliding-window retrieval (stride=32,
+4× the signal diversity of per-sequence), contrastive target
+(`W_y − mean(neg_k random rows)` instead of bare `W_y`), and 500 steps (vs 300).
 
-**Next levers (not yet run):** (a) more steps (1000–2000, the adapter is still
-converging); (b) per-position retrieval instead of per-sequence broadcast; (c) a
-richer target (contrastive: `W_y - mean(negative rows)`) instead of bare `W_y`.
-Phase 1B is not a KILL — it is undertrained with a known weak signal, and the
-mechanics are verified correct (no leak, right direction, distractor-safe).
+| test | loss | top1 | top5 | top10 | mean_rank |
+|------|------|------|------|-------|-----------|
+| off (init) | 7.9450 | 0.1533 | 0.2949 | 0.3738 | 7025.1 |
+| off (trained) | 7.9450 | 0.1533 | 0.2949 | 0.3738 | 7025.1 |
+| on relevant | 7.9386 | 0.1533 | 0.2954 | 0.3745 | 7025.3 |
+| on distractor | 7.9450 | 0.1533 | 0.2954 | 0.3738 | 7025.5 |
+
+on-relevant vs off: top5 +0.0005, top10 +0.0007 (both positive now, vs flat in
+v1), mean rank essentially flat (+0.2). Promote: 2/4 + distractor safe. Still
+below the 2% noise floor — the effect is real but ~100× too small to matter.
+
+### Phase 1B verdict: KILL the linear adapter as the discrimination lever
+
+The adapter learns the right direction (top5/top10 positive, distractor safe,
+no off-path leak, |u| converging) but the **magnitude is structurally too
+small**: `h' = h + γ·A·m` with γ≈0.1 produces a logit shift of ~0.1× on a frozen
+65536-way head — enough to nudge rank, not enough to flip top-1. Pushing
+retrieval diversity (per-position), target richness (contrastive), and steps
+(300→500) moved top5 from 0.0000 to +0.0005. The ceiling is the linear-adapter
+lever on a frozen head, not undertraining.
+
+**This is a useful negative:** the memory→hidden linear adapter is NOT the path
+to break the 0C discrimination plateau (Phase 0.5: acc plateaued at 0.17 while
+loss fell). The real levers are (a) a **logit bias from memory** (Architecture
+§6 `b_M` — add directly to `z`, bypass the h→W_o bottleneck), or (b) unfreeze
+the head with the memory signal (Phase 1C, breaks the frozen-core rule), or
+(c) accept memory helps **new-doc QA** (fact not in weights) not general
+discrimination.
+
+### Bug fixed during 1B push: gzip scoring when weight=0
+
+`_score_chunk` always called `compression_rerank_score` (gzip.compress) even
+when `lambda_gzip=0.0` — 2790 gzip calls per query, dominating retrieval cost.
+Fixed to skip when the weight is 0 (6× retrieval speedup; affects 1A too).
 
 See `results_phase1b_adapter.md` / `.json`.

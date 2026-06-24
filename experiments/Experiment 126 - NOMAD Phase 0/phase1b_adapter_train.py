@@ -164,6 +164,9 @@ def adapter_update(
     eta: float,
     alpha: float,        # target_delta_h = alpha * W_y
     eps: float = 1e-8,
+    contrastive: bool = False,   # target = alpha * (W_y - mean(negative rows))
+    neg_k: int = 16,             # #random negative rows for contrastive target
+    neg_generator: torch.Generator | None = None,
 ) -> dict[str, float]:
     """Local LMS/Kaczmarz update on A (and a small gamma nudge).
 
@@ -187,8 +190,19 @@ def adapter_update(
     hl = labels[mask].to(torch.long)
     W_y = weight.index_select(0, hl).float()  # [Nv, D] frozen head rows
 
+    if contrastive:
+        # target = alpha * (W_y - mean of neg_k random head rows). Teaches
+        # discrimination (push h toward the correct row AND away from random
+        # negatives), not just attraction. Negatives sampled uniformly over V.
+        V = int(weight.shape[0])
+        neg_idx = torch.randint(0, V, (neg_k,), device=weight.device,
+                                generator=neg_generator)
+        W_neg_mean = weight.index_select(0, neg_idx).float().mean(dim=0)  # [D]
+        target_delta = alpha * (W_y - W_neg_mean.unsqueeze(0))            # [Nv, D]
+    else:
+        target_delta = alpha * W_y                                         # [Nv, D]
+
     current_delta = F.linear(hm, adapter.A)   # [Nv, D]
-    target_delta = alpha * W_y                 # [Nv, D]
     error = target_delta - current_delta       # [Nv, D]
 
     # Kaczmarz-style: scale by 1/(||m||^2 + eps) per sample
@@ -250,6 +264,47 @@ def build_per_pos_memory(
     return reads.unsqueeze(1).expand(B, T, D).contiguous()
 
 
+@torch.no_grad()
+def build_per_position_memory(
+    model: nomad_model.NOMADModel,
+    memory: nomad_memory.ExternalMemory | None,
+    input_ids: Tensor,  # [B, T]
+    tokenizer: Tokenizer,
+    *,
+    query_window: int,   # tokens used as the query at each position
+    query_stride: int,   # re-query every `stride` positions; hold between
+    top_k: int,
+    device: torch.device,
+) -> Tensor:
+    """[B, T, D] memory reads with per-position (sliding-window) retrieval.
+
+    At each position t we query memory with the last `query_window` tokens
+    ending at t (a sliding context), retrieve top-K, mean-pool -> m_t. To keep
+    retrieval cost sane we re-query every `query_stride` positions and hold the
+    result constant in between (nearest-hold). This gives position-specific
+    signal (vs the per-sequence broadcast) at stride/query_window the cost.
+    Returns zeros if memory is None/empty.
+    """
+    B, T = input_ids.shape
+    D = model.width
+    if memory is None or len(memory) == 0:
+        return torch.zeros(B, T, D, device=device)
+    reads = torch.zeros(B, T, D, device=device)
+    for b in range(B):
+        ids = input_ids[b].tolist()
+        last_m = torch.zeros(D, device=device)
+        for t in range(T):
+            if t % query_stride == 0 or t == 0:
+                lo = max(0, t - query_window + 1)
+                query = tokenizer.decode(ids[lo : t + 1])
+                results = memory.retrieve(query, top_k=top_k)
+                if results:
+                    vecs = memory.get_vectors([cid for cid, _ in results]).to(device)
+                    last_m = vecs.mean(dim=0)
+            reads[b, t] = last_m
+    return reads
+
+
 def avg_metrics(results: list[dict[str, float]]) -> dict[str, float]:
     if not results:
         return {}
@@ -257,6 +312,32 @@ def avg_metrics(results: list[dict[str, float]]) -> dict[str, float]:
     out = {k: sum(r[k] for r in results) / len(results) for k in keys}
     out["n_valid_total"] = sum(r.get("n_valid", 0) for r in results)
     return out
+
+
+def build_memory_reads(
+    model: nomad_model.NOMADModel,
+    memory: nomad_memory.ExternalMemory | None,
+    input_ids: Tensor,
+    tokenizer: Tokenizer,
+    *,
+    retrieval_mode: str,
+    prefix_len: int,
+    query_window: int,
+    query_stride: int,
+    top_k: int,
+    device: torch.device,
+) -> Tensor:
+    """Dispatch to per-sequence or per-position retrieval -> [B, T, D]."""
+    if retrieval_mode == "per-position":
+        return build_per_position_memory(
+            model, memory, input_ids, tokenizer,
+            query_window=query_window, query_stride=query_stride,
+            top_k=top_k, device=device,
+        )
+    return build_per_pos_memory(
+        model, memory, input_ids, tokenizer,
+        prefix_len=prefix_len, top_k=top_k, device=device,
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -287,6 +368,21 @@ def build_parser() -> argparse.ArgumentParser:
     p.add_argument("--eval-fraction", type=float, default=0.2)
     p.add_argument("--relevant-chars", type=int, default=200_000)
     p.add_argument("--distractor-chars", type=int, default=200_000)
+    # retrieval granularity (1B push: per-position instead of per-sequence)
+    p.add_argument("--retrieval-mode", choices=["per-sequence", "per-position"],
+                   default="per-position",
+                   help=("per-sequence: one retrieval broadcast to all positions "
+                         "(1B v1). per-position: sliding-window retrieval at each "
+                         "position (1B push, position-specific signal)."))
+    p.add_argument("--query-window", type=int, default=16,
+                   help="per-position: tokens in the sliding query window")
+    p.add_argument("--query-stride", type=int, default=4,
+                   help="per-position: re-query every `stride` positions (hold between)")
+    # contrastive target (1B push: teach discrimination, not just attraction)
+    p.add_argument("--contrastive", action=argparse.BooleanOptionalAction, default=True,
+                   help="target = alpha*(W_y - mean(random neg rows)) instead of bare W_y")
+    p.add_argument("--neg-k", type=int, default=16,
+                   help="#random negative head rows for the contrastive target")
     p.add_argument("--output", type=Path,
                    default=EXP126_DIR / "results_phase1b_adapter.md")
     return p
@@ -356,6 +452,9 @@ def main() -> int:
 
     # Adapter (the only trainable thing)
     adapter = MemoryAdapter(model.width, gamma=args.gamma_init).to(device)
+    # RNG for the contrastive target's random negative rows (reproducible)
+    neg_generator = torch.Generator(device=device)
+    neg_generator.manual_seed(126 + args.seed)
     print(f"adapter: A=[{model.width},{model.width}] ({model.width*model.width} params), "
           f"gamma={float(adapter.gamma):.3f}", flush=True)
 
@@ -371,12 +470,20 @@ def main() -> int:
         if inp.ndim == 1:
             inp = inp.view(int(b.get("numseqs", 1)), -1)
         eval_h_cache.append(frozen_core_hidden(model, inp).detach())
-        eval_m_rel.append(build_per_pos_memory(model, mem_rel, inp, tokenizer,
-                                               prefix_len=args.prefix_len, top_k=args.memory_top_k,
+        eval_m_rel.append(build_memory_reads(model, mem_rel, inp, tokenizer,
+                                               retrieval_mode=args.retrieval_mode,
+                                               prefix_len=args.prefix_len,
+                                               query_window=args.query_window,
+                                               query_stride=args.query_stride,
+                                               top_k=args.memory_top_k,
                                                device=device).reshape(-1, model.width).detach())
-        eval_m_dist.append(build_per_pos_memory(model, mem_dist, inp, tokenizer,
-                                                prefix_len=args.prefix_len, top_k=args.memory_top_k,
-                                                device=device).reshape(-1, model.width).detach())
+        eval_m_dist.append(build_memory_reads(model, mem_dist, inp, tokenizer,
+                                              retrieval_mode=args.retrieval_mode,
+                                              prefix_len=args.prefix_len,
+                                              query_window=args.query_window,
+                                              query_stride=args.query_stride,
+                                              top_k=args.memory_top_k,
+                                              device=device).reshape(-1, model.width).detach())
 
     def eval_off() -> dict[str, float]:
         res = []
@@ -419,8 +526,12 @@ def main() -> int:
         inp = b["inputs"]
         if inp.ndim == 1:
             inp = inp.view(int(b.get("numseqs", 1)), -1)
-        m3 = build_per_pos_memory(model, mem_rel, inp, tokenizer,
-                                  prefix_len=args.prefix_len, top_k=args.memory_top_k, device=device)
+        m3 = build_memory_reads(model, mem_rel, inp, tokenizer,
+                                 retrieval_mode=args.retrieval_mode,
+                                 prefix_len=args.prefix_len,
+                                 query_window=args.query_window,
+                                 query_stride=args.query_stride,
+                                 top_k=args.memory_top_k, device=device)
         mem_cache.append(m3.reshape(-1, m3.shape[-1]).detach())
         if (step + 1) % 100 == 0:
             print(f"  cached {step+1}/{args.steps} ({_time.perf_counter()-_t0:.0f}s)", flush=True)
@@ -443,7 +554,9 @@ def main() -> int:
         m_flat = mem_cache[step]
         lab = b["labels"].reshape(-1)
         u = adapter_update(adapter, h, m_flat, lab, head_weight,
-                           eta=args.eta, alpha=args.alpha)
+                           eta=args.eta, alpha=args.alpha,
+                           contrastive=args.contrastive, neg_k=args.neg_k,
+                           neg_generator=neg_generator)
         if (step + 1) % args.log_interval == 0:
             print(f"  step {step+1}/{args.steps}: |u|={u['update_norm']:.4f} "
                   f"gamma={float(adapter.gamma):.4f} n_valid={u['n_valid']}", flush=True)
@@ -471,8 +584,12 @@ def main() -> int:
         h = frozen_core_hidden(model, inp)
         off = adapter_metrics(adapter, h, torch.zeros_like(h), lab.reshape(-1), head_weight,
                               vocab_chunk_size=args.vocab_chunk_size, memory_on=False)
-        m3 = build_per_pos_memory(model, mem_new, inp, tokenizer,
-                                  prefix_len=args.prefix_len, top_k=args.memory_top_k, device=device)
+        m3 = build_memory_reads(model, mem_new, inp, tokenizer,
+                                 retrieval_mode=args.retrieval_mode,
+                                 prefix_len=args.prefix_len,
+                                 query_window=args.query_window,
+                                 query_stride=args.query_stride,
+                                 top_k=args.memory_top_k, device=device)
         on = adapter_metrics(adapter, h, m3.reshape(-1, m3.shape[-1]), lab.reshape(-1), head_weight,
                              vocab_chunk_size=args.vocab_chunk_size, memory_on=True)
         insertion.append({"retrieval_hit": len(retr) > 0,
@@ -490,7 +607,9 @@ def main() -> int:
              f"checkpoint: `{args.checkpoint}` (frozen, Delta-theta-core=0, Delta-theta-head=0)",
              f"adapter: A=[{model.width},{model.width}] + gate gamma, trained {args.steps} steps "
              f"(eta={args.eta}, alpha={args.alpha}, gamma_init={args.gamma_init})",
-             f"retrieval: exact only (compression DISABLED -- it hurt in 1A), top_k={args.memory_top_k}",
+             f"retrieval: {args.retrieval_mode}, exact only (compression DISABLED -- it hurt in 1A), top_k={args.memory_top_k}",
+             f"per-position: query_window={args.query_window}, stride={args.query_stride}" + ("" if args.retrieval_mode == "per-sequence" else ""),
+             f"target: {'contrastive (W_y - mean(neg_k='+str(args.neg_k)+'))' if args.contrastive else 'bare W_y'}",
              "",
              "## Results (averaged over eval batches)",
              "",

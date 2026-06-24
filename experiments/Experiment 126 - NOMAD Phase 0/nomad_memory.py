@@ -233,10 +233,15 @@ class ExternalMemory:
 
     def _score_chunk(self, query: str, chunk: MemoryChunk) -> float:
         """Compute mixed retrieval score for a chunk."""
-        # Phase 0: exact + compression
-        exact = exact_match_score(query, chunk.text)
-        gzip_score = compression_rerank_score(query, chunk.text)
-        return self.lambda_exact * exact + self.lambda_gzip * gzip_score
+        # Skip the gzip term entirely when its weight is 0 -- gzip.compress is
+        # expensive (~microseconds/call) and dominates scoring when called over
+        # thousands of chunks per query. Phase 1B/1A run exact-only.
+        score = 0.0
+        if self.lambda_exact != 0.0:
+            score += self.lambda_exact * exact_match_score(query, chunk.text)
+        if self.lambda_gzip != 0.0:
+            score += self.lambda_gzip * compression_rerank_score(query, chunk.text)
+        return score
 
     def retrieve(
         self,

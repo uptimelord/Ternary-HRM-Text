@@ -11,7 +11,7 @@
     "vocab_size": 65536,
     "vocab_chunk_size": 8192,
     "memory_top_k": 4,
-    "steps": 300,
+    "steps": 500,
     "eta": 0.01,
     "alpha": 1.0,
     "gamma_init": 0.1,
@@ -20,6 +20,11 @@
     "eval_fraction": 0.2,
     "relevant_chars": 200000,
     "distractor_chars": 200000,
+    "retrieval_mode": "per-position",
+    "query_window": 16,
+    "query_stride": 32,
+    "contrastive": true,
+    "neg_k": 16,
     "output": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\experiments\\Experiment 126 - NOMAD Phase 0\\results_phase1b_adapter.md"
   },
   "checkpoint": "C:\\Users\\Dos\\Documents\\GRAM\\BitNet-HRM\\artifacts\\phase0_nomad_exp126\\seed1\\pretrain\\checkpoint_fp32.pt",
@@ -45,23 +50,23 @@
       "n_valid_total": 4096
     },
     "on_relevant": {
-      "loss": 7.940016984939575,
+      "loss": 7.938642740249634,
       "top1": 0.1533203125,
-      "top5": 0.294921875,
-      "top10": 0.37353515625,
-      "mean_rank": 7023.13916015625,
+      "top5": 0.29541015625,
+      "top10": 0.37451171875,
+      "mean_rank": 7025.3212890625,
       "median_rank": 35.5,
-      "ece": 0.11321698373842537,
+      "ece": 0.11316892162881231,
       "n_valid_total": 4096
     },
     "on_distractor": {
-      "loss": 7.945138692855835,
+      "loss": 7.944995403289795,
       "top1": 0.1533203125,
       "top5": 0.29541015625,
       "top10": 0.373779296875,
-      "mean_rank": 7025.844970703125,
+      "mean_rank": 7025.54541015625,
       "median_rank": 35.5,
-      "ece": 0.11361924522225308,
+      "ece": 0.11362710302398682,
       "n_valid_total": 4096
     }
   },
@@ -69,42 +74,42 @@
     {
       "retrieval_hit": true,
       "off_loss": 8.412839889526367,
-      "on_loss": 8.407490730285645,
+      "on_loss": 8.406814575195312,
       "off_top5": 0.18897637724876404,
       "on_top5": 0.18897637724876404,
       "off_rank": 5191.1259765625,
-      "on_rank": 5190.4013671875
+      "on_rank": 5189.04736328125
     },
     {
       "retrieval_hit": true,
       "off_loss": 8.836692810058594,
-      "on_loss": 8.833094596862793,
+      "on_loss": 8.834311485290527,
       "off_top5": 0.11023622006177902,
       "on_top5": 0.11023622006177902,
       "off_rank": 8636.0234375,
-      "on_rank": 8633.220703125
+      "on_rank": 8629.794921875
     },
     {
       "retrieval_hit": true,
       "off_loss": 7.144298553466797,
-      "on_loss": 7.137523174285889,
+      "on_loss": 7.140951156616211,
       "off_top5": 0.4094488024711609,
       "on_top5": 0.4094488024711609,
       "off_rank": 6008.3544921875,
-      "on_rank": 6000.50390625
+      "on_rank": 6002.70068359375
     },
     {
       "retrieval_hit": true,
       "off_loss": 7.525576114654541,
-      "on_loss": 7.515371322631836,
+      "on_loss": 7.5147013664245605,
       "off_top5": 0.4330708682537079,
       "on_top5": 0.4330708682537079,
       "off_rank": 6963.8896484375,
-      "on_rank": 6937.18115234375
+      "on_rank": 6936.69287109375
     }
   ],
   "promote": {
-    "n_good": 1,
+    "n_good": 2,
     "n_total": 4,
     "distractor_safe": true,
     "off_train_hurt": 0.0
