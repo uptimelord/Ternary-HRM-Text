@@ -1,15 +1,3 @@
-Yes. If we design from scratch, the clean target is **not** “a Transformer without backprop.” It is a new kind of system:
-
-[ iterative reasoner + attention-as-associative-memory + external reconstructive memory + local no-backprop learning ]
-
-Let’s call it for now:
-
-[ NOMAD: No-backprop Online Memory-Attention Dynamics ]
-
-The job of NOMAD is to keep the model small, let memory expand externally, and train using **local / recursive / projection / perturbation / alignment rules**, not backprop.
-
----
-
 # 1. What does an AI need?
 
 At minimum:
