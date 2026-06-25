@@ -279,6 +279,85 @@ Phase 0 question) is saturated. Eval acc > train acc throughout → still
 generalizing, not overfitting. This is Phase 0.5 / scaling-curve work, not
 promotion.
 
+## Phase 1 summary (milestone) + roadmap
+
+**Phase 1 is FORMALLY PROMOTED** (frozen 0C/10k core + frozen head + a tiny
+memory trust layer). The arc, in one line each:
+
+```
+Phase 1A (retrieval-only, Δθ=0):
+  Retrieval works; untrained memory injection fails. KILL as capability,
+  PASS as diagnostic. -> bottleneck is the memory-to-model interface.
+
+Phase 1B-linear-adapter (h' = h + γ·A·m, frozen core+head):
+  Linear hidden adapter is too weak (the h→W_o bottleneck caps the nudge at
+  ~0.05%). KILL as the discrimination lever.
+
+Phase 1B-logit-bias (z' = W_o h + β·b_M, scalar β, frozen core+head):
+  Direct memory logit bias is the right path -- stronger than the adapter,
+  distractor-safe, new-doc rank down on 4/4. But scalar β × a fixed b_M is
+  still ~0.05% (sub-noise-floor).
+
+Phase 1B-logit-bias + trainable b_M (z' = W_o h + β·(trust ⊙ b_M_raw)):
+  PROMOTED, 2 seeds. Per-token trust is the missing lever.
+```
+
+**Core implication:**
+
+```
+Memory becomes useful only after the model learns which retrieved tokens
+ to trust.
+```
+
+### Promoted Phase 1 mechanism (kept fixed for Phase 2)
+
+```
+z' = W_o h + β (trust ⊙ b_M)
+  h     = frozen 0C/10k core hidden
+  W_o   = frozen tied head
+  b_M   = retrieved chunks' token-freq distribution (decay-weighted, sparse)
+  trust = trainable per-vocab-token scale R^V (init 1.0), local LMS
+  β     = trainable scalar gate, local LMS
+```
+
+### Replicated result (2 seeds, spread ~0, far within 2× noise floor)
+
+| metric (on-relevant vs off) | seed 1 | seed 2 | mean |
+|------------------------------|--------|--------|------|
+| top5 | +0.0151 | +0.0151 | +0.0151 |
+| top10 | +0.0154 | +0.0156 | +0.0155 |
+| mean rank | -12.32 | -12.32 | -12.32 |
+| loss | -0.0772 | -0.0783 | -0.0778 |
+
+β 1.201/1.202, trust std 0.747/0.747. Both seeds: 5/5 discrimination checks,
+distractor-safe, new-doc top5 improved 2/4. VRAM peak 2347 MB (eval-time
+full-vocab rank/top-k + dense bias, not training state).
+
+### Roadmap
+
+```
+Phase 0   no-BP core learning                         ✅ promoted (2 seeds)
+Phase 0.5 saturation probe (0C 10k)                   ✅ done (acc plateaus ~0.17)
+Phase 1A  retrieval-only                              ✅ diagnostic / KILL capability
+Phase 1B  memory interface (linear adapter)           ✅ KILL (too weak)
+Phase 1B  logit-bias + trainable b_M                  ✅ PROMOTED (2 seeds)
+Phase 2A  semantic retrieval + trust                  next
+Phase 2B  router/gating across memory sources
+Phase 3   hidden adapter, only if logit path saturates
+Phase 4   reasoning-depth / fixed-point loop
+Phase 5   code/SPC specialization
+```
+
+### Phase 2 scope (next)
+
+Keep the proven `z' = W_o h + β(trust ⊙ b_M)` interface FIXED. Change only the
+memory source: exact vs semantic vs exact+semantic retrieval. Do NOT unfreeze
+the head or revive the hidden adapter yet — the clean thesis (frozen core +
+frozen head + tiny memory trust layer improves capability) stays unmuddied.
+Promote 2A only if semantic or exact+semantic improves top5/top10/mean-rank/
+new-doc over exact-only without hurting distractor safety. Head unfreezing is
+saved for later if retrieval/trust saturates.
+
 ## Phase 1A: retrieval-only memory probe (frozen 0C/10k, Δθ=0)
 
 Goal: test whether exact / exact+compression memory improves evaluation
